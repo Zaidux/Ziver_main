@@ -12,8 +12,7 @@ const claimReward = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const user = req.user;
   const now = new Date();
-  
-  // Mining cycle is 4 hours (4 * 60 * 60 * 1000 milliseconds)
+
   const MINING_CYCLE_DURATION = 4 * 60 * 60 * 1000;
 
   if (user.mining_session_start_time) {
@@ -26,13 +25,21 @@ const claimReward = asyncHandler(async (req, res) => {
     }
   }
 
-  // --- Calculate Daily Streak ---
+  // --- 1. FETCH SETTINGS FROM DATABASE ---
+  const settingsResult = await db.query('SELECT * FROM app_settings');
+  // Convert the array of settings into an easy-to-use object
+  const appSettings = settingsResult.rows.reduce((acc, setting) => {
+    acc[setting.setting_key] = setting.setting_value;
+    return acc;
+  }, {});
+
+
+  // --- 2. Calculate Daily Streak (no change here) ---
   let newStreak = user.daily_streak_count;
   if (user.last_claim_time) {
     const lastClaimDate = new Date(user.last_claim_time);
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const lastClaimDay = new Date(lastClaimDate.getFullYear(), lastClaimDate.getMonth(), lastClaimDate.getDate());
-    
     const diffDays = (today - lastClaimDay) / (1000 * 60 * 60 * 24);
 
     if (diffDays === 1) {
@@ -40,16 +47,19 @@ const claimReward = asyncHandler(async (req, res) => {
     } else if (diffDays > 1) {
       newStreak = 1; // Streak broken, reset to 1
     }
-    // If diffDays is 0, it's the same day, so streak doesn't change
   } else {
     newStreak = 1; // First claim ever
   }
 
-  // --- Calculate Rewards ---
-  const zpToAdd = 50; // Fixed ZP reward
-  const pointsToAdd = getRandomPoints(5, 15); // Random SEB points
+  // --- 3. Calculate Rewards USING FETCHED SETTINGS ---
+  // Use the fetched settings, with fallback default values just in case.
+  const zpToAdd = parseInt(appSettings.MINING_REWARD || '50', 10);
+  const minSebPoints = parseInt(appSettings.SEB_MINING_MIN || '5', 10);
+  const maxSebPoints = parseInt(appSettings.SEB_MINING_MAX || '15', 10);
+  const pointsToAdd = getRandomPoints(minSebPoints, maxSebPoints);
 
-  // --- Update Database ---
+
+  // --- 4. Update Database ---
   const query = `
     UPDATE users
     SET
@@ -63,10 +73,9 @@ const claimReward = asyncHandler(async (req, res) => {
   `;
   const { rows } = await db.query(query, [zpToAdd, pointsToAdd, newStreak, userId]);
 
-  // Exclude password from the returned user object
   const updatedUser = rows[0];
   delete updatedUser.password_hash;
-  
+
   res.json(updatedUser);
 });
 
