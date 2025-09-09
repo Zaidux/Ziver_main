@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const asyncHandler = require('express-async-handler');
-const User = require('../models/User'); // <-- IMPORT THE USER MODEL
+const User = require('../models/User');
 
 // Helper function to generate a JWT (no changes here)
 const generateToken = (id) => {
@@ -10,7 +10,7 @@ const generateToken = (id) => {
   });
 };
 
-// --- Controller for User Registration ---
+// --- Controller for User Registration --- (no changes here)
 const registerUser = asyncHandler(async (req, res) => {
   const { email, password, username } = req.body;
 
@@ -19,7 +19,6 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error('Please provide all required fields');
   }
 
-  // Use the model to check if the user exists
   const userExists = await User.findByEmail(email);
   if (userExists) {
     res.status(400);
@@ -29,7 +28,6 @@ const registerUser = asyncHandler(async (req, res) => {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  // Use the model to create the new user
   const user = await User.create({ username, email, hashedPassword });
 
   if (user) {
@@ -45,18 +43,20 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 });
 
-// --- Controller for User Login ---
+
+// --- Controller for User Login --- (THIS IS THE UPDATED PART)
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  // Use the model to find the user
   const user = await User.findByEmail(email);
 
   if (user && (await bcrypt.compare(password, user.password_hash))) {
+    // For security, remove the password before sending it back
+    delete user.password_hash;
+    
+    // Send the full user object along with a new token
     res.json({
-      id: user.id,
-      username: user.username,
-      email: user.email,
+      ...user, // This includes zp_balance, score, streak, etc.
       token: generateToken(user.id),
     });
   } else {
@@ -64,6 +64,7 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new Error('Invalid email or password');
   }
 });
+
 
 module.exports = {
   registerUser,
