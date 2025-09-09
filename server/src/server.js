@@ -4,17 +4,20 @@ require('dotenv').config();
 // Import required packages
 const express = require('express');
 const cors = require('cors');
-const db = require('./config/db'); // Import our database configuration
+const db = require('./config/db');
+
+// --- IMPORT OUR ROUTE FILES ---
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+
 
 // --- App Initialization ---
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// --- Middleware ---
-// Enable Cross-Origin Resource Sharing (CORS) so our React frontend can talk to the backend
-app.use(cors());
 
-// Enable the express.json() middleware to parse JSON-formatted request bodies
+// --- Middleware ---
+app.use(cors());
 app.use(express.json());
 
 
@@ -27,23 +30,18 @@ const checkDbConnection = async () => {
     console.error('❌ Error connecting to the database:', error);
   }
 };
-
 checkDbConnection();
 
 
-// --- Routes ---
-// A simple "health check" route to confirm the server is running
-app.get('/', (req, res) => {
-  res.json({
-    message: 'Welcome to the Ziver API! 🚀',
-    status: 'ok',
-    timestamp: new Date().toISOString()
-  });
-});
+// --- USE ROUTES ---
+// Tell Express to use our route files.
+// Any request to '/api/auth' will be handled by authRoutes.
+// Any request to '/api/user' will be handled by userRoutes.
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
 
 
 // --- Start the Server ---
 app.listen(PORT, () => {
   console.log(`🎉 Server is running on port ${PORT}`);
 });
-
