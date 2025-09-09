@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
-import MiningDisplay from '../components/MiningDisplay'; // <-- IMPORT a new component
+import miningService from '../services/miningService'; // <-- 1. IMPORT THE NEW SERVICE
+import MiningDisplay from '../components/MiningDisplay';
 import './MiningHub.css';
 
 const MiningHub = () => {
@@ -13,13 +13,9 @@ const MiningHub = () => {
     setLoading(true);
     setError('');
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      };
-      const response = await axios.post('https://ziver-api.onrender.com/api/mining/claim', {}, config);
-      updateUser(response.data); // Update global user state with the new data
+      // 2. The API call is now much simpler!
+      const updatedUserData = await miningService.claimReward();
+      updateUser(updatedUserData); // Update global user state with the new data
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred during claim.');
     } finally {
@@ -27,6 +23,7 @@ const MiningHub = () => {
     }
   };
 
+  // The rest of your JSX remains exactly the same
   return (
     <div className="hub-container">
       <header className="hub-header">
