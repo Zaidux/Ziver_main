@@ -1,0 +1,88 @@
+/* Basic Hub Styles */
+.hub-container {
+  padding: 2rem;
+  background-color: #121212;
+  color: #fff;
+  min-height: 100vh;
+}
+
+.hub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.hub-header h1 {
+  color: #00e676;
+}
+
+.logout-button {
+  background: none;
+  border: 1px solid #00e676;
+  color: #00e676;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.stat-card {
+  background-color: #1e1e1e;
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stat-card h2 {
+  font-size: 1rem;
+  color: #aaa;
+  margin-bottom: 0.5rem;
+}
+
+.stat-card p {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #00e676;
+}
+
+.mining-section {
+  background-color: #1e1e1e;
+  padding: 2rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.mining-timer {
+  font-size: 3rem;
+  font-weight: bold;
+  margin: 1rem 0;
+  color: #fff;
+}
+
+.mining-button {
+  width: 100%;
+  max-width: 300px;
+  padding: 1rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+  background-color: #00e676;
+  color: #121212;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.mining-button:disabled {
+  background-color: #555;
+  color: #888;
+  cursor: not-allowed;
+}
