@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import authService from '../services/authService';
-import './LoginPage.css'; // Assuming you copied the CSS
+import './LoginPage.css';
 
 function LoginPage() {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const { login } = useAuth(); // Get the login function from our context
 
   const { email, password } = formData;
 
@@ -27,17 +25,17 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      await authService.login(email, password);
-      // If login is successful, redirect to the main app page (Mining Hub)
-      navigate('/');
+      const userData = await authService.login(email, password);
+      login(userData); // This updates the global state and redirects
     } catch (err) {
-      const message = err.response?.data?.message || 'Login failed. Please check your credentials.';
+      const message = err.response?.data?.message || 'Login failed.';
       setError(message);
     } finally {
       setLoading(false);
     }
   };
 
+  // The JSX for your form remains the same
   return (
     <div className="auth-container">
       <form className="auth-form" onSubmit={handleSubmit}>
@@ -46,23 +44,15 @@ function LoginPage() {
         <div className="form-group">
           <label htmlFor="email">Email</label>
           <input
-            type="email"
-            id="email"
-            name="email"
-            value={email}
-            onChange={handleChange}
-            required
+            type="email" id="email" name="email"
+            value={email} onChange={handleChange} required
           />
         </div>
         <div className="form-group">
           <label htmlFor="password">Password</label>
           <input
-            type="password"
-            id="password"
-            name="password"
-            value={password}
-            onChange={handleChange}
-            required
+            type="password" id="password" name="password"
+            value={password} onChange={handleChange} required
           />
         </div>
         <button type="submit" className="auth-button" disabled={loading}>
