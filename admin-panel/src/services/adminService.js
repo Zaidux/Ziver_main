@@ -7,6 +7,11 @@ const updateTask = (id, taskData) => api.put(`/tasks/${id}`, taskData);
 const getSettings = () => api.get('/settings');
 const updateSetting = (settingData) => api.put('/settings', settingData);
 
+// Function to search for users
+const searchUsers = (searchTerm) => {
+  return api.get(`/users/search?searchTerm=${searchTerm}`);
+};
+
 const adminService = {
   getSummary,
   getTasks,
@@ -14,6 +19,7 @@ const adminService = {
   updateTask,
   getSettings,
   updateSetting,
+  searchUsers, // <-- Add new function here
 };
 
 export default adminService;
