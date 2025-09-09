@@ -34,6 +34,24 @@ const checkDbConnection = async () => {
 checkDbConnection();
 
 
+
+// --- HEALTH CHECK ROUTE (THE FIX) ---
+
+// This is the new "front door" for your API.
+
+app.get('/', (req, res) => {
+
+  res.status(200).json({ 
+
+    status: 'ok', 
+
+    message: 'Ziver API is running successfully.' 
+
+  });
+
+});
+
+
 // --- USE ROUTES ---
 // Tell Express to use our route files.
 app.use('/api/auth', authRoutes);
