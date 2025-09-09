@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './MiningDisplay.css'; // We'll create this CSS file
+import './MiningDisplay.css';
 
 const MiningDisplay = ({ user, onClaim, loading, error }) => {
   const [timeLeft, setTimeLeft] = useState(0);
@@ -8,14 +8,12 @@ const MiningDisplay = ({ user, onClaim, loading, error }) => {
   const MINING_CYCLE_MS = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
 
   useEffect(() => {
-    // If the user has never mined before, it's immediately claimable
     if (!user?.mining_session_start_time) {
       setIsClaimable(true);
       setTimeLeft(0);
       return;
     }
 
-    // Set up an interval to check the time every second
     const interval = setInterval(() => {
       const startTime = new Date(user.mining_session_start_time).getTime();
       const now = new Date().getTime();
@@ -32,7 +30,6 @@ const MiningDisplay = ({ user, onClaim, loading, error }) => {
       }
     }, 1000);
 
-    // Clean up the interval when the component unmounts or user changes
     return () => clearInterval(interval);
   }, [user]);
 
@@ -56,7 +53,8 @@ const MiningDisplay = ({ user, onClaim, loading, error }) => {
         onClick={onClaim}
         disabled={!isClaimable || loading}
       >
-        {loading ? 'Claiming...' : 'Claim 50 ZP'}
+        {/* THE FIX IS HERE: The button text is now generic. */}
+        {loading ? 'Claiming...' : 'Claim Reward'}
       </button>
     </div>
   );
