@@ -1,11 +1,9 @@
-import axios from 'axios';
-
-// The base URL of our deployed Render API
-const API_URL = 'https://ziver-api.onrender.com/api/auth/';
+import api from './api'; // <-- Import our new api instance
 
 // Register user
 const register = (username, email, password) => {
-  return axios.post(API_URL + 'register', {
+  // We just need the endpoint path now, not the full URL
+  return api.post('/auth/register', {
     username,
     email,
     password,
@@ -14,24 +12,17 @@ const register = (username, email, password) => {
 
 // Login user
 const login = async (email, password) => {
-  const response = await axios.post(API_URL + 'login', {
+  const response = await api.post('/auth/login', {
     email,
     password,
   });
-
-  // If the API call is successful and we get user data back...
-  if (response.data) {
-    // ...save the user object (which includes the token) to localStorage.
-    localStorage.setItem('user', JSON.stringify(response.data));
-  }
-
+  // Just return the data. The context will handle saving it.
   return response.data;
 };
 
-
 const authService = {
   register,
-  login, // <-- Add login here
+  login,
 };
 
 export default authService;
