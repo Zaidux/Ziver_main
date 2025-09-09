@@ -9,7 +9,8 @@ const db = require('./config/db');
 // --- IMPORT OUR ROUTE FILES ---
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
-const miningRoutes = require('./routes/miningRoutes'); // <-- IMPORT THIS
+const miningRoutes = require('./routes/miningRoutes');
+const adminRoutes = require('./routes/adminRoutes'); // <-- 1. IMPORT ADMIN ROUTES
 
 // --- App Initialization ---
 const app = express();
@@ -35,11 +36,10 @@ checkDbConnection();
 
 // --- USE ROUTES ---
 // Tell Express to use our route files.
-// Any request to '/api/auth' will be handled by authRoutes.
-// Any request to '/api/user' will be handled by userRoutes.
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
-app.use('/api/mining', miningRoutes); // <-- ADD THIS LINE
+app.use('/api/mining', miningRoutes);
+app.use('/api/admin', adminRoutes); // <-- 2. USE ADMIN ROUTES
 
 
 // --- Start the Server ---
