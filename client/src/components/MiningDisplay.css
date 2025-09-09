@@ -1,0 +1,39 @@
+.mining-section {
+  background-color: #1e1e1e;
+  padding: 2rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.mining-timer {
+  font-size: 3rem;
+  font-weight: bold;
+  margin: 1rem 0;
+  color: #fff;
+}
+
+.mining-button {
+  width: 100%;
+  max-width: 300px;
+  padding: 1rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+  background-color: #00e676;
+  color: #121212;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.mining-button:disabled {
+  background-color: #555;
+  color: #888;
+  cursor: not-allowed;
+}
+
+/* You can copy the .error-message style from RegisterPage.css here if you want */
+.error-message {
+  color: #ff4d4d;
+  margin-bottom: 1rem;
+}
