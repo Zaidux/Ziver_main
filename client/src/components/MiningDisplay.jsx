@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import './MiningDisplay.css';
 
-const MiningDisplay = ({ user, onClaim, loading, error }) => {
+const MiningDisplay = ({ user, appSettings, onClaim, loading, error }) => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isClaimable, setIsClaimable] = useState(false);
 
-  const MINING_CYCLE_MS = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+  // Use the setting from props, with a fallback to 4 hours, to calculate the cycle
+  const miningCycleHours = parseFloat(appSettings?.MINING_CYCLE_HOURS || '4');
+  const MINING_CYCLE_MS = miningCycleHours * 60 * 60 * 1000;
 
   useEffect(() => {
     if (!user?.mining_session_start_time) {
@@ -31,7 +33,7 @@ const MiningDisplay = ({ user, onClaim, loading, error }) => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, MINING_CYCLE_MS]); // Added MINING_CYCLE_MS to dependency array
 
   const formatTime = (ms) => {
     const totalSeconds = Math.floor(ms / 1000);
@@ -53,7 +55,6 @@ const MiningDisplay = ({ user, onClaim, loading, error }) => {
         onClick={onClaim}
         disabled={!isClaimable || loading}
       >
-        {/* THE FIX IS HERE: The button text is now generic. */}
         {loading ? 'Claiming...' : 'Claim Reward'}
       </button>
     </div>
