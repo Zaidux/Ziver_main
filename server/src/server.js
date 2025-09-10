@@ -10,7 +10,7 @@ const db = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const miningRoutes = require('./routes/miningRoutes');
-const adminRoutes = require('./routes/adminRoutes'); // <-- 1. IMPORT ADMIN ROUTES
+const adminRoutes = require('./routes/adminRoutes');
 
 // --- App Initialization ---
 const app = express();
@@ -33,22 +33,20 @@ const checkDbConnection = async () => {
 };
 checkDbConnection();
 
+// --- NEW: DIAGNOSTIC MIDDLEWARE ---
+// This will log every single request that hits your server to the console.
+app.use((req, res, next) => {
+  console.log(`[LOG] Incoming Request: ${req.method} ${req.originalUrl}`);
+  next();
+});
 
 
-// --- HEALTH CHECK ROUTE (THE FIX) ---
-
-// This is the new "front door" for your API.
-
+// --- HEALTH CHECK ROUTE ---
 app.get('/', (req, res) => {
-
   res.status(200).json({ 
-
     status: 'ok', 
-
     message: 'Ziver API is running successfully.' 
-
   });
-
 });
 
 
@@ -57,7 +55,14 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/mining', miningRoutes);
-app.use('/api/admin', adminRoutes); // <-- 2. USE ADMIN ROUTES
+app.use('/api/admin', adminRoutes);
+
+
+// --- NEW: CATCH-ALL 404 HANDLER ---
+// This will catch any request that doesn't match a route and send a clean 404 response.
+app.use((req, res, next) => {
+  res.status(404).json({ message: `API endpoint not found for ${req.method} ${req.originalUrl}` });
+});
 
 
 // --- Start the Server ---
