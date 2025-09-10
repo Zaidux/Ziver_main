@@ -9,15 +9,13 @@ const claimReward = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const user = req.user;
   const now = new Date();
-  
-  // --- 1. FETCH SETTINGS FROM DATABASE (no change here) ---
+
   const settingsResult = await db.query('SELECT * FROM app_settings');
   const appSettings = settingsResult.rows.reduce((acc, setting) => {
     acc[setting.setting_key] = setting.setting_value;
     return acc;
   }, {});
 
-  // --- 2. USE THE DYNAMIC MINING CYCLE DURATION ---
   const miningCycleHours = parseFloat(appSettings.MINING_CYCLE_HOURS || '4');
   const MINING_CYCLE_DURATION = miningCycleHours * 60 * 60 * 1000;
 
@@ -29,27 +27,30 @@ const claimReward = asyncHandler(async (req, res) => {
     }
   }
 
-  // --- 3. Calculate Daily Streak (no change here) ---
   let newStreak = user.daily_streak_count;
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
   if (user.last_claim_time) {
     const lastClaimDate = new Date(user.last_claim_time);
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const lastClaimDay = new Date(lastClaimDate.getFullYear(), lastClaimDate.getMonth(), lastClaimDate.getDate());
-    const diffDays = (today - lastClaimDay) / (1000 * 60 * 60 * 24);
+    
+    const diffTime = today.getTime() - lastClaimDay.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 1) newStreak++;
-    else if (diffDays > 1) newStreak = 1;
+    if (diffDays === 1) {
+      newStreak++;
+    } else if (diffDays > 1) {
+      newStreak = 1;
+    }
   } else {
     newStreak = 1;
   }
   
-  // --- 4. Calculate Rewards USING FETCHED SETTINGS (no change here) ---
   const zpToAdd = parseInt(appSettings.MINING_REWARD || '50', 10);
   const minSebPoints = parseInt(appSettings.SEB_MINING_MIN || '5', 10);
   const maxSebPoints = parseInt(appSettings.SEB_MINING_MAX || '15', 10);
   const pointsToAdd = getRandomPoints(minSebPoints, maxSebPoints);
 
-  // --- 5. Update Database (no change here) ---
   const query = `
     UPDATE users
     SET
