@@ -10,6 +10,7 @@ import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import MiningHub from './pages/MiningHub';
 import TasksPage from './pages/TasksPage';
+import ReferralsPage from './pages/ReferralsPage'; // <-- IMPORT THIS
 
 function App() {
   const { user } = useAuth();
@@ -43,6 +44,7 @@ function App() {
             <Route path="/" element={<MiningHub />} />
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/referrals" element={<div>Referrals Page (Coming Soon)</div>} />
+            <Route path="/referrals" element={<ReferralsPage />} /> {/* <-- UPDATE THIS LINE */}
           </Route>
         </Route>
       </Routes>
