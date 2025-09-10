@@ -11,6 +11,7 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const miningRoutes = require('./routes/miningRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const tasksRoutes = require('./routes/tasksRoutes'); // <-- 1. IMPORT TASKS ROUTES
 
 // --- App Initialization ---
 const app = express();
@@ -56,7 +57,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/mining', miningRoutes);
 app.use('/api/admin', adminRoutes);
-
+app.use('/api/tasks', tasksRoutes); // <-- 2. USE TASKS ROUTES
 
 // --- NEW: CATCH-ALL 404 HANDLER ---
 // This will catch any request that doesn't match a route and send a clean 404 response.
