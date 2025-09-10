@@ -5,12 +5,12 @@ import api from './services/api';
 
 // Layout and Component Imports
 import Layout from './components/Layout';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components-ProtectedRoute';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import MiningHub from './pages/MiningHub';
 import TasksPage from './pages/TasksPage';
-import ReferralsPage from './pages/ReferralsPage'; // <-- IMPORT THIS
+import ReferralsPage from './pages/ReferralsPage'; // This import will now work
 
 function App() {
   const { user } = useAuth();
@@ -40,11 +40,11 @@ function App() {
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
-          <Route element={<Layout />}> {/* <-- All pages inside here will have the Navbar */}
+          <Route element={<Layout />}>
             <Route path="/" element={<MiningHub />} />
             <Route path="/tasks" element={<TasksPage />} />
-            <Route path="/referrals" element={<div>Referrals Page (Coming Soon)</div>} />
-            <Route path="/referrals" element={<ReferralsPage />} /> {/* <-- UPDATE THIS LINE */}
+            {/* The single, correct route for referrals */}
+            <Route path="/referrals" element={<ReferralsPage />} />
           </Route>
         </Route>
       </Routes>
