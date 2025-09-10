@@ -5,12 +5,12 @@ import api from './services/api';
 
 // Layout and Component Imports
 import Layout from './components/Layout';
-import ProtectedRoute from './components-ProtectedRoute';
+import ProtectedRoute from './components/ProtectedRoute'; // <-- THE FIX IS HERE
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import MiningHub from './pages/MiningHub';
 import TasksPage from './pages/TasksPage';
-import ReferralsPage from './pages/ReferralsPage'; // This import will now work
+import ReferralsPage from './pages/ReferralsPage';
 
 function App() {
   const { user } = useAuth();
@@ -43,7 +43,6 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<MiningHub />} />
             <Route path="/tasks" element={<TasksPage />} />
-            {/* The single, correct route for referrals */}
             <Route path="/referrals" element={<ReferralsPage />} />
           </Route>
         </Route>
