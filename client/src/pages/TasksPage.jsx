@@ -19,17 +19,18 @@ const TasksPage = () => {
       const fetchedTasks = await taskService.getTasks();
       setTasks(fetchedTasks);
     } catch (err) {
+      // Now, this error will only show for non-401 issues.
       setError('Failed to load tasks.');
     } finally {
       setLoading(false);
     }
   };
-
+  
+  // handleCompleteTask function remains the same...
   const handleCompleteTask = async (taskId) => {
     try {
       const response = await taskService.completeTask(taskId);
-      updateUser(response.user); // Update global user state with new balances
-      // Visually mark the task as completed without a full refresh
+      updateUser(response.user);
       setTasks(currentTasks => 
         currentTasks.map(task => 
           task.id === taskId ? { ...task, is_completed: true } : task
@@ -40,8 +41,8 @@ const TasksPage = () => {
     }
   };
 
-  if (loading) return <p>Loading tasks...</p>;
-  if (error) return <p>{error}</p>;
+  if (loading) return <p style={{ textAlign: 'center', padding: '2rem' }}>Loading tasks...</p>;
+  if (error) return <p style={{ textAlign: 'center', padding: '2rem' }}>{error}</p>;
 
   return (
     <div className="tasks-container">
@@ -53,24 +54,29 @@ const TasksPage = () => {
       </div>
 
       <div className="task-list">
-        {tasks.map((task) => (
-          <div key={task.id} className="task-card">
-            <div className="task-info">
-              <h3>{task.title}</h3>
-              <p>{task.description}</p>
+        {/* --- NEW LOGIC HERE --- */}
+        {tasks.length === 0 ? (
+          <p style={{ textAlign: 'center' }}>No currently active tasks. Check back later!</p>
+        ) : (
+          tasks.map((task) => (
+            <div key={task.id} className="task-card">
+              <div className="task-info">
+                <h3>{task.title}</h3>
+                <p>{task.description}</p>
+              </div>
+              <div className="task-rewards">
+                <p>+{task.zp_reward} ZP | +{task.seb_reward} SEB</p>
+                <button
+                  className="task-action-btn"
+                  onClick={() => handleCompleteTask(task.id)}
+                  disabled={task.is_completed}
+                >
+                  {task.is_completed ? 'Completed' : 'Complete Task'}
+                </button>
+              </div>
             </div>
-            <div className="task-rewards">
-              <p>+{task.zp_reward} ZP | +{task.seb_reward} SEB</p>
-              <button
-                className="task-action-btn"
-                onClick={() => handleCompleteTask(task.id)}
-                disabled={task.is_completed}
-              >
-                {task.is_completed ? 'Completed' : 'Complete Task'}
-              </button>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
