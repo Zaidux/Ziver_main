@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import authService from '../services/authService';
 import './RegisterPage.css';
 
@@ -9,9 +9,23 @@ function RegisterPage() {
     email: '',
     password: '',
   });
+  // State to hold the referral code from the URL
+  const [referralCode, setReferralCode] = useState(null);
+  
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // This effect runs once when the page loads to check for a referral code
+  useEffect(() => {
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      setReferralCode(refCode);
+      console.log(`Referral code found: ${refCode}`);
+    }
+  }, [searchParams]);
 
   const { username, email, password } = formData;
 
@@ -28,12 +42,10 @@ function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await authService.register(username, email, password);
-      // If registration is successful, redirect to login page
-      // In a real app, you might auto-login the user or store the token
+      // Pass the referral code (if it exists) to the register function
+      await authService.register(username, email, password, referralCode);
       navigate('/login');
     } catch (err) {
-      // Set error message from API response, or a default one
       const message = err.response?.data?.message || 'Registration failed. Please try again.';
       setError(message);
     } finally {
@@ -46,37 +58,27 @@ function RegisterPage() {
       <form className="auth-form" onSubmit={handleSubmit}>
         <h2>Create Your Account</h2>
         {error && <p className="error-message">{error}</p>}
+        {referralCode && <p style={{ color: '#00e676', textAlign: 'center' }}>Referred by code: {referralCode}</p>}
+        
         <div className="form-group">
           <label htmlFor="username">Username</label>
           <input
-            type="text"
-            id="username"
-            name="username"
-            value={username}
-            onChange={handleChange}
-            required
+            type="text" id="username" name="username"
+            value={username} onChange={handleChange} required
           />
         </div>
         <div className="form-group">
           <label htmlFor="email">Email</label>
           <input
-            type="email"
-            id="email"
-            name="email"
-            value={email}
-            onChange={handleChange}
-            required
+            type="email" id="email" name="email"
+            value={email} onChange={handleChange} required
           />
         </div>
         <div className="form-group">
           <label htmlFor="password">Password</label>
           <input
-            type="password"
-            id="password"
-            name="password"
-            value={password}
-            onChange={handleChange}
-            required
+            type="password" id="password" name="password"
+            value={password} onChange={handleChange} required
           />
         </div>
         <button type="submit" className="auth-button" disabled={loading}>
