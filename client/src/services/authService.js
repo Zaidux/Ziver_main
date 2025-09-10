@@ -1,12 +1,13 @@
 import api from './api'; // <-- Import our new api instance
 
-// Register user
-const register = (username, email, password) => {
-  // We just need the endpoint path now, not the full URL
+// Register user - now accepts an optional referralCode
+const register = (username, email, password, referralCode) => {
   return api.post('/auth/register', {
     username,
     email,
     password,
+    referralCode, // Include the referral code in the request
+
   });
 };
 
