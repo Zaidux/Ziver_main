@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import api from './services/api';
 
 // Layout and Component Imports
 import Layout from './components/Layout';
-import ProtectedRoute from './components/ProtectedRoute'; // <-- THE FIX IS HERE
+import ProtectedRoute from './components/ProtectedRoute';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import MiningHub from './pages/MiningHub';
@@ -13,41 +13,56 @@ import TasksPage from './pages/TasksPage';
 import ReferralsPage from './pages/ReferralsPage';
 
 function App() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
-  // Heartbeat effect (no changes here)
+  // Heartbeat effect with error handling
   useEffect(() => {
     let intervalId;
     if (user) {
-      api.post('/user/heartbeat'); 
-      intervalId = setInterval(() => {
-        api.post('/user/heartbeat');
-      }, 60000);
+      const doHeartbeat = async () => {
+        try {
+          await api.post('/user/heartbeat');
+        } catch (error) {
+          if (error.response?.status === 401) {
+            logout(); // Token is invalid, force logout
+          }
+        }
+      };
+      
+      // Immediate heartbeat check
+      doHeartbeat();
+      // Set up interval for subsequent heartbeats
+      intervalId = setInterval(doHeartbeat, 60000);
     }
     return () => {
       if (intervalId) {
         clearInterval(intervalId);
       }
     };
-  }, [user]);
+  }, [user, logout]);
 
   return (
-    <div className="app-container">
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/login" element={<LoginPage />} />
+    <Router>
+      <div className="app-container">
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/login" element={<LoginPage />} />
 
-        {/* Protected Routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<Layout />}>
-            <Route path="/" element={<MiningHub />} />
-            <Route path="/tasks" element={<TasksPage />} />
-            <Route path="/referrals" element={<ReferralsPage />} />
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Layout />}>
+              <Route path="/" element={<MiningHub />} />
+              <Route path="/tasks" element={<TasksPage />} />
+              <Route path="/referrals" element={<ReferralsPage />} />
+            </Route>
           </Route>
-        </Route>
-      </Routes>
-    </div>
+          
+          {/* Fallback route for 404 errors */}
+          <Route path="*" element={<LoginPage />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
