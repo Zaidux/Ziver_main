@@ -1,15 +1,14 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+// Remove useNavigate import
 import api from '../services/api';
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider = ({ children }) => {
+export const AuthProvider = ({ children, navigate }) => { // Add navigate as prop
   const [user, setUser] = useState(null);
   const [appSettings, setAppSettings] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -20,7 +19,6 @@ export const AuthProvider = ({ children }) => {
           
           // Verify token with backend
           try {
-            // Set auth header for verification request
             api.defaults.headers.common['Authorization'] = `Bearer ${storedUser.token}`;
             const response = await api.get('/auth/verify');
             
@@ -28,11 +26,9 @@ export const AuthProvider = ({ children }) => {
               setUser(storedUser);
               setAppSettings(storedSettings);
             } else {
-              // Token is invalid
               localStorage.removeItem('session');
             }
           } catch (error) {
-            // Token verification failed
             console.error('Token verification failed:', error);
             localStorage.removeItem('session');
           }
@@ -54,10 +50,9 @@ export const AuthProvider = ({ children }) => {
     setUser(fullUser);
     setAppSettings(appSettings);
     
-    // Set default auth header for future requests
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     
-    navigate('/');
+    if (navigate) navigate('/');
   };
 
   const logout = () => {
@@ -65,10 +60,9 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setAppSettings(null);
     
-    // Remove auth header
     delete api.defaults.headers.common['Authorization'];
     
-    navigate('/login');
+    if (navigate) navigate('/login');
   };
 
   const updateUser = (newUserData) => {
