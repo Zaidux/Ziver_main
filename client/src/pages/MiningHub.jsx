@@ -1,13 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import miningService from '../services/miningService';
 import MiningDisplay from '../components/MiningDisplay';
 import './MiningHub.css';
 
 const MiningHub = () => {
-  const { user, appSettings, logout, updateUser } = useAuth(); // <-- Get appSettings from context
+  const { user, appSettings, logout, updateUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [miningStatus, setMiningStatus] = useState(null);
+
+  // Load mining status on component mount and user change
+  useEffect(() => {
+    const loadMiningStatus = async () => {
+      if (user) {
+        try {
+          const status = await miningService.getMiningStatus();
+          setMiningStatus(status);
+          // Update user data with latest from server
+          updateUser(status.userData);
+        } catch (err) {
+          console.error('Failed to load mining status:', err);
+        }
+      }
+    };
+    
+    loadMiningStatus();
+  }, [user, updateUser]);
 
   const handleClaim = async () => {
     setLoading(true);
@@ -15,6 +34,9 @@ const MiningHub = () => {
     try {
       const updatedUserData = await miningService.claimReward();
       updateUser(updatedUserData);
+      // Refresh mining status after claim
+      const status = await miningService.getMiningStatus();
+      setMiningStatus(status);
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred during claim.');
     } finally {
@@ -46,7 +68,8 @@ const MiningHub = () => {
 
       <MiningDisplay
         user={user}
-        appSettings={appSettings} // <-- Pass appSettings down as a prop
+        appSettings={appSettings}
+        miningStatus={miningStatus} // Pass mining status
         onClaim={handleClaim}
         loading={loading}
         error={error}
