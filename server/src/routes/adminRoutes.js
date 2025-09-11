@@ -2,10 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { admin } = require('../middleware/adminMiddleware');
-
-// We will create these controller functions in the next file.
 const {
   getDashboardSummary,
+  searchUsers, // Make sure this is imported
   getAllTasks,
   createTask,
   updateTask,
@@ -17,14 +16,21 @@ const {
 // --- Dashboard Routes ---
 router.get('/summary', protect, admin, getDashboardSummary);
 
+// --- User Management Routes ---
+router.get('/users/search', protect, admin, searchUsers); // Add this route
+router.post('/users/reward', protect, admin, rewardUser);
+
 // --- Task Management Routes ---
-router.route('/tasks').get(protect, admin, getAllTasks).post(protect, admin, createTask);
-router.route('/tasks/:id').put(protect, admin, updateTask);
+router.route('/tasks')
+  .get(protect, admin, getAllTasks)
+  .post(protect, admin, createTask);
+
+router.route('/tasks/:id')
+  .put(protect, admin, updateTask);
 
 // --- App Settings Routes ---
-router.route('/settings').get(protect, admin, getAppSettings).put(protect, admin, updateAppSetting);
-
-// --- User Management Routes ---
-router.post('/users/reward', protect, admin, rewardUser);
+router.route('/settings')
+  .get(protect, admin, getAppSettings)
+  .put(protect, admin, updateAppSetting);
 
 module.exports = router;
