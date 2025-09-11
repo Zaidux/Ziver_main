@@ -1,14 +1,12 @@
 const db = require('../config/db');
 
 const User = {
-  // Method to find a user by their email
   findByEmail: async (email) => {
     const query = 'SELECT * FROM users WHERE email = $1';
     const { rows } = await db.query(query, [email]);
     return rows[0];
   },
 
-  // Method to create a new user
   create: async ({ username, email, hashedPassword }) => {
     const query = `
       INSERT INTO users (username, email, password_hash, zp_balance, social_capital_score) 
@@ -19,10 +17,13 @@ const User = {
     return rows[0];
   },
 
-  // Method to find a user by their ID
   findById: async (id) => {
-    // THE FIX IS HERE: We've added "role" to the list of columns being selected.
-    const query = 'SELECT id, username, email, zp_balance, social_capital_score, created_at, role FROM users WHERE id = $1';
+    // CRITICAL: Added mining_session_start_time and last_claim_time
+    const query = `
+      SELECT id, username, email, zp_balance, social_capital_score, 
+             daily_streak_count, mining_session_start_time, last_claim_time, role 
+      FROM users WHERE id = $1
+    `;
     const { rows } = await db.query(query, [id]);
     return rows[0];
   }
