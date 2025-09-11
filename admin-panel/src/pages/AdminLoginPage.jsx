@@ -2,9 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// You can create an AdminLoginPage.css and copy styles from the main app's LoginPage.css
-// import './AdminLoginPage.css'; 
-
 const AdminLoginPage = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -29,24 +26,35 @@ const AdminLoginPage = () => {
         }
       );
 
-      const user = response.data;
+      const { user, token, appSettings } = response.data;
 
       // CRUCIAL: Check if the user has the ADMIN role
       if (user && user.role === 'ADMIN') {
+        // Store admin session data
         localStorage.setItem('admin_user', JSON.stringify(user));
-        navigate('/'); // Redirect to the admin dashboard
+        localStorage.setItem('admin_token', token);
+        localStorage.setItem('admin_settings', JSON.stringify(appSettings));
+        
+        // Set default auth header for future requests
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        navigate('/'); // Redirect to admin dashboard
       } else {
-        setError('Access Denied: Not an admin account.');
+        setError('Access Denied: Administrator privileges required.');
+        // Clear any existing admin data
+        localStorage.removeItem('admin_user');
+        localStorage.removeItem('admin_token');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials.');
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container"> {/* You can reuse styles from the main app */}
+    <div className="auth-container">
       <form className="auth-form" onSubmit={handleSubmit}>
         <h2>Admin Panel Login</h2>
         {error && <p className="error-message">{error}</p>}
