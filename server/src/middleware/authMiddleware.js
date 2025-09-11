@@ -1,27 +1,33 @@
 const jwt = require('jsonwebtoken');
 const asyncHandler = require('express-async-handler');
-const User = require('../models/User');
+const db = require('../config/db'); // Use database directly since you're not using Mongoose
 
 const protect = asyncHandler(async (req, res, next) => {
   let token;
 
-  // Check if the token was sent in the headers and starts with "Bearer"
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
-      // 1. Get token from header (e.g., "Bearer eyJhbGci...")
       token = req.headers.authorization.split(' ')[1];
-
-      // 2. Verify the token using our secret key
+      
+      // Verify token and decode it (includes role now)
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // 3. Get user from the database using the id from the token
-      // We attach the user to the request object so our controllers can access it
-      req.user = await User.findById(decoded.id);
+      // Get user from database including their role
+      const userResult = await db.query(
+        'SELECT id, username, email, role FROM users WHERE id = $1',
+        [decoded.id]
+      );
       
-      // 4. Call the next middleware/controller
+      if (userResult.rows.length === 0) {
+        res.status(401);
+        throw new Error('Not authorized, user not found');
+      }
+
+      // Attach user data to request (including role)
+      req.user = userResult.rows[0];
       next();
     } catch (error) {
-      console.error(error);
+      console.error('Token verification error:', error);
       res.status(401);
       throw new Error('Not authorized, token failed');
     }
