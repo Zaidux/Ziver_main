@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Add Router import
 import AdminLoginPage from './pages/AdminLoginPage';
 import Dashboard from './pages/Dashboard';
 import TaskManagement from './pages/TaskManagement';
@@ -9,23 +9,24 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
-    // REMOVED BrowserRouter wrapper since it's already in main.jsx
-    <Routes>
-      <Route path="/login" element={<AdminLoginPage />} />
+    <Router> {/* Add Router wrapper here */}
+      <Routes>
+        <Route path="/login" element={<AdminLoginPage />} />
 
-      {/* Protected Admin Routes */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/tasks" element={<TaskManagement />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/users" element={<UserManagement />} />
+        {/* Protected Admin Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/tasks" element={<TaskManagement />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/users" element={<UserManagement />} />
+          </Route>
         </Route>
-      </Route>
 
-      {/* Fallback route for admin panel */}
-      <Route path="*" element={<AdminLoginPage />} />
-    </Routes>
+        {/* Fallback route for admin panel */}
+        <Route path="*" element={<AdminLoginPage />} />
+      </Routes>
+    </Router>
   );
 }
 
