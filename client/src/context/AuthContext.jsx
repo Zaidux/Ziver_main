@@ -1,11 +1,10 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-// Remove useNavigate import
 import api from '../services/api';
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider = ({ children, navigate }) => { // Add navigate as prop
+export const AuthProvider = ({ children, navigate }) => {
   const [user, setUser] = useState(null);
   const [appSettings, setAppSettings] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,11 +15,12 @@ export const AuthProvider = ({ children, navigate }) => { // Add navigate as pro
       if (storedData) {
         try {
           const { user: storedUser, appSettings: storedSettings } = JSON.parse(storedData);
-          
-          // Verify token with backend
+
+          // Verify token with backend - FIXED endpoint
           try {
             api.defaults.headers.common['Authorization'] = `Bearer ${storedUser.token}`;
-            const response = await api.get('/auth/verify');
+            // Changed from '/auth/verify' to '/user/verify-token'
+            const response = await api.get('/user/verify-token');
             
             if (response.data.valid) {
               setUser(storedUser);
