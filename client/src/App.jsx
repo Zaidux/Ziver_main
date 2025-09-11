@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom'; // Remove BrowserRouter import
 import { useAuth } from './context/AuthContext';
 import api from './services/api';
 
@@ -42,27 +42,25 @@ function App() {
   }, [user, logout]);
 
   return (
-    <Router>
-      <div className="app-container">
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/login" element={<LoginPage />} />
+    <div className="app-container">
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/login" element={<LoginPage />} />
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route element={<Layout />}>
-              <Route path="/" element={<MiningHub />} />
-              <Route path="/tasks" element={<TasksPage />} />
-              <Route path="/referrals" element={<ReferralsPage />} />
-            </Route>
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout />}>
+            <Route path="/" element={<MiningHub />} />
+            <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/referrals" element={<ReferralsPage />} />
           </Route>
+        </Route>
 
-          {/* Fallback route for 404 errors */}
-          <Route path="*" element={<LoginPage />} />
-        </Routes>
-      </div>
-    </Router>
+        {/* Fallback route for 404 errors */}
+        <Route path="*" element={<LoginPage />} />
+      </Routes>
+    </div>
   );
 }
 
