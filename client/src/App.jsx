@@ -28,7 +28,7 @@ function App() {
           }
         }
       };
-      
+
       // Immediate heartbeat check
       doHeartbeat();
       // Set up interval for subsequent heartbeats
@@ -57,7 +57,7 @@ function App() {
               <Route path="/referrals" element={<ReferralsPage />} />
             </Route>
           </Route>
-          
+
           {/* Fallback route for 404 errors */}
           <Route path="*" element={<LoginPage />} />
         </Routes>
