@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import './MiningDisplay.css';
 
-const MiningDisplay = ({ user, appSettings, onClaim, loading, error }) => {
+const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, error }) => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isClaimable, setIsClaimable] = useState(false);
 
-  // Use the setting from props, with a fallback to 4 hours, to calculate the cycle
   const miningCycleHours = parseFloat(appSettings?.MINING_CYCLE_HOURS || '4');
   const MINING_CYCLE_MS = miningCycleHours * 60 * 60 * 1000;
 
   useEffect(() => {
+    // Use server-side mining status if available
+    if (miningStatus) {
+      setIsClaimable(miningStatus.canClaim);
+      setTimeLeft(miningStatus.timeRemaining);
+      return;
+    }
+
+    // Fallback to client-side calculation
     if (!user?.mining_session_start_time) {
       setIsClaimable(true);
       setTimeLeft(0);
@@ -33,7 +40,7 @@ const MiningDisplay = ({ user, appSettings, onClaim, loading, error }) => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [user, MINING_CYCLE_MS]); // Added MINING_CYCLE_MS to dependency array
+  }, [user, MINING_CYCLE_MS, miningStatus]);
 
   const formatTime = (ms) => {
     const totalSeconds = Math.floor(ms / 1000);
