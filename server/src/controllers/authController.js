@@ -1,3 +1,9 @@
+const asyncHandler = require('express-async-handler');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const User = require('../models/User'); // Note: This file doesn't seem to be used, but it's good to keep it for now.
+const db = require('../config/db');
+
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
