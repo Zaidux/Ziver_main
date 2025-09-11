@@ -1,15 +1,19 @@
-import api from './api'; // Import our configured api instance
+import api from './api';
 
-// Function to send a request to the claim endpoint
 const claimReward = async () => {
-  // We don't need to provide the full URL or the token.
-  // The 'api' instance handles that for us automatically.
   const response = await api.post('/mining/claim');
+  return response.data;
+};
+
+// NEW: Get mining status from server
+const getMiningStatus = async () => {
+  const response = await api.get('/mining/status');
   return response.data;
 };
 
 const miningService = {
   claimReward,
+  getMiningStatus // Export the new function
 };
 
 export default miningService;
