@@ -1,7 +1,13 @@
 const asyncHandler = require('express-async-handler');
 const db = require('../config/db');
 
-// --- Controller to get user profile --- (no change)
+// --- Controller to verify token --- NEW FUNCTION
+const verifyToken = asyncHandler(async (req, res) => {
+  // If protect middleware passed, the token is valid
+  res.json({ valid: true, user: req.user });
+});
+
+// --- Controller to get user profile ---
 const getUserProfile = asyncHandler(async (req, res) => {
   if (req.user) {
     res.json(req.user);
@@ -11,19 +17,18 @@ const getUserProfile = asyncHandler(async (req, res) => {
   }
 });
 
-// A helper function to get a random number within a range (no change)
+// A helper function to get a random number within a range
 function getRandomPoints(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// --- Controller to update user activity and score --- (no change)
+// --- Controller to update user activity and score ---
 const updateUserActivity = asyncHandler(async (req, res) => {
   const { activityType } = req.body;
   const userId = req.user.id;
   let pointsToAdd = 0;
   let zpToAdd = 0;
 
-  // ... (switch statement logic remains the same)
   switch (activityType) {
     case 'DAILY_LOGIN':
       pointsToAdd = getRandomPoints(1, 10);
@@ -57,7 +62,7 @@ const updateUserActivity = asyncHandler(async (req, res) => {
   }
 });
 
-// --- Controller to record user activity heartbeat ---  <-- NEW FUNCTION
+// --- Controller to record user activity heartbeat ---
 const recordHeartbeat = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const query = 'UPDATE users SET last_seen = NOW() WHERE id = $1';
@@ -66,7 +71,8 @@ const recordHeartbeat = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  verifyToken, // <-- ADD THIS EXPORT
   getUserProfile,
   updateUserActivity,
-  recordHeartbeat, // <-- EXPORT THE NEW FUNCTION
+  recordHeartbeat,
 };
