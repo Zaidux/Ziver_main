@@ -19,7 +19,7 @@ const MiningHub = () => {
           const status = await miningService.getMiningStatus();
           setMiningStatus(status);
           updateUser(status.userData);
-          
+
           // Determine current state based on mining status
           if (status.canClaim) {
             setCurrentState(status.progress >= 0.8 ? 3 : 4);
@@ -43,7 +43,7 @@ const MiningHub = () => {
     try {
       const updatedUserData = await miningService.claimReward();
       updateUser(updatedUserData);
-      
+
       const status = await miningService.getMiningStatus();
       setMiningStatus(status);
       setCurrentState(4);
@@ -61,16 +61,16 @@ const MiningHub = () => {
       // Call the start mining endpoint
       const result = await miningService.startMining();
       updateUser(result.userData);
-      
+
       // Transition to mining state
       setCurrentState(2);
-      
+
       // Start polling for mining progress
       const pollInterval = setInterval(async () => {
         try {
           const status = await miningService.getMiningStatus();
           setMiningStatus(status);
-          
+
           if (status.canClaim) {
             clearInterval(pollInterval);
             setCurrentState(status.progress >= 0.8 ? 3 : 4);
@@ -141,5 +141,8 @@ const MiningHub = () => {
           currentState={currentState}
         />
       </div>
+    </div>
+  );
+};
 
 export default MiningHub;
