@@ -7,7 +7,7 @@
   max-width: 390px;
   margin: 0 auto;
   position: relative;
-  padding-bottom: 94px; /* Space for bottom nav */
+  padding-bottom: 20px; /* Reduced padding since no bottom nav */
 }
 
 /* Status Bar */
@@ -100,106 +100,37 @@
   margin: 0;
 }
 
-/* Bottom Navigation */
-.bottom-navigation {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background-color: #1A1A1A;
-  border-top: 1px solid #2A2A2A;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding-bottom: 34px; /* Safe area for mobile */
-  max-width: 390px;
-  margin: 0 auto;
-}
-
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  cursor: pointer;
-}
-
-.nav-icon {
-  font-size: 24px;
-  margin-bottom: 4px;
-  color: #A5A5A5;
-}
-
-.nav-label {
-  font-size: 10px;
-  font-weight: 400;
-  color: #A5A5A5;
-}
-
-.nav-item:hover .nav-icon,
-.nav-item:hover .nav-label {
-  color: #00FF80;
-}
-
-/* Debug Controls (Remove in production) */
-.debug-controls {
-  margin-top: 24px;
-  padding: 16px;
-  background-color: #2A2A2A;
-  border-radius: 8px;
-  border: 1px solid #00FF80;
-}
-
-.debug-controls h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #00FF80;
-  margin: 0 0 12px 0;
-  text-align: center;
-}
-
-.state-buttons {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
-.state-button {
-  padding: 8px 12px;
-  border: 1px solid #00FF80;
-  background: none;
-  color: #00FF80;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.state-button:hover {
-  background-color: rgba(0, 255, 128, 0.1);
-}
-
-.state-button.active {
-  background-color: #00FF80;
-  color: #1A1A1A;
-}
-
 /* Responsive Design */
 @media (max-width: 480px) {
   .mining-hub-container {
-    padding-bottom: 84px;
+    padding-bottom: 20px; /* Adjusted for mobile */
   }
-  
+
+  .mining-content {
+    padding: 16px;
+  }
+
   .user-stats-grid {
     grid-template-columns: 1fr;
     gap: 8px;
   }
-  
+
   .user-stat-card {
     padding: 12px;
+  }
+
+  .hub-title {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 320px) {
+  .user-stat-card h2 {
+    font-size: 12px;
+  }
+
+  .stat-value {
+    font-size: 16px;
   }
 }
 
