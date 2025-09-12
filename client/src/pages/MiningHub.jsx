@@ -9,7 +9,7 @@ const MiningHub = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [miningStatus, setMiningStatus] = useState(null);
-  const [currentState, setCurrentState] = useState(1); // 1-4 for different states
+  const [currentState, setCurrentState] = useState(1);
 
   // Load mining status on component mount and user change
   useEffect(() => {
@@ -22,11 +22,11 @@ const MiningHub = () => {
           
           // Determine current state based on mining status
           if (status.canClaim) {
-            setCurrentState(status.progress >= 0.8 ? 3 : 4); // Ad state or completed
+            setCurrentState(status.progress >= 0.8 ? 3 : 4);
           } else if (status.progress > 0) {
-            setCurrentState(2); // Mining in progress
+            setCurrentState(2);
           } else {
-            setCurrentState(1); // Idle
+            setCurrentState(1);
           }
         } catch (err) {
           console.error('Failed to load mining status:', err);
@@ -44,12 +44,9 @@ const MiningHub = () => {
       const updatedUserData = await miningService.claimReward();
       updateUser(updatedUserData);
       
-      // Refresh mining status after claim
       const status = await miningService.getMiningStatus();
       setMiningStatus(status);
-      
-      // Move to next state after successful claim
-      setCurrentState(4); // Post-break state
+      setCurrentState(4);
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred during claim.');
     } finally {
@@ -61,22 +58,32 @@ const MiningHub = () => {
     setLoading(true);
     setError('');
     try {
-      // Simulate starting mining - you'll need to implement this endpoint
-      // const result = await miningService.startMining();
-      // updateUser(result.userData);
+      // Call the start mining endpoint
+      const result = await miningService.startMining();
+      updateUser(result.userData);
       
-      // For now, just transition to mining state
-      setCurrentState(2); // Mining in progress
+      // Transition to mining state
+      setCurrentState(2);
       
-      // Set a timer to simulate mining progress
-      const timer = setInterval(() => {
-        setCurrentState(prev => {
-          if (prev === 2) return 3; // Move to ad state after some time
-          return prev;
-        });
-      }, 5000); // 5 seconds for demo
+      // Start polling for mining progress
+      const pollInterval = setInterval(async () => {
+        try {
+          const status = await miningService.getMiningStatus();
+          setMiningStatus(status);
+          
+          if (status.canClaim) {
+            clearInterval(pollInterval);
+            setCurrentState(status.progress >= 0.8 ? 3 : 4);
+          } else if (status.progress > 0.7) {
+            setCurrentState(3); // Show ad state
+          }
+        } catch (error) {
+          console.error('Polling error:', error);
+          clearInterval(pollInterval);
+        }
+      }, 5000); // Poll every 5 seconds
 
-      return () => clearInterval(timer);
+      return () => clearInterval(pollInterval);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to start mining.');
     } finally {
@@ -94,7 +101,7 @@ const MiningHub = () => {
 
   return (
     <div className="mining-hub-container">
-      {/* Status Bar (Simulated) */}
+      {/* Status Bar */}
       <div className="status-bar">
         <div className="status-time">9:41</div>
         <div className="status-icons">
@@ -133,42 +140,6 @@ const MiningHub = () => {
           error={error}
           currentState={currentState}
         />
-
-        {/* Debug Controls (Remove in production) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="debug-controls">
-            <h3>Debug State Controls:</h3>
-            <div className="state-buttons">
-              {[1, 2, 3, 4].map(state => (
-                <button
-                  key={state}
-                  onClick={() => setCurrentState(state)}
-                  className={`state-button ${currentState === state ? 'active' : ''}`}
-                >
-                  State {state}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
-
-      {/* Bottom Navigation */}
-      <nav className="bottom-navigation">
-        {[
-          { icon: '🏠', label: 'Home' },
-          { icon: '📋', label: 'Tasks' },
-          { icon: '⚡', label: 'Upgrade' },
-          { icon: '💳', label: 'Wallet' }
-        ].map((item, index) => (
-          <div key={index} className="nav-item">
-            <span className="nav-icon">{item.icon}</span>
-            <span className="nav-label">{item.label}</span>
-          </div>
-        ))}
-      </nav>
-    </div>
-  );
-};
 
 export default MiningHub;
