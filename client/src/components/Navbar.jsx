@@ -7,52 +7,55 @@ const Navbar = () => {
   const { logout, user } = useAuth();
 
   return (
-    <nav className="navbar">
-      <NavLink to="/" className="nav-brand">
-        <span className="brand-icon">⛏️</span>
-        Ziver
-      </NavLink>
-      
-      <div className="nav-links">
+    <>
+      {/* Main Content Container - Adds padding to prevent content from being hidden behind nav */}
+      <div className="content-container">
+        {/* Your page content will be rendered here */}
+      </div>
+
+      {/* Bottom Navigation Bar */}
+      <nav className="bottom-navbar">
         <NavLink 
           to="/" 
-          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+          className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
         >
-          <span className="nav-icon">🏠</span>
-          Mining
+          <span className="nav-icon">⛏️</span>
+          <span className="nav-label">Mining</span>
         </NavLink>
-        
+
         <NavLink 
           to="/tasks" 
-          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+          className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
         >
           <span className="nav-icon">📋</span>
-          Tasks
+          <span className="nav-label">Tasks</span>
         </NavLink>
-        
+
         <NavLink 
           to="/referrals" 
-          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+          className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
         >
           <span className="nav-icon">👥</span>
-          Referrals
+          <span className="nav-label">Referrals</span>
         </NavLink>
-        
+
         <NavLink 
           to="/upgrade" 
-          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+          className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
         >
           <span className="nav-icon">⚡</span>
-          Upgrade
+          <span className="nav-label">Upgrade</span>
         </NavLink>
-      </div>
-      
-      <div className="nav-user">
-        <span className="user-welcome">Welcome, {user?.username}</span>
-        <span className="user-zp">ZP: {user?.zp_balance || 0}</span>
-        <button onClick={logout} className="logout-button">Logout</button>
-      </div>
-    </nav>
+
+        <NavLink 
+          to="/profile" 
+          className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
+        >
+          <span className="nav-icon">👤</span>
+          <span className="nav-label">Profile</span>
+        </NavLink>
+      </nav>
+    </>
   );
 };
 
