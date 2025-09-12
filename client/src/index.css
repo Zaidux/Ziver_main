@@ -1,7 +1,8 @@
 /* Global styles for the entire application */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -11,8 +12,73 @@
 }
 
 /* A common CSS reset to make styling more consistent across browsers */
-body {
+* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #1A1A1A;
+  color: #FFFFFF;
+  line-height: 1.6;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2A2A2A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00FF80;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00CC66;
+}
+
+/* Selection Styling */
+::selection {
+  background-color: #00FF80;
+  color: #1A1A1A;
+}
+
+/* Focus Outline */
+*:focus {
+  outline: 2px solid #00FF80;
+  outline-offset: 2px;
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Utility Classes */
+.text-green {
+  color: #00FF80;
+}
+
+.text-gray {
+  color: #A5A5A5;
+}
+
+.bg-dark {
+  background-color: #1A1A1A;
+}
+
+.bg-darker {
+  background-color: #2A2A2A;
 }
