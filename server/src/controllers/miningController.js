@@ -14,7 +14,7 @@ const claimReward = asyncHandler(async (req, res) => {
     SELECT mining_session_start_time, last_claim_time, daily_streak_count 
     FROM users WHERE id = $1
   `, [userId]);
-  
+
   const user = userResult.rows[0];
   if (!user) {
     res.status(404);
@@ -34,7 +34,7 @@ const claimReward = asyncHandler(async (req, res) => {
   if (user.mining_session_start_time) {
     const startTime = new Date(user.mining_session_start_time);
     const elapsed = now.getTime() - startTime.getTime();
-    
+
     if (elapsed < MINING_CYCLE_DURATION) {
       res.status(400);
       throw new Error('Mining cycle not yet complete.');
@@ -79,29 +79,35 @@ const claimReward = asyncHandler(async (req, res) => {
       social_capital_score = social_capital_score + $2,
       daily_streak_count = $3,
       mining_session_start_time = NOW(),
-      last_claim_time = NOW()
+      last_claim_time = NOW(),
+      last_activity = NOW()
     WHERE id = $4
     RETURNING id, username, email, zp_balance, social_capital_score, 
               daily_streak_count, mining_session_start_time, last_claim_time;
   `;
-  
+
   const { rows } = await db.query(query, [zpToAdd, pointsToAdd, newStreak, userId]);
 
   const updatedUser = rows[0];
   res.json(updatedUser);
 });
 
-// NEW: Function to get current mining status
+// Function to get current mining status
 const getMiningStatus = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-  
+
   const userResult = await db.query(`
     SELECT mining_session_start_time, last_claim_time, daily_streak_count,
-           zp_balance, social_capital_score
+           zp_balance, social_capital_score, last_activity
     FROM users WHERE id = $1
   `, [userId]);
-  
+
   const user = userResult.rows[0];
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
   const settingsResult = await db.query('SELECT * FROM app_settings');
   const appSettings = settingsResult.rows.reduce((acc, setting) => {
     acc[setting.setting_key] = setting.setting_value;
@@ -114,26 +120,146 @@ const getMiningStatus = asyncHandler(async (req, res) => {
   let miningStatus = {
     canClaim: false,
     timeRemaining: 0,
+    progress: 0,
     userData: user
   };
 
   if (user.mining_session_start_time) {
     const startTime = new Date(user.mining_session_start_time);
     const elapsed = new Date().getTime() - startTime.getTime();
-    
+    const progress = elapsed / MINING_CYCLE_DURATION;
+
     if (elapsed >= MINING_CYCLE_DURATION) {
       miningStatus.canClaim = true;
+      miningStatus.progress = 1;
     } else {
       miningStatus.timeRemaining = MINING_CYCLE_DURATION - elapsed;
+      miningStatus.progress = progress;
     }
   } else {
     miningStatus.canClaim = true;
+    miningStatus.progress = 0;
   }
 
   res.json(miningStatus);
 });
 
+// NEW: Start a mining session
+const startMining = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  
+  // Check if user already has an active mining session
+  const userResult = await db.query(`
+    SELECT mining_session_start_time 
+    FROM users WHERE id = $1
+  `, [userId]);
+
+  const user = userResult.rows[0];
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  const settingsResult = await db.query('SELECT * FROM app_settings');
+  const appSettings = settingsResult.rows.reduce((acc, setting) => {
+    acc[setting.setting_key] = setting.setting_value;
+    return acc;
+  }, {});
+
+  const miningCycleHours = parseFloat(appSettings.MINING_CYCLE_HOURS || '4');
+  const MINING_CYCLE_DURATION = miningCycleHours * 60 * 60 * 1000;
+
+  // If user has an active session that's not completed, return error
+  if (user.mining_session_start_time) {
+    const startTime = new Date(user.mining_session_start_time);
+    const elapsed = new Date().getTime() - startTime.getTime();
+    
+    if (elapsed < MINING_CYCLE_DURATION) {
+      res.status(400);
+      throw new Error('Mining session already in progress.');
+    }
+  }
+
+  // Start new mining session
+  const query = `
+    UPDATE users 
+    SET mining_session_start_time = NOW(),
+        last_activity = NOW()
+    WHERE id = $1 
+    RETURNING id, username, email, zp_balance, social_capital_score, 
+              mining_session_start_time, last_claim_time, daily_streak_count
+  `;
+  
+  const { rows } = await db.query(query, [userId]);
+  
+  if (rows.length === 0) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+  
+  res.json(rows[0]);
+});
+
+// NEW: Get mining configuration
+const getMiningConfig = asyncHandler(async (req, res) => {
+  // Get mining configuration from app_settings
+  const settingsResult = await db.query(`
+    SELECT setting_key, setting_value 
+    FROM app_settings 
+    WHERE setting_key LIKE 'MINING_%' OR setting_key LIKE 'SEB_%'
+  `);
+  
+  const config = settingsResult.rows.reduce((acc, setting) => {
+    acc[setting.setting_key] = setting.setting_value;
+    return acc;
+  }, {});
+  
+  res.json(config);
+});
+
+// NEW: Update mining settings (Admin only)
+const updateMiningSettings = asyncHandler(async (req, res) => {
+  // Check if user is admin
+  if (req.user.role !== 'ADMIN') {
+    res.status(403);
+    throw new Error('Admin access required');
+  }
+
+  const { settings } = req.body;
+  
+  if (!settings || typeof settings !== 'object') {
+    res.status(400);
+    throw new Error('Settings object required');
+  }
+
+  const client = await db.getClient();
+  try {
+    await client.query('BEGIN');
+    
+    for (const [key, value] of Object.entries(settings)) {
+      await client.query(`
+        UPDATE app_settings 
+        SET setting_value = $1,
+            updated_at = NOW()
+        WHERE setting_key = $2
+      `, [value, key]);
+    }
+    
+    await client.query('COMMIT');
+    res.json({ message: 'Mining settings updated successfully' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    res.status(500);
+    throw new Error('Failed to update settings: ' + error.message);
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = {
   claimReward,
-  getMiningStatus // Export the new function
+  getMiningStatus,
+  startMining,
+  getMiningConfig,
+  updateMiningSettings
 };
