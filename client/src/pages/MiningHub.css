@@ -1,88 +1,207 @@
-/* Basic Hub Styles */
-.hub-container {
-  padding: 2rem;
-  background-color: #121212;
-  color: #fff;
+/* Mining Hub Styles - Based on Design Spec */
+.mining-hub-container {
+  background-color: #1A1A1A;
   min-height: 100vh;
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  max-width: 390px;
+  margin: 0 auto;
+  position: relative;
+  padding-bottom: 94px; /* Space for bottom nav */
 }
 
-.hub-header {
+/* Status Bar */
+.status-bar {
+  height: 44px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  padding: 0 20px;
+  background-color: #1A1A1A;
+  border-bottom: 1px solid #2A2A2A;
 }
 
-.hub-header h1 {
-  color: #00e676;
+.status-time {
+  font-size: 17px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.status-icons {
+  display: flex;
+  gap: 8px;
+}
+
+.status-icon {
+  font-size: 16px;
+}
+
+/* Main Content */
+.mining-content {
+  padding: 20px;
+}
+
+.mining-hub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.hub-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
 }
 
 .logout-button {
   background: none;
-  border: 1px solid #00e676;
-  color: #00e676;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border: 1px solid #00FF80;
+  color: #00FF80;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  font-weight: bold;
+  transition: all 0.3s ease;
 }
 
-.stats-grid {
+.logout-button:hover {
+  background-color: rgba(0, 255, 128, 0.1);
+}
+
+/* User Stats Grid */
+.user-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-  margin-bottom: 3rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
-.stat-card {
-  background-color: #1e1e1e;
-  padding: 1.5rem;
-  border-radius: 8px;
+.user-stat-card {
+  background-color: #2A2A2A;
+  padding: 16px;
+  border-radius: 12px;
   text-align: center;
 }
 
-.stat-card h2 {
-  font-size: 1rem;
-  color: #aaa;
-  margin-bottom: 0.5rem;
+.user-stat-card h2 {
+  font-size: 14px;
+  font-weight: 500;
+  color: #A5A5A5;
+  margin: 0 0 8px 0;
 }
 
-.stat-card p {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #00e676;
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
 }
 
-.mining-section {
-  background-color: #1e1e1e;
-  padding: 2rem;
-  border-radius: 8px;
-  text-align: center;
+/* Bottom Navigation */
+.bottom-navigation {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background-color: #1A1A1A;
+  border-top: 1px solid #2A2A2A;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding-bottom: 34px; /* Safe area for mobile */
+  max-width: 390px;
+  margin: 0 auto;
 }
 
-.mining-timer {
-  font-size: 3rem;
-  font-weight: bold;
-  margin: 1rem 0;
-  color: #fff;
-}
-
-.mining-button {
-  width: 100%;
-  max-width: 300px;
-  padding: 1rem;
-  font-size: 1.2rem;
-  font-weight: bold;
-  background-color: #00e676;
-  color: #121212;
-  border: none;
-  border-radius: 8px;
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
   cursor: pointer;
-  transition: background-color 0.3s ease;
 }
 
-.mining-button:disabled {
-  background-color: #555;
-  color: #888;
-  cursor: not-allowed;
+.nav-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
+  color: #A5A5A5;
 }
+
+.nav-label {
+  font-size: 10px;
+  font-weight: 400;
+  color: #A5A5A5;
+}
+
+.nav-item:hover .nav-icon,
+.nav-item:hover .nav-label {
+  color: #00FF80;
+}
+
+/* Debug Controls (Remove in production) */
+.debug-controls {
+  margin-top: 24px;
+  padding: 16px;
+  background-color: #2A2A2A;
+  border-radius: 8px;
+  border: 1px solid #00FF80;
+}
+
+.debug-controls h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #00FF80;
+  margin: 0 0 12px 0;
+  text-align: center;
+}
+
+.state-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.state-button {
+  padding: 8px 12px;
+  border: 1px solid #00FF80;
+  background: none;
+  color: #00FF80;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.state-button:hover {
+  background-color: rgba(0, 255, 128, 0.1);
+}
+
+.state-button.active {
+  background-color: #00FF80;
+  color: #1A1A1A;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .mining-hub-container {
+    padding-bottom: 84px;
+  }
+  
+  .user-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .user-stat-card {
+    padding: 12px;
+  }
+}
+
+/* Font Import */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
