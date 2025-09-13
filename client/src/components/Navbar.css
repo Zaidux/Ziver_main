@@ -4,7 +4,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 70px; /* Perfect height for mobile thumb reach */
+  height: 70px;
   background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%);
   border-top: 2px solid #00FF80;
   box-shadow: 0 -4px 25px rgba(0, 255, 128, 0.15);
@@ -44,7 +44,7 @@
 
 /* Navigation Icons */
 .nav-icon {
-  font-size: 22px; /* Perfectly sized for mobile */
+  font-size: 22px;
   margin-bottom: 4px;
   transition: all 0.3s ease;
   display: block;
@@ -62,7 +62,7 @@
 
 /* Navigation Labels */
 .nav-label {
-  font-size: 11px; /* Optimized for mobile */
+  font-size: 11px;
   font-weight: 600;
   color: #A5A5A5;
   text-align: center;
@@ -96,18 +96,18 @@
     padding-bottom: env(safe-area-inset-bottom);
     height: calc(70px + env(safe-area-inset-bottom));
   }
-  
+}
 
 /* Responsive Design */
 @media (max-width: 380px) {
   .nav-label {
     font-size: 10px;
   }
-  
+
   .nav-icon {
     font-size: 20px;
   }
-  
+
   .nav-item {
     padding: 6px 3px;
     margin: 0 1px;
@@ -118,11 +118,11 @@
   .nav-label {
     font-size: 9px;
   }
-  
+
   .nav-icon {
     font-size: 18px;
   }
-  
+
   .bottom-navbar {
     height: 65px;
     padding: 0 8px;
@@ -142,15 +142,15 @@
   .nav-label {
     transition: none;
   }
-  
+
   .nav-item.active {
     animation: none;
   }
-  
+
   .nav-item:hover {
     transform: none;
   }
-  
+
   .nav-item:hover .nav-icon {
     transform: none;
   }
