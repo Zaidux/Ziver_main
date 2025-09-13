@@ -11,6 +11,19 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
   const MINING_CYCLE_MS = miningCycleHours * 60 * 60 * 1000;
   const miningReward = parseInt(appSettings?.MINING_REWARD || '50', 10);
 
+  // Define formatTime function BEFORE it's used
+  const formatTime = (ms) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    }
+    return `${minutes}m ${seconds}s`;
+  };
+
   // Get state data based on currentState prop (1-3)
   const getStateData = () => {
     switch (currentState) {
@@ -29,7 +42,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
           zpValue: currentZP,
           isMining: true,
           progress: progress,
-          buttonText: formatTime(timeLeft),
+          buttonText: formatTime(timeLeft), // Now formatTime is defined
           buttonEnabled: false
         };
       case 3: // Ready to claim
@@ -59,7 +72,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
       setIsClaimable(miningStatus.canClaim);
       setTimeLeft(miningStatus.timeRemaining);
       setProgress(miningStatus.progress || 0);
-      
+
       // Calculate current ZP during mining
       if (miningStatus.progress > 0 && miningStatus.progress < 1) {
         const earnedZP = Math.floor(miningReward * miningStatus.progress);
@@ -103,18 +116,6 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
 
     return () => clearInterval(interval);
   }, [user, MINING_CYCLE_MS, miningStatus, miningReward]);
-
-  const formatTime = (ms) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}h ${minutes}m ${seconds}s`;
-    }
-    return `${minutes}m ${seconds}s`;
-  };
 
   const calculateCircleProgress = () => {
     return progress * 283; // 2πr where r=45 (283 is circumference)
