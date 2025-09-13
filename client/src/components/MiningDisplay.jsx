@@ -5,56 +5,41 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
   const [timeLeft, setTimeLeft] = useState(0);
   const [isClaimable, setIsClaimable] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentZP, setCurrentZP] = useState(user?.zp_balance || 0);
 
   const miningCycleHours = parseFloat(appSettings?.MINING_CYCLE_HOURS || '4');
   const MINING_CYCLE_MS = miningCycleHours * 60 * 60 * 1000;
+  const miningReward = parseInt(appSettings?.MINING_REWARD || '50', 10);
 
-  // Get state data based on currentState prop (1-4)
+  // Get state data based on currentState prop (1-3)
   const getStateData = () => {
     switch (currentState) {
-      case 1: // Idle/Break Start
+      case 1: // Idle - Ready to start
         return {
-          breakNum: 5,
-          zpValue: user?.zp_balance || 5000,
-          miningTime: '00:00',
+          title: "Ready to Mine",
+          zpValue: user?.zp_balance || 0,
           isMining: false,
           progress: 0,
-          buttonText: 'Start mining',
-          buttonEnabled: true,
-          hasAd: false
+          buttonText: 'Start Mining',
+          buttonEnabled: true
         };
-      case 2: // Mining In Progress
+      case 2: // Mining in progress
         return {
-          breakNum: 5,
-          zpValue: user?.zp_balance || 5000,
-          miningTime: '03:40',
+          title: "Mining...",
+          zpValue: currentZP,
           isMining: true,
-          progress: 0.6,
-          buttonText: 'Claim',
-          buttonEnabled: false,
-          hasAd: false
+          progress: progress,
+          buttonText: formatTime(timeLeft),
+          buttonEnabled: false
         };
-      case 3: // Mining with Ad Incentive
+      case 3: // Ready to claim
         return {
-          breakNum: 5,
-          zpValue: user?.zp_balance || 5000,
-          miningTime: '04:00',
-          isMining: true,
-          progress: 0.8,
-          buttonText: null,
-          buttonEnabled: true,
-          hasAd: true
-        };
-      case 4: // Post-Break/Next Cycle
-        return {
-          breakNum: 6,
-          zpValue: (user?.zp_balance || 5000) + 100,
-          miningTime: '03:30',
+          title: "Reward Ready!",
+          zpValue: (user?.zp_balance || 0) + miningReward,
           isMining: false,
-          progress: 0,
-          buttonText: 'Start mining',
-          buttonEnabled: true,
-          hasAd: false
+          progress: 1,
+          buttonText: 'Claim Reward',
+          buttonEnabled: true
         };
       default:
         return getStateData(1);
@@ -62,7 +47,11 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
   };
 
   const stateData = getStateData();
-  const miningColor = stateData.isMining ? '#00FF80' : '#FFFFFF';
+
+  useEffect(() => {
+    // Update current ZP when user balance changes
+    setCurrentZP(user?.zp_balance || 0);
+  }, [user?.zp_balance]);
 
   useEffect(() => {
     // Use server-side mining status if available
@@ -70,6 +59,12 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
       setIsClaimable(miningStatus.canClaim);
       setTimeLeft(miningStatus.timeRemaining);
       setProgress(miningStatus.progress || 0);
+      
+      // Calculate current ZP during mining
+      if (miningStatus.progress > 0 && miningStatus.progress < 1) {
+        const earnedZP = Math.floor(miningReward * miningStatus.progress);
+        setCurrentZP((user?.zp_balance || 0) + earnedZP);
+      }
       return;
     }
 
@@ -78,6 +73,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
       setIsClaimable(true);
       setTimeLeft(0);
       setProgress(0);
+      setCurrentZP(user?.zp_balance || 0);
       return;
     }
 
@@ -88,10 +84,15 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
       const remaining = MINING_CYCLE_MS - timePassed;
       const currentProgress = timePassed / MINING_CYCLE_MS;
 
+      // Calculate real-time ZP earnings
+      const earnedZP = Math.floor(miningReward * currentProgress);
+      setCurrentZP((user?.zp_balance || 0) + earnedZP);
+
       if (remaining <= 0) {
         setTimeLeft(0);
         setIsClaimable(true);
         setProgress(1);
+        setCurrentZP((user?.zp_balance || 0) + miningReward);
         clearInterval(interval);
       } else {
         setTimeLeft(remaining);
@@ -101,100 +102,66 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [user, MINING_CYCLE_MS, miningStatus]);
+  }, [user, MINING_CYCLE_MS, miningStatus, miningReward]);
 
   const formatTime = (ms) => {
     const totalSeconds = Math.floor(ms / 1000);
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  const renderProgressBar = (progressValue) => {
-    if (!stateData.isMining || progressValue === 0) return null;
     
-    return (
-      <div className="progress-container">
-        <div className="progress-bar">
-          <div 
-            className="progress-fill" 
-            style={{ width: `${progressValue * 100}%` }}
-          />
-        </div>
-      </div>
-    );
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    }
+    return `${minutes}m ${seconds}s`;
   };
 
-  const renderAd = () => (
-    <div className="ad-container">
-      <div className="ad-image-placeholder">
-        {/* Replace with actual image: <img src="/ad-woman.jpg" alt="Earn more" /> */}
-        <div className="ad-image-content">
-          <span className="ad-image-text">Ad Image: Woman in park</span>
-        </div>
-      </div>
-      <div className="ad-text-container">
-        <div className="ad-title">Earn 20% more</div>
-        <div className="ad-subtitle">by watching ads</div>
-        <div className="ad-logo">Faithpay</div>
-      </div>
-      <button className="ad-claim-button">
-        Claim
-      </button>
-    </div>
-  );
+  const calculateCircleProgress = () => {
+    return progress * 283; // 2πr where r=45 (283 is circumference)
+  };
 
   return (
     <div className="mining-display">
       {/* Header */}
       <div className="mining-header">
-        <div className="header-title">Break {stateData.breakNum}</div>
-        <div className="header-subtitle">Dedicated miner</div>
+        <div className="header-title">{stateData.title}</div>
+        <div className="header-subtitle">Active Miner</div>
       </div>
 
-      {/* Central Circle */}
+      {/* Central Circle with Progress */}
       <div className="mining-circle-container">
         <div className="mining-circle">
-          <div className="zp-text">ZP</div>
-          <div className="zp-value">#{stateData.zpValue}</div>
-        </div>
-      </div>
-
-      {/* Stats Section */}
-      <div className="mining-stats">
-        <div className="stat-row">
-          <div className="stat-label">Mining speed</div>
-          <div className="stat-value" style={{ color: miningColor }}>
-            {stateData.isMining ? stateData.miningTime : formatTime(timeLeft)}
+          <svg className="progress-ring" width="120" height="120">
+            <circle
+              className="progress-ring-circle"
+              stroke="#00FF80"
+              strokeWidth="3"
+              fill="transparent"
+              r="45"
+              cx="60"
+              cy="60"
+              strokeDasharray="283"
+              strokeDashoffset={283 - calculateCircleProgress()}
+            />
+          </svg>
+          <div className="circle-content">
+            <div className="zp-text">ZP</div>
+            <div className="zp-value">{stateData.zpValue}</div>
+            {stateData.isMining && (
+              <div className="mining-progress">+{Math.floor(miningReward * progress)}</div>
+            )}
           </div>
-          {renderProgressBar(stateData.progress)}
-        </div>
-
-        <div className="stat-row">
-          <div className="stat-label">Hashrate</div>
-          <div className="stat-value">2023 CH/s</div>
-        </div>
-
-        <div className="stat-row">
-          <div className="stat-label">Reward staked</div>
-          <div className="stat-value">2023</div>
         </div>
       </div>
-
-      {/* Ad Overlay (State 3) */}
-      {stateData.hasAd && renderAd()}
 
       {/* Action Button */}
-      {stateData.buttonText && (
-        <button
-          className={`mining-action-button ${!stateData.buttonEnabled ? 'disabled' : ''}`}
-          onClick={onClaim}
-          disabled={!stateData.buttonEnabled || loading}
-        >
-          {loading ? 'Processing...' : stateData.buttonText}
-        </button>
-      )}
+      <button
+        className={`mining-action-button ${!stateData.buttonEnabled ? 'disabled' : ''}`}
+        onClick={onClaim}
+        disabled={!stateData.buttonEnabled || loading}
+      >
+        {loading ? 'Processing...' : stateData.buttonText}
+      </button>
 
       {error && <div className="error-message">{error}</div>}
     </div>
