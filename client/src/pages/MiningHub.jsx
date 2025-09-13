@@ -20,13 +20,13 @@ const MiningHub = () => {
           setMiningStatus(status);
           updateUser(status.userData);
 
-          // Determine current state based on mining status
+          // Determine current state based on mining status (now only 3 states)
           if (status.canClaim) {
-            setCurrentState(status.progress >= 0.8 ? 3 : 4);
+            setCurrentState(3); // Ready to claim
           } else if (status.progress > 0) {
-            setCurrentState(2);
+            setCurrentState(2); // Mining in progress
           } else {
-            setCurrentState(1);
+            setCurrentState(1); // Ready to start
           }
         } catch (err) {
           console.error('Failed to load mining status:', err);
@@ -46,7 +46,7 @@ const MiningHub = () => {
 
       const status = await miningService.getMiningStatus();
       setMiningStatus(status);
-      setCurrentState(4);
+      setCurrentState(1); // Return to ready state after claim
     } catch (err) {
       setError(err.message || 'An error occurred during claim.');
     } finally {
@@ -60,7 +60,7 @@ const MiningHub = () => {
     try {
       // Call the start mining endpoint
       const result = await miningService.startMining();
-      
+
       // Update user with the returned userData
       if (result.userData) {
         updateUser(result.userData);
@@ -81,9 +81,7 @@ const MiningHub = () => {
 
           if (status.canClaim) {
             clearInterval(pollInterval);
-            setCurrentState(status.progress >= 0.8 ? 3 : 4);
-          } else if (status.progress > 0.7) {
-            setCurrentState(3); // Show ad state
+            setCurrentState(3); // Ready to claim
           }
         } catch (error) {
           console.error('Polling error:', error);
@@ -103,24 +101,15 @@ const MiningHub = () => {
   };
 
   const handleAction = () => {
-    if (currentState === 1 || currentState === 4) {
+    if (currentState === 1) {
       handleStartMining();
-    } else {
+    } else if (currentState === 3) {
       handleClaim();
     }
   };
 
   return (
     <div className="mining-hub-container">
-      {/* Status Bar */}
-      <div className="status-bar">
-        <div className="status-time">9:41</div>
-        <div className="status-icons">
-          <span className="status-icon">📶</span>
-          <span className="status-icon">🔋</span>
-        </div>
-      </div>
-
       <div className="mining-content">
         <header className="mining-hub-header">
           <h1 className="hub-title">Mining Hub</h1>
