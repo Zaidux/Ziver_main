@@ -11,7 +11,8 @@ const claimReward = asyncHandler(async (req, res) => {
 
   // Get user data with ALL required fields from database
   const userResult = await db.query(`
-    SELECT mining_session_start_time, last_claim_time, daily_streak_count 
+    SELECT mining_session_start_time, last_claim_time, daily_streak_count, 
+           zp_balance, social_capital_score
     FROM users WHERE id = $1
   `, [userId]);
 
@@ -78,7 +79,7 @@ const claimReward = asyncHandler(async (req, res) => {
       zp_balance = zp_balance + $1,
       social_capital_score = social_capital_score + $2,
       daily_streak_count = $3,
-      mining_session_start_time = NOW(),
+      mining_session_start_time = NULL, -- Reset mining session after claim
       last_claim_time = NOW(),
       last_activity = NOW()
     WHERE id = $4
@@ -131,7 +132,7 @@ const getMiningStatus = asyncHandler(async (req, res) => {
   if (user.mining_session_start_time) {
     const startTime = new Date(user.mining_session_start_time);
     const elapsed = new Date().getTime() - startTime.getTime();
-    const progress = elapsed / MINING_CYCLE_DURATION;
+    const progress = Math.min(elapsed / MINING_CYCLE_DURATION, 1); // Cap at 1
 
     if (elapsed >= MINING_CYCLE_DURATION) {
       miningStatus.canClaim = true;
@@ -141,7 +142,7 @@ const getMiningStatus = asyncHandler(async (req, res) => {
       miningStatus.progress = progress;
     }
   } else {
-    miningStatus.canClaim = true;
+    miningStatus.canClaim = false; // Can't claim if no active session
     miningStatus.progress = 0;
   }
 
