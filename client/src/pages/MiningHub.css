@@ -1,4 +1,4 @@
-/* Mining Hub Styles - Based on Design Spec */
+/* Mining Hub Styles - Clean & Modern */
 .mining-hub-container {
   background-color: #1A1A1A;
   min-height: 100vh;
@@ -9,46 +9,21 @@
   position: relative;
 }
 
-/* Status Bar */
-.status-bar {
-  height: 44px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  background-color: #1A1A1A;
-  border-bottom: 1px solid #2A2A2A;
-}
-
-.status-time {
-  font-size: 17px;
-  font-weight: 600;
-  color: #FFFFFF;
-}
-
-.status-icons {
-  display: flex;
-  gap: 8px;
-}
-
-.status-icon {
-  font-size: 16px;
-}
-
 /* Main Content */
 .mining-content {
   padding: 20px;
+  padding-top: 15px; /* Reduced top padding since status bar is removed */
 }
 
 .mining-hub-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .hub-title {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   color: #FFFFFF;
   margin: 0;
@@ -58,9 +33,9 @@
   background: none;
   border: 1px solid #00FF80;
   color: #00FF80;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -70,30 +45,34 @@
   background-color: rgba(0, 255, 128, 0.1);
 }
 
-/* User Stats Grid */
+/* User Stats Grid - Reduced Size */
 .user-stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 .user-stat-card {
   background-color: #2A2A2A;
-  padding: 16px;
-  border-radius: 12px;
+  padding: 12px;
+  border-radius: 10px;
   text-align: center;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .user-stat-card h2 {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: #A5A5A5;
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
 }
 
 .stat-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #FFFFFF;
   margin: 0;
@@ -102,7 +81,12 @@
 /* Responsive Design */
 @media (max-width: 480px) {
   .mining-content {
-    padding: 16px;
+    padding: 15px;
+    padding-top: 12px;
+  }
+
+  .hub-title {
+    font-size: 20px;
   }
 
   .user-stats-grid {
@@ -111,21 +95,40 @@
   }
 
   .user-stat-card {
-    padding: 12px;
+    padding: 10px;
+    min-height: 55px;
   }
 
-  .hub-title {
-    font-size: 20px;
+  .user-stat-card h2 {
+    font-size: 11px;
+  }
+
+  .stat-value {
+    font-size: 15px;
   }
 }
 
 @media (max-width: 320px) {
+  .mining-content {
+    padding: 12px;
+    padding-top: 10px;
+  }
+
+  .hub-title {
+    font-size: 18px;
+  }
+
+  .logout-button {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
   .user-stat-card h2 {
-    font-size: 12px;
+    font-size: 10px;
   }
 
   .stat-value {
-    font-size: 16px;
+    font-size: 14px;
   }
 }
 
