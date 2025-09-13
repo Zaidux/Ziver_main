@@ -4,12 +4,11 @@ import Navbar from './Navbar';
 
 const Layout = () => {
   return (
-    <div>
-      <Navbar />
-      <main>
-        {/* The Outlet component renders the specific page (e.g., MiningHub or TasksPage) */}
+    <div className="app-container">
+      <div className="main-content">
         <Outlet />
-      </main>
+      </div>
+      <Navbar />
     </div>
   );
 };
