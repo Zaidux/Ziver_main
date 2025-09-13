@@ -99,6 +99,8 @@
   margin: 0;
 }
 
+/* Responsive Design */
+@media (max-width: 480px) {
   .mining-content {
     padding: 16px;
   }
