@@ -99,12 +99,6 @@
   margin: 0;
 }
 
-/* Responsive Design */
-@media (max-width: 480px) {
-  .mining-hub-container {
-    padding-bottom: 20px; /* Adjusted for mobile */
-  }
-
   .mining-content {
     padding: 16px;
   }
