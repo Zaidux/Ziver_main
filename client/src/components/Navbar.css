@@ -97,10 +97,6 @@
     height: calc(70px + env(safe-area-inset-bottom));
   }
   
-  .content-container {
-    padding-bottom: calc(90px + env(safe-area-inset-bottom));
-  }
-}
 
 /* Responsive Design */
 @media (max-width: 380px) {
