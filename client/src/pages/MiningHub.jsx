@@ -41,14 +41,14 @@ const MiningHub = () => {
     setLoading(true);
     setError('');
     try {
-      const updatedUserData = await miningService.claimReward();
-      updateUser(updatedUserData);
+      const result = await miningService.claimReward();
+      updateUser(result.userData);
 
       const status = await miningService.getMiningStatus();
       setMiningStatus(status);
       setCurrentState(4);
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred during claim.');
+      setError(err.message || 'An error occurred during claim.');
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,15 @@ const MiningHub = () => {
     try {
       // Call the start mining endpoint
       const result = await miningService.startMining();
-      updateUser(result.userData);
+      
+      // Update user with the returned userData
+      if (result.userData) {
+        updateUser(result.userData);
+      } else {
+        // Fallback: if userData is not in response, refresh user data
+        const status = await miningService.getMiningStatus();
+        updateUser(status.userData);
+      }
 
       // Transition to mining state
       setCurrentState(2);
@@ -85,7 +93,10 @@ const MiningHub = () => {
 
       return () => clearInterval(pollInterval);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to start mining.');
+      // Improved error handling
+      const errorMessage = err.message || 'Failed to start mining.';
+      setError(errorMessage);
+      console.error('Start mining error:', err);
     } finally {
       setLoading(false);
     }
