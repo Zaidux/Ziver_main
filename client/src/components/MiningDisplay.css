@@ -1,27 +1,24 @@
-/* Mining Display Styles - Based on Design Spec */
+/* Mining Display Styles - Modern & Clean */
 .mining-display {
   background-color: #1A1A1A;
   padding: 20px;
-  border-radius: 12px;
+  border-radius: 20px;
   max-width: 390px;
   margin: 0 auto;
-  position: relative;
   font-family: 'Inter', sans-serif;
+  text-align: center;
 }
 
 /* Header */
 .mining-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 40px;
-  margin-bottom: 24px;
+  margin-bottom: 30px;
 }
 
 .header-title {
   font-size: 24px;
   font-weight: 700;
   color: #FFFFFF;
+  margin-bottom: 8px;
 }
 
 .header-subtitle {
@@ -30,193 +27,96 @@
   color: #A5A5A5;
 }
 
-/* Central Circle */
+/* Central Circle with Progress */
 .mining-circle-container {
   display: flex;
   justify-content: center;
-  margin-bottom: 24px;
-}
-
-.mining-circle {
-  width: 120px;
-  height: 120px;
-  border: 3px solid #00FF80;
-  border-radius: 60px;
-  background-color: #1A1A1A;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  margin-bottom: 30px;
   position: relative;
 }
 
-.zp-text {
-  font-size: 32px;
-  font-weight: 700;
-  color: #FFFFFF;
+.mining-circle {
+  width: 140px;
+  height: 140px;
+  border-radius: 70px;
+  background-color: #2A2A2A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.progress-ring {
   position: absolute;
-  top: 20px;
+  top: 0;
+  left: 0;
+  transform: rotate(-90deg);
+}
+
+.progress-ring-circle {
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.circle-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.zp-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #00FF80;
+  margin-bottom: 4px;
 }
 
 .zp-value {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   color: #FFFFFF;
-  position: absolute;
-  bottom: 20px;
 }
 
-/* Stats Section */
-.mining-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 24px;
-}
-
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 24px;
-}
-
-.stat-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #A5A5A5;
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 18px;
-  font-weight: 700;
-  color: #FFFFFF;
-  text-align: right;
-  flex: 1;
-}
-
-/* Progress Bar */
-.progress-container {
-  position: absolute;
-  right: 20px;
-  margin-top: 4px;
-}
-
-.progress-bar {
-  width: 100px;
-  height: 4px;
-  background-color: #4A4A4A;
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: #00FF80;
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-
-/* Ad Container */
-.ad-container {
-  position: absolute;
-  right: -10px;
-  top: 200px;
-  width: 160px;
-  height: 200px;
-  background: linear-gradient(135deg, #2A2A2A 0%, #3A3A3A 100%);
-  border-radius: 12px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.ad-image-placeholder {
-  flex: 0.7;
-  background: linear-gradient(45deg, #4A4A4A 0%, #5A5A5A 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ad-image-content {
-  color: #A5A5A5;
-  font-size: 12px;
-  text-align: center;
-}
-
-.ad-text-container {
-  flex: 0.2;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.ad-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #FFFFFF;
-  margin-bottom: 2px;
-}
-
-.ad-subtitle {
-  font-size: 14px;
-  font-weight: 400;
-  color: #A5A5A5;
-}
-
-.ad-logo {
+.mining-progress {
   font-size: 12px;
   font-weight: 500;
   color: #00FF80;
-  align-self: flex-end;
   margin-top: 4px;
-}
-
-.ad-claim-button {
-  flex: 0.1;
-  background-color: #00FF80;
-  color: #FFFFFF;
-  border: none;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.ad-claim-button:hover {
-  background-color: #00CC66;
 }
 
 /* Action Button */
 .mining-action-button {
   width: 200px;
-  height: 48px;
-  background-color: #00FF80;
+  height: 50px;
+  background: linear-gradient(135deg, #00FF80 0%, #00CC66 100%);
   color: #FFFFFF;
   border: none;
-  border-radius: 24px;
+  border-radius: 25px;
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   margin: 0 auto;
   display: block;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 255, 128, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 255, 128, 0.3);
 }
 
 .mining-action-button:hover:not(.disabled) {
-  background-color: #00CC66;
-  transform: scale(0.98);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 255, 128, 0.4);
+}
+
+.mining-action-button:active:not(.disabled) {
+  transform: translateY(0);
 }
 
 .mining-action-button.disabled {
-  background-color: #4A4A4A;
+  background: linear-gradient(135deg, #4A4A4A 0%, #5A5A5A 100%);
   color: #A5A5A5;
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.8;
+  box-shadow: none;
 }
 
 /* Error Message */
@@ -225,6 +125,7 @@
   text-align: center;
   margin-top: 16px;
   font-size: 14px;
+  font-weight: 500;
 }
 
 /* Responsive Design */
@@ -233,16 +134,26 @@
     padding: 16px;
     margin: 0 10px;
   }
-  
-  .ad-container {
-    position: relative;
-    right: auto;
-    top: auto;
-    margin: 20px auto;
-    width: 140px;
-    height: 180px;
+
+  .mining-circle {
+    width: 120px;
+    height: 120px;
+  }
+
+  .zp-text {
+    font-size: 16px;
+  }
+
+  .zp-value {
+    font-size: 20px;
+  }
+
+  .mining-action-button {
+    width: 180px;
+    height: 45px;
+    font-size: 15px;
   }
 }
 
 /* Font Import */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
