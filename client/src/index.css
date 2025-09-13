@@ -5,10 +5,9 @@
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #1A1A1A; /* Dark charcoal background */
+  background-color: #1A1A1A;
 }
 
 /* Global App Layout */
@@ -18,11 +17,11 @@
 }
 
 .main-content {
-  padding-bottom: 90px; /* Space for bottom navbar */
+  padding-bottom: 90px;
   min-height: calc(100vh - 90px);
 }
 
-/* A common CSS reset to make styling more consistent across browsers */
+/* A common CSS reset */
 * {
   margin: 0;
   padding: 0;
