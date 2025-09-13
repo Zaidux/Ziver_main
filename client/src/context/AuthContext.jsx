@@ -21,7 +21,7 @@ export const AuthProvider = ({ children, navigate }) => {
             api.defaults.headers.common['Authorization'] = `Bearer ${storedUser.token}`;
             const response = await api.get('/user/verify-token');
 
-            // FIX: Check if response has valid property AND it's true
+            // Check if response has valid property AND it's true
             if (response.data && response.data.valid === true) {
               setUser(storedUser);
               setAppSettings(storedSettings);
@@ -51,17 +51,17 @@ export const AuthProvider = ({ children, navigate }) => {
   const login = (sessionData) => {
     const { user, token, appSettings } = sessionData;
     const fullUser = { ...user, token };
-    
+
     // Store session data
     localStorage.setItem('session', JSON.stringify({ user: fullUser, appSettings }));
-    
+
     // Update state
     setUser(fullUser);
     setAppSettings(appSettings);
-    
+
     // Set default auth header
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    
+
     // Navigate if navigate function is provided
     if (navigate) navigate('/');
   };
@@ -69,14 +69,14 @@ export const AuthProvider = ({ children, navigate }) => {
   const logout = () => {
     // Clear local storage
     localStorage.removeItem('session');
-    
+
     // Clear state
     setUser(null);
     setAppSettings(null);
-    
+
     // Remove auth header
     delete api.defaults.headers.common['Authorization'];
-    
+
     // Navigate to login if navigate function is provided
     if (navigate) navigate('/login');
   };
@@ -86,13 +86,33 @@ export const AuthProvider = ({ children, navigate }) => {
     const storedData = localStorage.getItem('session');
     if (storedData) {
       const sessionData = JSON.parse(storedData);
-      const updatedSession = { ...sessionData, user: newUserData };
+      const updatedUser = { ...sessionData.user, ...newUserData };
+      const updatedSession = { ...sessionData, user: updatedUser };
       localStorage.setItem('session', JSON.stringify(updatedSession));
-      setUser(newUserData);
+      setUser(updatedUser);
     }
   };
 
-  const value = { user, appSettings, loading, login, logout, updateUser };
+  const updateAppSettings = (newSettings) => {
+    // Update both localStorage and state
+    const storedData = localStorage.getItem('session');
+    if (storedData) {
+      const sessionData = JSON.parse(storedData);
+      const updatedSession = { ...sessionData, appSettings: newSettings };
+      localStorage.setItem('session', JSON.stringify(updatedSession));
+      setAppSettings(newSettings);
+    }
+  };
+
+  const value = { 
+    user, 
+    appSettings, 
+    loading, 
+    login, 
+    logout, 
+    updateUser, 
+    updateAppSettings 
+  };
 
   return (
     <AuthContext.Provider value={value}>
