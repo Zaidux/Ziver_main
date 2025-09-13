@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const asyncHandler = require('express-async-handler');
-const db = require('../config/db'); // Use database directly since you're not using Mongoose
+const db = require('../config/db');
 
 const protect = asyncHandler(async (req, res, next) => {
   let token;
@@ -8,22 +8,33 @@ const protect = asyncHandler(async (req, res, next) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];
-      
-      // Verify token and decode it (includes role now)
+
+      // Verify token and decode it
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Get user from database including their role
+      // Get ALL user fields that might be needed by other controllers
       const userResult = await db.query(
-        'SELECT id, username, email, role FROM users WHERE id = $1',
+        `SELECT 
+          id, 
+          username, 
+          email, 
+          role, 
+          zp_balance, 
+          social_capital_score, 
+          daily_streak_count, 
+          mining_session_start_time, 
+          last_claim_time, 
+          last_activity
+         FROM users WHERE id = $1`,
         [decoded.id]
       );
-      
+
       if (userResult.rows.length === 0) {
         res.status(401);
         throw new Error('Not authorized, user not found');
       }
 
-      // Attach user data to request (including role)
+      // Attach complete user data to request
       req.user = userResult.rows[0];
       next();
     } catch (error) {
