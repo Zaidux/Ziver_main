@@ -11,6 +11,24 @@
   background-color: #1A1A1A; /* Dark charcoal background */
 }
 
+/* Global App Layout */
+.app-container {
+  position: relative;
+  min-height: 100vh;
+}
+
+.main-content {
+  padding-bottom: 90px; /* Space for bottom navbar */
+  min-height: calc(100vh - 90px);
+}
+
+/* Ensure body has proper spacing */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #1A1A1A;
+}
+
 /* A common CSS reset to make styling more consistent across browsers */
 * {
   margin: 0;
