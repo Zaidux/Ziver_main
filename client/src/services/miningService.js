@@ -1,37 +1,54 @@
 import api from './api';
 
 const claimReward = async () => {
-  const response = await api.post('/mining/claim');
-  return response.data;
+  try {
+    const response = await api.post('/mining/claim');
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to claim reward');
+  }
 };
 
 const getMiningStatus = async () => {
-  const response = await api.get('/mining/status');
-  return response.data;
+  try {
+    const response = await api.get('/mining/status');
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to get mining status');
+  }
 };
 
-// NEW: Start mining endpoint
 const startMining = async () => {
-  const response = await api.post('/mining/start');
-  return response.data;
+  try {
+    const response = await api.post('/mining/start');
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to start mining');
+  }
 };
 
-// NEW: Get mining configuration
 const getMiningConfig = async () => {
-  const response = await api.get('/mining/config');
-  return response.data;
+  try {
+    const response = await api.get('/mining/config');
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to get mining config');
+  }
 };
 
-// NEW: Update mining settings
 const updateMiningSettings = async (settings) => {
-  const response = await api.put('/mining/settings', settings);
-  return response.data;
+  try {
+    const response = await api.put('/mining/settings', settings);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to update settings');
+  }
 };
 
 const miningService = {
   claimReward,
   getMiningStatus,
-  startMining, // Export the new function
+  startMining,
   getMiningConfig,
   updateMiningSettings
 };
