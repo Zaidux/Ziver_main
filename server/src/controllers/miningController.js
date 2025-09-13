@@ -89,7 +89,11 @@ const claimReward = asyncHandler(async (req, res) => {
   const { rows } = await db.query(query, [zpToAdd, pointsToAdd, newStreak, userId]);
 
   const updatedUser = rows[0];
-  res.json(updatedUser);
+  res.json({
+    success: true,
+    message: 'Reward claimed successfully',
+    userData: updatedUser
+  });
 });
 
 // Function to get current mining status
@@ -144,10 +148,10 @@ const getMiningStatus = asyncHandler(async (req, res) => {
   res.json(miningStatus);
 });
 
-// NEW: Start a mining session
+// Start a mining session
 const startMining = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-  
+
   // Check if user already has an active mining session
   const userResult = await db.query(`
     SELECT mining_session_start_time 
@@ -173,7 +177,7 @@ const startMining = asyncHandler(async (req, res) => {
   if (user.mining_session_start_time) {
     const startTime = new Date(user.mining_session_start_time);
     const elapsed = new Date().getTime() - startTime.getTime();
-    
+
     if (elapsed < MINING_CYCLE_DURATION) {
       res.status(400);
       throw new Error('Mining session already in progress.');
@@ -189,18 +193,23 @@ const startMining = asyncHandler(async (req, res) => {
     RETURNING id, username, email, zp_balance, social_capital_score, 
               mining_session_start_time, last_claim_time, daily_streak_count
   `;
-  
+
   const { rows } = await db.query(query, [userId]);
-  
+
   if (rows.length === 0) {
     res.status(404);
     throw new Error('User not found');
   }
-  
-  res.json(rows[0]);
+
+  // Return consistent response format with userData
+  res.json({
+    success: true,
+    message: 'Mining started successfully',
+    userData: rows[0]
+  });
 });
 
-// NEW: Get mining configuration
+// Get mining configuration
 const getMiningConfig = asyncHandler(async (req, res) => {
   // Get mining configuration from app_settings
   const settingsResult = await db.query(`
@@ -208,16 +217,16 @@ const getMiningConfig = asyncHandler(async (req, res) => {
     FROM app_settings 
     WHERE setting_key LIKE 'MINING_%' OR setting_key LIKE 'SEB_%'
   `);
-  
+
   const config = settingsResult.rows.reduce((acc, setting) => {
     acc[setting.setting_key] = setting.setting_value;
     return acc;
   }, {});
-  
+
   res.json(config);
 });
 
-// NEW: Update mining settings (Admin only)
+// Update mining settings (Admin only)
 const updateMiningSettings = asyncHandler(async (req, res) => {
   // Check if user is admin
   if (req.user.role !== 'ADMIN') {
@@ -226,7 +235,7 @@ const updateMiningSettings = asyncHandler(async (req, res) => {
   }
 
   const { settings } = req.body;
-  
+
   if (!settings || typeof settings !== 'object') {
     res.status(400);
     throw new Error('Settings object required');
@@ -235,7 +244,7 @@ const updateMiningSettings = asyncHandler(async (req, res) => {
   const client = await db.getClient();
   try {
     await client.query('BEGIN');
-    
+
     for (const [key, value] of Object.entries(settings)) {
       await client.query(`
         UPDATE app_settings 
@@ -244,7 +253,7 @@ const updateMiningSettings = asyncHandler(async (req, res) => {
         WHERE setting_key = $2
       `, [value, key]);
     }
-    
+
     await client.query('COMMIT');
     res.json({ message: 'Mining settings updated successfully' });
   } catch (error) {
