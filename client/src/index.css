@@ -22,13 +22,6 @@
   min-height: calc(100vh - 90px);
 }
 
-/* Ensure body has proper spacing */
-body {
-  margin: 0;
-  padding: 0;
-  background-color: #1A1A1A;
-}
-
 /* A common CSS reset to make styling more consistent across browsers */
 * {
   margin: 0;
