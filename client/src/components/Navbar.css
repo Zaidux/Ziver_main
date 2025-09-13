@@ -16,12 +16,6 @@
   backdrop-filter: blur(10px);
 }
 
-/* Content container to prevent overlap */
-.content-container {
-  padding-bottom: 90px; /* Height of nav + some spacing */
-  min-height: 100vh;
-}
-
 /* Navigation Items */
 .nav-item {
   display: flex;
