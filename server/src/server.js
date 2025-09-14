@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
+const telegramRoutes = require('./routes/telegramRoutes');
 
 // --- IMPORT OUR ROUTE FILES ---
 const authRoutes = require('./routes/authRoutes');
@@ -51,6 +52,7 @@ app.use('/api/mining', miningRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/referrals', referralsRoutes); // ADD THIS LINE
+app.use('/api/telegram', telegramRoutes);
 
 // --- CATCH-ALL 404 HANDLER ---
 app.use((req, res, next) => {
