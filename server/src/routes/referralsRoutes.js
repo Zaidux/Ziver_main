@@ -5,7 +5,7 @@ const {
   getReferralData,
   removeReferral,
   getLeaderboard
-} = require('../controllers/referralController'); // Fixed import name
+} = require('../controllers/referralsController'); // Fixed import name
 
 // @route   GET /api/referrals
 // @desc    Get the logged-in user's referral data
