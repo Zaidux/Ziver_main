@@ -1,35 +1,71 @@
 const asyncHandler = require('express-async-handler');
 const db = require('../config/db');
+const axios = require('axios');
 
-// Telegram webhook handler
+// Your Telegram bot token (should be in environment variables)
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || 'your_bot_token_here';
+const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
+
+// Set webhook for your Telegram bot
+const setWebhook = asyncHandler(async (req, res) => {
+  try {
+    const { webhookUrl } = req.body;
+    
+    const response = await axios.post(`${TELEGRAM_API_URL}/setWebhook`, {
+      url: webhookUrl
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Webhook set successfully',
+      data: response.data 
+    });
+  } catch (error) {
+    console.error('Error setting webhook:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to set webhook',
+      error: error.message 
+    });
+  }
+});
+
+// Telegram webhook handler - MAIN ENTRY POINT
 const handleTelegramWebhook = asyncHandler(async (req, res) => {
   try {
     const { message, callback_query } = req.body;
 
-    // Handle start command with referral parameter
-    if (message && message.text && message.text.startsWith('/start')) {
-      const startParam = message.text.split(' ')[1]; // Get the referral code
+    // Handle callback queries (button presses)
+    if (callback_query) {
+      await handleCallbackQuery(callback_query);
+      return res.status(200).send('OK');
+    }
 
-      if (startParam) {
-        // Store referral code for this user
-        const telegramId = message.from.id;
-        const username = message.from.username || `user_${telegramId}`;
-        const firstName = message.from.first_name || '';
-        const lastName = message.from.last_name || '';
-
-        // Save to database
-        await db.query(
-          `INSERT INTO telegram_referrals (telegram_id, username, first_name, last_name, referral_code, created_at) 
-           VALUES ($1, $2, $3, $4, $5, NOW()) 
-           ON CONFLICT (telegram_id) 
-           DO UPDATE SET referral_code = $5, updated_at = NOW()`,
-          [telegramId, username, firstName, lastName, startParam]
-        );
-
-        console.log(`Telegram user ${username} came from referral: ${startParam}`);
-        
-        // Send welcome message with referral info
-        // This would require your Telegram bot logic
+    // Handle regular messages
+    if (message) {
+      const chatId = message.chat.id;
+      const text = message.text || '';
+      const from = message.from;
+      
+      // Handle /start command with referral parameter
+      if (text.startsWith('/start')) {
+        await handleStartCommand(chatId, from, text);
+      } 
+      // Handle /connect command to link Telegram account to app
+      else if (text.startsWith('/connect')) {
+        await handleConnectCommand(chatId, from, text);
+      }
+      // Handle /help command
+      else if (text.startsWith('/help')) {
+        await sendMessage(chatId, getHelpMessage());
+      }
+      // Handle /referral command to get user's referral code
+      else if (text.startsWith('/referral')) {
+        await handleReferralCommand(chatId, from);
+      }
+      // Handle any other message
+      else {
+        await sendMessage(chatId, "I don't understand that command. Type /help to see available commands.");
       }
     }
 
@@ -39,6 +75,175 @@ const handleTelegramWebhook = asyncHandler(async (req, res) => {
     res.status(200).send('OK'); // Always respond OK to Telegram
   }
 });
+
+// Handle /start command with referral parameter
+const handleStartCommand = async (chatId, from, text) => {
+  const telegramId = from.id;
+  const username = from.username || `user_${telegramId}`;
+  const firstName = from.first_name || '';
+  const lastName = from.last_name || '';
+  
+  // Extract referral code from /start command (e.g., /start REF123)
+  const referralCode = text.split(' ')[1] || null;
+  
+  if (referralCode) {
+    // Save referral to database
+    await db.query(
+      `INSERT INTO telegram_referrals (telegram_id, username, first_name, last_name, referral_code, created_at) 
+       VALUES ($1, $2, $3, $4, $5, NOW()) 
+       ON CONFLICT (telegram_id) 
+       DO UPDATE SET referral_code = $5, updated_at = NOW()`,
+      [telegramId, username, firstName, lastName, referralCode]
+    );
+
+    console.log(`Telegram user ${username} came from referral: ${referralCode}`);
+    
+    // Send welcome message with referral info
+    const welcomeMessage = `👋 Welcome to Ziver, ${firstName}!\n\n` +
+                          `You were referred by: ${referralCode}\n` +
+                          `When you create an account, you'll receive 100 ZP bonus!\n\n` +
+                          `Use /connect to link your Telegram account to your Ziver app account.`;
+    
+    await sendMessage(chatId, welcomeMessage);
+  } else {
+    // Regular start without referral
+    const welcomeMessage = `👋 Welcome to Ziver, ${firstName}!\n\n` +
+                          `I'm the Ziver bot. I can help you:\n` +
+                          `• Get your referral code to share with friends\n` +
+                          `• Check your ZP balance\n` +
+                          `• Link your Telegram account to your Ziver app\n\n` +
+                          `Use /help to see all available commands.`;
+    
+    await sendMessage(chatId, welcomeMessage);
+  }
+};
+
+// Handle /connect command to link Telegram account to app
+const handleConnectCommand = async (chatId, from, text) => {
+  const telegramId = from.id;
+  
+  // Check if the user is already connected
+  const existingConnection = await db.query(
+    'SELECT * FROM telegram_user_map WHERE telegram_id = $1',
+    [telegramId]
+  );
+  
+  if (existingConnection.rows.length > 0) {
+    await sendMessage(chatId, "Your Telegram account is already connected to a Ziver account.");
+    return;
+  }
+  
+  // Generate a unique connection code (6-digit number)
+  const connectionCode = Math.floor(100000 + Math.random() * 900000).toString();
+  
+  // Store the connection code in the session
+  await db.query(
+    `INSERT INTO telegram_sessions (chat_id, state, data) 
+     VALUES ($1, 'awaiting_connection', $2)
+     ON CONFLICT (chat_id) 
+     DO UPDATE SET state = 'awaiting_connection', data = $2, updated_at = NOW()`,
+    [chatId, JSON.stringify({ connectionCode, telegramId: from.id })]
+  );
+  
+  const connectMessage = `To connect your Telegram account to Ziver:\n\n` +
+                        `1. Go to your Ziver app profile settings\n` +
+                        `2. Find the "Connect Telegram" option\n` +
+                        `3. Enter this code: **${connectionCode}**\n\n` +
+                        `This code will expire in 10 minutes.`;
+  
+  await sendMessage(chatId, connectMessage);
+};
+
+// Handle /referral command
+const handleReferralCommand = async (chatId, from) => {
+  const telegramId = from.id;
+  
+  // Check if user has a Ziver account connected
+  const userMap = await db.query(
+    `SELECT u.* FROM telegram_user_map tum
+     JOIN users u ON tum.user_id = u.id
+     WHERE tum.telegram_id = $1`,
+    [telegramId]
+  );
+  
+  if (userMap.rows.length > 0) {
+    const user = userMap.rows[0];
+    const referralLink = `https://t.me/YourBotUsername?start=${user.referral_code}`;
+    
+    const message = `📣 Your Referral Code: **${user.referral_code}**\n\n` +
+                   `Share this link with friends:\n${referralLink}\n\n` +
+                   `You'll earn 50 ZP for each friend who joins using your code!`;
+    
+    await sendMessage(chatId, message);
+    
+    // Create inline keyboard for easy sharing
+    const keyboard = {
+      inline_keyboard: [
+        [
+          {
+            text: "📤 Share Referral Link",
+            url: `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Join me on Ziver and earn ZP tokens!')}`
+          }
+        ]
+      ]
+    };
+    
+    await sendMessage(chatId, "Share your referral link:", keyboard);
+  } else {
+    await sendMessage(chatId, "You need to connect your Ziver account first. Use /connect to get started.");
+  }
+};
+
+// Handle callback queries from inline buttons
+const handleCallbackQuery = async (callbackQuery) => {
+  const { id, data, message, from } = callbackQuery;
+  
+  try {
+    // Answer the callback query (removes loading state)
+    await axios.post(`${TELEGRAM_API_URL}/answerCallbackQuery`, {
+      callback_query_id: id
+    });
+    
+    // Handle different callback data
+    if (data === 'get_referral') {
+      await handleReferralCommand(message.chat.id, from);
+    }
+    // Add more callback handlers as needed
+    
+  } catch (error) {
+    console.error('Error handling callback query:', error);
+  }
+};
+
+// Helper function to send messages to Telegram
+const sendMessage = async (chatId, text, replyMarkup = null) => {
+  try {
+    const payload = {
+      chat_id: chatId,
+      text: text,
+      parse_mode: 'Markdown'
+    };
+    
+    if (replyMarkup) {
+      payload.reply_markup = replyMarkup;
+    }
+    
+    await axios.post(`${TELEGRAM_API_URL}/sendMessage`, payload);
+  } catch (error) {
+    console.error('Error sending Telegram message:', error);
+  }
+};
+
+// Get help message
+const getHelpMessage = () => {
+  return `🤖 *Ziver Bot Help*\n\n` +
+         `Available commands:\n` +
+         `/start - Start using the bot\n` +
+         `/connect - Connect your Telegram to Ziver app\n` +
+         `/referral - Get your referral code and link\n` +
+         `/help - Show this help message\n\n` +
+         `To earn ZP tokens, share your referral link with friends!`;
+};
 
 // Get referral info for a Telegram user
 const getTelegramReferral = asyncHandler(async (req, res) => {
@@ -61,39 +266,77 @@ const getTelegramReferral = asyncHandler(async (req, res) => {
   }
 });
 
-// New function to connect Telegram user to app account
-const connectTelegramUser = asyncHandler(async (req, res) => {
-  const { telegramId, userId } = req.body;
+// Verify connection code from the app
+const verifyConnectionCode = asyncHandler(async (req, res) => {
+  const { connectionCode, userId } = req.body;
   
   try {
-    // Check if Telegram user has a referral code
+    // Find session with this connection code
+    const sessionResult = await db.query(
+      `SELECT * FROM telegram_sessions 
+       WHERE data->>'connectionCode' = $1 AND state = 'awaiting_connection'`,
+      [connectionCode]
+    );
+    
+    if (sessionResult.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Invalid or expired connection code' 
+      });
+    }
+    
+    const session = sessionResult.rows[0];
+    const telegramId = JSON.parse(session.data).telegramId;
+    const chatId = session.chat_id;
+    
+    // Create the connection between Telegram and user
+    await db.query(
+      'INSERT INTO telegram_user_map (telegram_id, user_id) VALUES ($1, $2)',
+      [telegramId, userId]
+    );
+    
+    // Clear the session
+    await db.query(
+      'UPDATE telegram_sessions SET state = "connected", updated_at = NOW() WHERE chat_id = $1',
+      [chatId]
+    );
+    
+    // Send confirmation message to Telegram
+    await sendMessage(chatId, '✅ Your Telegram account has been successfully connected to your Ziver account!');
+    
+    // Check if this user came from a referral
     const referralResult = await db.query(
       'SELECT referral_code FROM telegram_referrals WHERE telegram_id = $1',
       [telegramId]
     );
     
+    let referralApplied = false;
     if (referralResult.rows.length > 0) {
       const referralCode = referralResult.rows[0].referral_code;
       
-      // Apply the referral to the user
-      await db.query(
-        'UPDATE users SET telegram_id = $1 WHERE id = $2',
-        [telegramId, userId]
-      );
-      
-      // Return the referral code to be applied
-      res.json({ referralCode });
-    } else {
-      res.json({ message: 'No referral code found' });
+      // Apply the referral bonus
+      // You'll need to implement this function in your referral controller
+      referralApplied = true;
     }
+    
+    res.json({ 
+      success: true, 
+      message: 'Telegram account connected successfully',
+      referralApplied 
+    });
+    
   } catch (error) {
-    console.error('Error connecting Telegram user:', error);
-    res.status(500).json({ message: 'Error connecting Telegram account' });
+    console.error('Error verifying connection code:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error connecting Telegram account' 
+    });
   }
 });
 
 module.exports = {
+  setWebhook,
   handleTelegramWebhook,
   getTelegramReferral,
-  connectTelegramUser
+  verifyConnectionCode
 };
