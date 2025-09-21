@@ -88,6 +88,19 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 });
 
+// In your register function in authController.js
+// After creating the user, check for Telegram referral
+const telegramReferral = await db.query(
+  'SELECT referral_code FROM telegram_referrals WHERE telegram_id = $1',
+  [telegramId] // You'll need to capture this during registration
+);
+
+if (telegramReferral.rows.length > 0) {
+  const referralCode = telegramReferral.rows[0].referral_code;
+  // Apply the referral
+  await applyReferral(referralCode, newUser.id);
+}
+
 // --- Controller for User Login ---
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
