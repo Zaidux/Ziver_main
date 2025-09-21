@@ -2,10 +2,16 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const {
+  applyReferral,
   getReferralData,
   removeReferral,
   getLeaderboard
-} = require('../controllers/referralsController'); // Fixed import name
+} = require('../controllers/referralsController');
+
+// @route   POST /api/referrals/apply
+// @desc    Apply a referral code to a user
+// @access  Public (needed for registration)
+router.post('/apply', applyReferral);
 
 // @route   GET /api/referrals
 // @desc    Get the logged-in user's referral data
