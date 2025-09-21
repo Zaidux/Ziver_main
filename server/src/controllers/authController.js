@@ -1,4 +1,4 @@
-const asyncHandler = require('express-async-handler'); // ADD THIS IMPORT
+const asyncHandler = require('express-async-handler');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('../config/db');
@@ -13,21 +13,51 @@ const generateReferralCode = (length = 6) => {
   return result;
 };
 
-// Helper function to generate a JWT (UPDATED)
+// Helper function to generate a JWT
 const generateToken = (user) => {
   return jwt.sign(
     { 
       id: user.id,
-      role: user.role // Include role in token payload
+      role: user.role
     }, 
     process.env.JWT_SECRET, 
     { expiresIn: '30d' }
   );
 };
 
+// Helper function to apply referral (ADD THIS FUNCTION)
+const applyReferral = async (client, referralCode, userId) => {
+  if (!referralCode) return null;
+  
+  const referrerResult = await client.query(
+    'SELECT id, referral_count FROM users WHERE referral_code = $1', 
+    [referralCode]
+  );
+  
+  if (referrerResult.rows.length === 0) {
+    return null;
+  }
+  
+  const referrer = referrerResult.rows[0];
+  
+  // Apply referral bonus to referrer
+  await client.query(
+    'UPDATE users SET zp_balance = zp_balance + 50, referral_count = referral_count + 1 WHERE id = $1',
+    [referrer.id]
+  );
+  
+  // Apply referral bonus to new user
+  await client.query(
+    'UPDATE users SET zp_balance = zp_balance + 100, referred_by = $1 WHERE id = $2',
+    [referrer.id, userId]
+  );
+  
+  return referrer.id;
+};
+
 // --- Controller for User Registration ---
 const registerUser = asyncHandler(async (req, res) => {
-  const { email, password, username, referralCode } = req.body;
+  const { email, password, username, referralCode, telegramId } = req.body;
 
   if (!email || !password || !username) {
     res.status(400);
@@ -43,18 +73,16 @@ const registerUser = asyncHandler(async (req, res) => {
       throw new Error('User with that email already exists');
     }
 
-    let referrerId = null;
-    if (referralCode) {
-      const referrerResult = await client.query('SELECT id, referral_count FROM users WHERE referral_code = $1', [referralCode]);
-      if (referrerResult.rows.length > 0) {
-        const referrer = referrerResult.rows[0];
-        if (referrer.referral_count < 50) {
-          referrerId = referrer.id;
-          await client.query(
-            'UPDATE users SET zp_balance = zp_balance + 150, referral_count = referral_count + 1 WHERE id = $1',
-            [referrerId]
-          );
-        }
+    // Check for Telegram referral if telegramId is provided
+    let finalReferralCode = referralCode;
+    if (telegramId && !finalReferralCode) {
+      const telegramReferralResult = await client.query(
+        'SELECT referral_code FROM telegram_referrals WHERE telegram_id = $1',
+        [telegramId]
+      );
+      
+      if (telegramReferralResult.rows.length > 0) {
+        finalReferralCode = telegramReferralResult.rows[0].referral_code;
       }
     }
 
@@ -63,12 +91,26 @@ const registerUser = asyncHandler(async (req, res) => {
     const newReferralCode = generateReferralCode();
 
     const newUserQuery = `
-      INSERT INTO users (username, email, password_hash, referral_code, referred_by) 
-      VALUES ($1, $2, $3, $4, $5) 
-      RETURNING id, username, email, created_at
+      INSERT INTO users (username, email, password_hash, referral_code) 
+      VALUES ($1, $2, $3, $4) 
+      RETURNING id, username, email, created_at, role
     `;
-    const newUserResult = await client.query(newUserQuery, [username, email, hashedPassword, newReferralCode, referrerId]);
+    const newUserResult = await client.query(newUserQuery, [username, email, hashedPassword, newReferralCode]);
     const user = newUserResult.rows[0];
+
+    // Apply referral if provided
+    let referrerId = null;
+    if (finalReferralCode) {
+      referrerId = await applyReferral(client, finalReferralCode, user.id);
+    }
+
+    // Link Telegram account if telegramId is provided
+    if (telegramId) {
+      await client.query(
+        'INSERT INTO telegram_user_map (telegram_id, user_id) VALUES ($1, $2) ON CONFLICT (telegram_id) DO NOTHING',
+        [telegramId, user.id]
+      );
+    }
 
     await client.query('COMMIT');
 
@@ -76,30 +118,18 @@ const registerUser = asyncHandler(async (req, res) => {
       id: user.id,
       username: user.username,
       email: user.email,
+      role: user.role,
       token: generateToken(user),
     });
 
   } catch (error) {
     await client.query('ROLLBACK');
-    res.status(400);
-    throw new Error(error.message);
+    console.error('Registration error:', error);
+    res.status(400).json({ message: error.message });
   } finally {
     client.release();
   }
 });
-
-// In your register function in authController.js
-// After creating the user, check for Telegram referral
-const telegramReferral = await db.query(
-  'SELECT referral_code FROM telegram_referrals WHERE telegram_id = $1',
-  [telegramId] // You'll need to capture this during registration
-);
-
-if (telegramReferral.rows.length > 0) {
-  const referralCode = telegramReferral.rows[0].referral_code;
-  // Apply the referral
-  await applyReferral(referralCode, newUser.id);
-}
 
 // --- Controller for User Login ---
 const loginUser = asyncHandler(async (req, res) => {
@@ -136,12 +166,11 @@ const loginUser = asyncHandler(async (req, res) => {
         appSettings,
       });
     } else {
-      res.status(401);
-      throw new Error('Invalid email or password');
+      res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
-    res.status(500);
-    throw new Error('Server error during login');
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error during login' });
   } finally {
     client.release();
   }
