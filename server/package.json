@@ -21,7 +21,8 @@
     "express": "^4.19.2",
     "express-async-handler": "^1.2.0",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.11.5"
+    "pg": "^8.11.5",
+    "axios": "^1.6.0"  // <-- ADD THIS LINE
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
