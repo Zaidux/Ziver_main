@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
-const telegramRoutes = require('./routes/telegramRoutes');
+const setWebhook = require('./setupTelegramWebhook'); // ADD THIS LINE
 
 // --- IMPORT OUR ROUTE FILES ---
 const authRoutes = require('./routes/authRoutes');
@@ -10,7 +10,8 @@ const userRoutes = require('./routes/userRoutes');
 const miningRoutes = require('./routes/miningRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const tasksRoutes = require('./routes/tasksRoutes');
-const referralsRoutes = require('./routes/referralsRoutes'); // ADD THIS LINE
+const referralsRoutes = require('./routes/referralsRoutes');
+const telegramRoutes = require('./routes/telegramRoutes');
 
 // --- App Initialization ---
 const app = express();
@@ -29,7 +30,25 @@ const checkDbConnection = async () => {
     console.error('❌ Error connecting to the database:', error);
   }
 };
-checkDbConnection();
+
+// --- Set Telegram Webhook on Startup ---
+const initializeApp = async () => {
+  // Check database connection
+  await checkDbConnection();
+  
+  // Set Telegram webhook if token is available
+  if (process.env.TELEGRAM_BOT_TOKEN) {
+    console.log('🤖 Setting up Telegram webhook...');
+    await setWebhook();
+  } else {
+    console.log('⚠️  TELEGRAM_BOT_TOKEN not set, skipping webhook setup');
+  }
+
+  // Start server
+  app.listen(PORT, () => {
+    console.log(`🎉 Server is running on port ${PORT}`);
+  });
+};
 
 // --- DIAGNOSTIC MIDDLEWARE ---
 app.use((req, res, next) => {
@@ -45,13 +64,22 @@ app.get('/', (req, res) => {
   });
 });
 
+// --- BOT HEALTH CHECK ---
+app.get('/api/telegram/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    hasBotToken: !!process.env.TELEGRAM_BOT_TOKEN,
+    webhookUrl: process.env.TELEGRAM_WEBHOOK_URL || `${process.env.BASE_URL}/api/telegram/webhook`
+  });
+});
+
 // --- USE ROUTES ---
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/mining', miningRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/tasks', tasksRoutes);
-app.use('/api/referrals', referralsRoutes); // ADD THIS LINE
+app.use('/api/referrals', referralsRoutes);
 app.use('/api/telegram', telegramRoutes);
 
 // --- CATCH-ALL 404 HANDLER ---
@@ -60,6 +88,4 @@ app.use((req, res, next) => {
 });
 
 // --- Start the Server ---
-app.listen(PORT, () => {
-  console.log(`🎉 Server is running on port ${PORT}`);
-});
+initializeApp();
