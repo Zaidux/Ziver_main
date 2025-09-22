@@ -409,5 +409,8 @@ module.exports = {
   setWebhook,
   handleTelegramWebhook,
   getTelegramReferral,
-  verifyConnectionCode
+  verifyConnectionCode,
+  setWebhookManual,    // ADD THIS
+  getWebhookInfo,      // ADD THIS  
+  sendTestMessage      // ADD THIS
 };
