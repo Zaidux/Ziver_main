@@ -334,6 +334,77 @@ const verifyConnectionCode = asyncHandler(async (req, res) => {
   }
 });
 
+// Debug endpoint to manually set webhook
+const setWebhookManual = asyncHandler(async (req, res) => {
+  try {
+    const { webhookUrl } = req.body;
+    const url = webhookUrl || process.env.TELEGRAM_WEBHOOK_URL || `${process.env.BASE_URL}/api/telegram/webhook`;
+    
+    const response = await axios.post(`${TELEGRAM_API_URL}/setWebhook`, {
+      url: url,
+      drop_pending_updates: true
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Webhook set successfully',
+      data: response.data,
+      webhookUrl: url
+    });
+  } catch (error) {
+    console.error('Error setting webhook:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to set webhook',
+      error: error.response?.data || error.message 
+    });
+  }
+});
+
+// Get webhook info
+const getWebhookInfo = asyncHandler(async (req, res) => {
+  try {
+    const response = await axios.get(`${TELEGRAM_API_URL}/getWebhookInfo`);
+    res.json({ 
+      success: true, 
+      data: response.data 
+    });
+  } catch (error) {
+    console.error('Error getting webhook info:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to get webhook info',
+      error: error.response?.data || error.message 
+    });
+  }
+});
+
+// Send test message
+const sendTestMessage = asyncHandler(async (req, res) => {
+  try {
+    const { chatId, text } = req.body;
+    
+    const response = await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+      chat_id: chatId,
+      text: text || 'Test message from Ziver bot',
+      parse_mode: 'Markdown'
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Test message sent',
+      data: response.data 
+    });
+  } catch (error) {
+    console.error('Error sending test message:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to send test message',
+      error: error.response?.data || error.message 
+    });
+  }
+});
+
 module.exports = {
   setWebhook,
   handleTelegramWebhook,
