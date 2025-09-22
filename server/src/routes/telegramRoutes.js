@@ -4,18 +4,31 @@ const {
   setWebhook,
   handleTelegramWebhook,
   getTelegramReferral,
-  verifyConnectionCode
+  verifyConnectionCode,
+  setWebhookManual,
+  getWebhookInfo,
+  sendTestMessage
 } = require('../controllers/telegramController');
 
 // @route   POST /api/telegram/webhook
 // @desc    Handle incoming Telegram webhook messages
-// @access  Public (Telegram needs to access this)
+// @access  Public
 router.post('/webhook', handleTelegramWebhook);
 
 // @route   POST /api/telegram/set-webhook
 // @desc    Set the Telegram webhook URL
-// @access  Private (Admin only)
-router.post('/set-webhook', setWebhook);
+// @access  Private
+router.post('/set-webhook', setWebhookManual);
+
+// @route   GET /api/telegram/webhook-info
+// @desc    Get webhook information
+// @access  Private
+router.get('/webhook-info', getWebhookInfo);
+
+// @route   POST /api/telegram/test-message
+// @desc    Send a test message
+// @access  Private
+router.post('/test-message', sendTestMessage);
 
 // @route   GET /api/telegram/referral/:telegramId
 // @desc    Get referral info for a Telegram user
