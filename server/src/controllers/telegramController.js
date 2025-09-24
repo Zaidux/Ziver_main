@@ -141,7 +141,7 @@ await db.query(
                             `🎁 *You were referred by: ${referrerUsername}*\n` +
                             `💎 When you register, you'll receive *100 ZP bonus!*\n\n` +
                             `Click the link below to register and claim your bonus:\n` +
-                            `${process.env.FRONTEND_URL || 'https://your-frontend.com'}?ref=${referralCode}\n\n` +
+                            `${process.env.FRONTEND_URL || 'https://ziver-main.onrender.com'}?ref=${referralCode}\n\n` +
                             `The referrer's name will be shown during registration.`;
 
       await sendMessage(chatId, welcomeMessage);
