@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import authService from '../services/authService';
+import referralService from '../services/referralService';
 import { useTelegramReferral } from '../hooks/useTelegramReferral';
 import { useAuth } from '../context/AuthContext';
 import './RegisterPage.css';
@@ -19,6 +20,8 @@ function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [urlReferralCode, setUrlReferralCode] = useState(null);
+  const [referrerInfo, setReferrerInfo] = useState(null);
+  const [checkingReferral, setCheckingReferral] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,21 +29,51 @@ function RegisterPage() {
 
   const { username, email, password, confirmPassword } = formData;
 
-  // Check for URL referral parameter
+  // Check for URL referral parameter and validate referral code
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const ref = searchParams.get('ref');
+    
     if (ref) {
       setUrlReferralCode(ref);
-      // Store in session storage for persistence
       sessionStorage.setItem('referralCode', ref);
+      validateReferralCode(ref);
+    } else if (referralCode) {
+      validateReferralCode(referralCode);
     }
-  }, [location]);
+  }, [location, referralCode]);
+
+  // Validate referral code and get referrer info
+  const validateReferralCode = async (code) => {
+    if (!code) return;
+    
+    setCheckingReferral(true);
+    try {
+      const response = await referralService.getReferrerInfo(code);
+      if (response.success && response.referrer) {
+        setReferrerInfo(response.referrer);
+        console.log('Referrer found:', response.referrer.username);
+      } else {
+        setReferrerInfo(null);
+        console.log('Invalid referral code');
+      }
+    } catch (error) {
+      console.error('Error validating referral code:', error);
+      setReferrerInfo(null);
+    } finally {
+      setCheckingReferral(false);
+    }
+  };
 
   // Use either Telegram referral or URL referral
   const effectiveReferralCode = referralCode || urlReferralCode;
 
   const handleChange = (e) => {
+    // Prevent changing username if it's a referral and we're showing referrer info
+    if (e.target.name === 'username' && referrerInfo && effectiveReferralCode) {
+      return; // Don't allow changing the username when referred
+    }
+    
     setFormData((prevState) => ({
       ...prevState,
       [e.target.name]: e.target.value,
@@ -51,6 +84,7 @@ function RegisterPage() {
     e.preventDefault();
     setError('');
 
+    // Basic validation
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -58,6 +92,11 @@ function RegisterPage() {
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (username.length < 3) {
+      setError('Username must be at least 3 characters');
       return;
     }
 
@@ -71,25 +110,24 @@ function RegisterPage() {
         password, 
         effectiveReferralCode
       );
-      
+
       // Clear any stored referral code after successful registration
       sessionStorage.removeItem('referralCode');
-      
+
+      let successMessage = 'Account created successfully!';
+      if (response.referralApplied) {
+        successMessage += ` You received 100 ZP bonus for being referred by ${response.referrer?.username || 'a friend'}!`;
+      }
+
       // If auto-login is enabled after registration, log the user in
       if (response.token) {
         login(response.token, response.user);
         navigate('/mining', { 
-          state: { 
-            message: 'Account created successfully!' + 
-                    (effectiveReferralCode ? ' You received a 100 ZP referral bonus!' : '')
-          } 
+          state: { message: successMessage }
         });
       } else {
         navigate('/login', { 
-          state: { 
-            message: 'Account created successfully! Please login.' + 
-                    (effectiveReferralCode ? ' You received a 100 ZP referral bonus!' : '')
-          } 
+          state: { message: successMessage }
         });
       }
     } catch (err) {
@@ -103,6 +141,15 @@ function RegisterPage() {
     }
   };
 
+  // Auto-fill username with referrer's suggestion when referral is detected
+  useEffect(() => {
+    if (referrerInfo && effectiveReferralCode && !username) {
+      // Suggest a username based on referrer (user can change this if they want)
+      const suggestedUsername = `friend_of_${referrerInfo.username}`.toLowerCase().substring(0, 20);
+      setFormData(prev => ({ ...prev, username: suggestedUsername }));
+    }
+  }, [referrerInfo, effectiveReferralCode, username]);
+
   return (
     <div className="register-container">
       <div className="register-card">
@@ -113,10 +160,21 @@ function RegisterPage() {
         </div>
 
         {effectiveReferralCode && (
-          <div className="referral-banner">
+          <div className={`referral-banner ${referrerInfo ? 'valid' : 'invalid'}`}>
             <span className="referral-icon">🎁</span>
-            <span>Referred by: {effectiveReferralCode}</span>
-            <span className="bonus-badge">+100 ZP Bonus</span>
+            {checkingReferral ? (
+              <span>Checking referral code...</span>
+            ) : referrerInfo ? (
+              <>
+                <span>Referred by: <strong>{referrerInfo.username}</strong></span>
+                <span className="bonus-badge">+100 ZP Bonus</span>
+              </>
+            ) : (
+              <>
+                <span>Invalid referral code: {effectiveReferralCode}</span>
+                <span className="bonus-badge invalid">No Bonus</span>
+              </>
+            )}
           </div>
         )}
 
@@ -138,12 +196,19 @@ function RegisterPage() {
               name="username"
               value={username}
               onChange={handleChange}
-              placeholder="Choose a username"
+              placeholder={referrerInfo ? `Friend of ${referrerInfo.username}` : "Choose a username"}
               required
               minLength="3"
               maxLength="20"
-              className="modern-input"
+              className={`modern-input ${referrerInfo && effectiveReferralCode ? 'referral-username' : ''}`}
+              readOnly={!!(referrerInfo && effectiveReferralCode)} // Make read-only when referred
+              title={referrerInfo && effectiveReferralCode ? "Username suggested based on your referrer" : ""}
             />
+            {referrerInfo && effectiveReferralCode && (
+              <div className="referral-note">
+                🔒 Username suggested based on your referrer
+              </div>
+            )}
           </div>
 
           <div className="input-group">
@@ -178,7 +243,7 @@ function RegisterPage() {
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
-                tabIndex="-1" // Prevent tab focus on this button
+                tabIndex="-1"
               >
                 {showPassword ? '🙈' : '👁️'}
               </button>
@@ -213,15 +278,17 @@ function RegisterPage() {
           <button 
             type="submit" 
             className="register-button"
-            disabled={loading}
+            disabled={loading || checkingReferral}
           >
             {loading ? (
               <div className="button-loading">
                 <div className="spinner"></div>
                 Creating Account...
               </div>
+            ) : checkingReferral ? (
+              'Checking Referral...'
             ) : (
-              'Create Account'
+              `Create Account ${effectiveReferralCode && referrerInfo ? '+ Get 100 ZP' : ''}`
             )}
           </button>
         </form>
