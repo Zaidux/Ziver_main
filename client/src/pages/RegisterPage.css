@@ -351,3 +351,124 @@
     text-align: center;
   }
 }
+
+/* Enhanced referral banner styles */
+.referral-banner.valid {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15));
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  animation: pulseGlow 2s infinite;
+}
+
+.referral-banner.checking {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.15));
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.referral-banner.invalid {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15));
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.bonus-badge.invalid {
+  background: #ef4444;
+}
+
+.referral-username {
+  border-color: #10b981 !important;
+  background-color: rgba(16, 185, 129, 0.05);
+  color: #10b981;
+}
+
+.referral-note {
+  font-size: 0.875rem;
+  color: #10b981;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(16, 185, 129, 0.05);
+  border-radius: 0.375rem;
+  border-left: 3px solid #10b981;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Enhanced animations */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  }
+}
+
+/* Success message styles */
+.success-message {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* Loading state improvements */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.loading-spinner .spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid #00FF80;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Enhanced button states */
+.register-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.register-button:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 255, 128, 0.3);
+}
+
+/* Responsive improvements */
+@media (max-width: 480px) {
+  .referral-banner {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+  
+  .bonus-badge {
+    margin-left: 0;
+  }
+  
+  .referral-note {
+    font-size: 0.8rem;
+    padding: 0.375rem;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .referral-banner.valid {
+    animation: none;
+  }
+  
+  .register-button:hover:not(:disabled) {
+    transform: none;
+  }
+}
