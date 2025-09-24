@@ -1,6 +1,46 @@
 const asyncHandler = require('express-async-handler');
 const db = require('../config/db');
 
+// @desc    Get referrer info by referral code
+// @route   GET /api/referrals/referrer/:referralCode
+const getReferrerInfo = asyncHandler(async (req, res) => {
+  const { referralCode } = req.params;
+
+  try {
+    // Check if it's a valid user referral code
+    const userResult = await db.query(
+      'SELECT id, username, email FROM users WHERE referral_code = $1',
+      [referralCode]
+    );
+
+    if (userResult.rows.length > 0) {
+      const referrer = userResult.rows[0];
+      return res.json({
+        success: true,
+        referrer: {
+          id: referrer.id,
+          username: referrer.username,
+          email: referrer.email
+        },
+        isValid: true
+      });
+    }
+
+    res.status(404).json({
+      success: false,
+      message: 'Invalid referral code',
+      isValid: false
+    });
+
+  } catch (error) {
+    console.error('Error getting referrer info:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error checking referral code'
+    });
+  }
+});
+
 // @desc    Apply referral to a new user
 // @route   POST /api/referrals/apply
 const applyReferral = asyncHandler(async (req, res) => {
@@ -9,41 +49,46 @@ const applyReferral = asyncHandler(async (req, res) => {
   try {
     // Find the referrer by their referral code
     const referrerResult = await db.query(
-      'SELECT id FROM users WHERE referral_code = $1', 
+      'SELECT id, username FROM users WHERE referral_code = $1', 
       [referralCode]
     );
-    
+
     if (referrerResult.rows.length === 0) {
-      return res.status(404).json({ message: 'Invalid referral code' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Invalid referral code' 
+      });
     }
-    
-    const referrerId = referrerResult.rows[0].id;
-    
-    // Update the referred user's record
+
+    const referrer = referrerResult.rows[0];
+
+    // Update the referred user's record and add bonus
     await db.query(
-      'UPDATE users SET referred_by = $1 WHERE id = $2',
-      [referrerId, userId]
+      'UPDATE users SET referred_by = $1, zp_balance = zp_balance + 100 WHERE id = $2',
+      [referrer.id, userId]
     );
-    
-    // Award bonus to the referred user (100 ZP)
-    await db.query(
-      'UPDATE users SET zp_balance = zp_balance + 100 WHERE id = $1',
-      [userId]
-    );
-    
-    // Award bonus to the referrer (50 ZP) and increment count
+
+    // Award bonus to the referrer and increment count
     await db.query(
       'UPDATE users SET zp_balance = zp_balance + 50, referral_count = referral_count + 1 WHERE id = $1',
-      [referrerId]
+      [referrer.id]
     );
-    
+
     res.status(200).json({ 
+      success: true,
       message: 'Referral applied successfully',
-      bonus: 100
+      bonus: 100,
+      referrer: {
+        id: referrer.id,
+        username: referrer.username
+      }
     });
   } catch (error) {
     console.error('Error applying referral:', error);
-    res.status(500).json({ message: 'Error applying referral' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Error applying referral' 
+    });
   }
 });
 
@@ -58,11 +103,11 @@ const getReferralData = asyncHandler(async (req, res) => {
       'SELECT referral_code, referral_count, zp_balance FROM users WHERE id = $1', 
       [userId]
     );
-    
+
     if (userResult.rows.length === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     const userData = userResult.rows[0];
 
     // 2. Get the list of users they have referred
@@ -71,17 +116,27 @@ const getReferralData = asyncHandler(async (req, res) => {
        FROM users WHERE referred_by = $1 ORDER BY created_at DESC`,
       [userId]
     );
-    
+
     const referrals = referralsResult.rows;
 
     // 3. Calculate total earnings from referrals (50 ZP per referral)
     const totalEarnings = referrals.length * 50;
+
+    // 4. Get pending referrals
+    const pendingResult = await db.query(
+      `SELECT referral_code, referrer_username, created_at 
+       FROM pending_referrals 
+       WHERE referrer_id = $1 AND expires_at > NOW() 
+       ORDER BY created_at DESC`,
+      [userId]
+    );
 
     res.json({
       referralCode: userData.referral_code,
       referralCount: userData.referral_count || 0,
       totalEarnings: totalEarnings,
       referrals: referrals,
+      pendingReferrals: pendingResult.rows,
       currentBalance: userData.zp_balance
     });
   } catch (error) {
@@ -126,8 +181,7 @@ const removeReferral = asyncHandler(async (req, res) => {
     res.json({ message: 'Referral removed successfully' });
   } catch (error) {
     await client.query('ROLLBACK');
-    res.status(400);
-    throw new Error(error.message);
+    res.status(400).json({ message: error.message });
   } finally {
     client.release();
   }
@@ -158,5 +212,6 @@ module.exports = {
   applyReferral,
   getReferralData,
   removeReferral,
-  getLeaderboard
+  getLeaderboard,
+  getReferrerInfo
 };
