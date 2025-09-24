@@ -1,9 +1,10 @@
 import api from './api';
 
-// Get referrer info by referral code
+// Get referrer info by referral code - FIXED ENDPOINT
 const getReferrerInfo = async (referralCode) => {
   try {
-    const response = await api.get(`/referrals/referrer/${referralCode}`);
+    // Changed from /referrals/referrer/ to /auth/referrer-info/
+    const response = await api.get(`/auth/referrer-info/${referralCode}`);
     return response.data;
   } catch (error) {
     console.error('Error getting referrer info:', error);
@@ -50,7 +51,7 @@ const getLeaderboard = async () => {
 
 // Generate referral link
 const generateReferralLink = (referralCode) => {
-  const botUsername = 'Zivurlbot'; // Replace with your actual bot username
+  const botUsername = 'Zivurlbot';
   return `https://t.me/${botUsername}?start=${referralCode}`;
 };
 
@@ -79,7 +80,6 @@ const shareReferral = async (platform, referralCode) => {
       window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(fullMessage)}`, '_blank');
       break;
     case 'copy':
-      // Copy to clipboard
       await navigator.clipboard.writeText(webLink);
       return 'Link copied to clipboard!';
     default:
