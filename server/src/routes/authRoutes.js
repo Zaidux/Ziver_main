@@ -15,5 +15,9 @@ router.post('/register', registerUser);
 // @access  Public
 router.post('/login', loginUser);
 
+// Add these to your existing authRoutes.js
+router.get('/referrer-info/:referralCode', getReferrerInfo);
+router.post('/pending-referral', createPendingReferral);
+
 
 module.exports = router;
