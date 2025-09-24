@@ -91,27 +91,38 @@ const handleStartCommand = async (chatId, from, text) => {
   if (referralCode) {
     try {
       // Get referrer info from the referral code
-      const referrerResult = await db.query(
-        'SELECT id, username FROM users WHERE referral_code = $1',
-        [referralCode]
-      );
+const referrerResult = await db.query(
+  'SELECT id, username FROM users WHERE referral_code = $1',
+  [referralCode]
+);
 
-      let referrerUsername = 'Unknown User';
-      let referrerId = null;
+let referrerUsername = 'Unknown User';
+let referrerId = null;
 
-      if (referrerResult.rows.length > 0) {
-        referrerUsername = referrerResult.rows[0].username;
-        referrerId = referrerResult.rows[0].id;
-      }
+if (referrerResult.rows.length > 0) {
+  referrerUsername = referrerResult.rows[0].username;
+  referrerId = referrerResult.rows[0].id;
+  
+  // Validate that referrerId is a valid integer (not UUID)
+  if (referrerId && !Number.isInteger(referrerId)) {
+    console.log('Invalid referrer ID format, setting to null:', referrerId);
+    referrerId = null;
+  }
+}
 
-      // Save referral to database with referrer info
-      await db.query(
-        `INSERT INTO telegram_referrals (telegram_id, username, first_name, referral_code, created_at) 
-         VALUES ($1, $2, $3, $4, NOW()) 
-         ON CONFLICT (telegram_id) 
-         DO UPDATE SET referral_code = $4, updated_at = NOW()`,
-        [telegramId, username, firstName, referralCode]
-      );
+// Create pending referral with safe referrer_id handling
+await db.query(
+  `INSERT INTO pending_referrals 
+   (referral_code, referrer_username, referrer_id, telegram_id, created_at) 
+   VALUES ($1, $2, $3, $4, NOW())
+   ON CONFLICT (referral_code) 
+   DO UPDATE SET 
+     referrer_username = EXCLUDED.referrer_username,
+     referrer_id = EXCLUDED.referrer_id,
+     telegram_id = EXCLUDED.telegram_id,
+     updated_at = NOW()`,
+  [referralCode, referrerUsername, referrerId, telegramId]
+);
 
       // Create pending referral
       await db.query(
