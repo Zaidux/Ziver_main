@@ -284,3 +284,70 @@
     animation: none;
   }
 }
+
+/* Added these styles to your existing RegisterPage.css */
+
+.referral-banner.valid {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: 1px solid #10b981;
+}
+
+.referral-banner.invalid {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: 1px solid #ef4444;
+}
+
+.bonus-badge.invalid {
+  background: #ef4444;
+}
+
+.referral-username {
+  background-color: #f3f4f6;
+  border-color: #10b981 !important;
+  color: #059669;
+  cursor: not-allowed;
+}
+
+.referral-username:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.referral-note {
+  font-size: 0.75rem;
+  color: #059669;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.button-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .referral-banner {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+}
