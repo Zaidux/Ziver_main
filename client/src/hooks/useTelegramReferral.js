@@ -13,43 +13,46 @@ export const useTelegramReferral = () => {
   useEffect(() => {
     const detectReferralAndTelegram = async () => {
       try {
-        // Check for referral code in multiple possible parameters
-        const ref = searchParams.get('ref') || 
-                   searchParams.get('start') || 
-                   searchParams.get('referral') ||
-                   localStorage.getItem('ziver_referral_code') ||
-                   sessionStorage.getItem('referralCode');
+        setIsLoading(true);
 
-        if (ref) {
-          setReferralCode(ref);
-          console.log('Referral code detected:', ref);
-          
+        // Check for referral code in URL parameters first
+        const urlRef = searchParams.get('ref') || searchParams.get('start');
+        
+        // Then check storage
+        const storageRef = localStorage.getItem('ziver_referral_code') || 
+                          sessionStorage.getItem('referralCode');
+
+        const effectiveRef = urlRef || storageRef;
+
+        if (effectiveRef) {
+          setReferralCode(effectiveRef);
+          console.log('Referral code detected:', effectiveRef);
+
           // Store in both storage for persistence
-          localStorage.setItem('ziver_referral_code', ref);
-          sessionStorage.setItem('referralCode', ref);
-          
+          localStorage.setItem('ziver_referral_code', effectiveRef);
+          sessionStorage.setItem('referralCode', effectiveRef);
+
           // Fetch referrer information
           try {
-            const referrerData = await referralService.getReferrerInfo(ref);
+            const referrerData = await referralService.getReferrerInfo(effectiveRef);
             if (referrerData.success && referrerData.referrer) {
               setReferrerInfo(referrerData.referrer);
               console.log('Referrer found:', referrerData.referrer.username);
             } else {
-              console.log('No referrer found for code:', ref);
+              console.log('No referrer found for code:', effectiveRef);
+              setReferrerInfo(null);
             }
           } catch (error) {
             console.log('Error fetching referrer info:', error.message);
+            setReferrerInfo(null);
           }
         }
 
         // Enhanced Telegram detection
-        const userAgent = navigator.userAgent.toLowerCase();
-        let isTgWebView = userAgent.includes('telegram') || 
-                         window.Telegram?.WebApp ||
-                         document.referrer.includes('t.me') ||
-                         window.location.href.includes('tgWebAppPlatform');
+        let isTgWebView = false;
+        let tgUser = null;
 
-        // Additional check for Telegram Web App
+        // Check for Telegram Web App
         if (window.Telegram?.WebApp) {
           isTgWebView = true;
           const tg = window.Telegram.WebApp;
@@ -60,26 +63,23 @@ export const useTelegramReferral = () => {
 
           // Get Telegram user info
           if (tg.initDataUnsafe?.user) {
-            setTelegramUser({
+            tgUser = {
               id: tg.initDataUnsafe.user.id,
               username: tg.initDataUnsafe.user.username,
               firstName: tg.initDataUnsafe.user.first_name,
               lastName: tg.initDataUnsafe.user.last_name
-            });
+            };
+            setTelegramUser(tgUser);
           }
-        }
 
-        setIsTelegram(isTgWebView);
-
-        // If coming from Telegram, check for start parameter in URL
-        if (isTgWebView) {
-          const urlParams = new URLSearchParams(window.location.search);
-          const startParam = urlParams.get('start');
-          if (startParam && !ref) {
+          // Check for start parameter in Telegram
+          const startParam = tg.initDataUnsafe?.start_param;
+          if (startParam && !effectiveRef) {
+            console.log('Telegram start parameter detected:', startParam);
             setReferralCode(startParam);
             localStorage.setItem('ziver_referral_code', startParam);
             sessionStorage.setItem('referralCode', startParam);
-            
+
             // Fetch referrer information for Telegram referral
             try {
               const referrerData = await referralService.getReferrerInfo(startParam);
@@ -91,6 +91,21 @@ export const useTelegramReferral = () => {
             }
           }
         }
+
+        // Additional Telegram detection
+        const userAgent = navigator.userAgent.toLowerCase();
+        if (userAgent.includes('telegram') || document.referrer.includes('t.me')) {
+          isTgWebView = true;
+        }
+
+        setIsTelegram(isTgWebView);
+
+        console.log('Telegram detection:', {
+          isTelegram: isTgWebView,
+          hasTelegramUser: !!tgUser,
+          referralCode: effectiveRef,
+          hasReferrer: !!referrerInfo
+        });
 
       } catch (error) {
         console.error('Error detecting Telegram/referral:', error);
@@ -110,6 +125,13 @@ export const useTelegramReferral = () => {
     sessionStorage.removeItem('referralCode');
   };
 
+  // Function to manually set referral code
+  const setManualReferralCode = (code) => {
+    setReferralCode(code);
+    localStorage.setItem('ziver_referral_code', code);
+    sessionStorage.setItem('referralCode', code);
+  };
+
   return { 
     referralCode, 
     referrerInfo,
@@ -117,7 +139,8 @@ export const useTelegramReferral = () => {
     telegramUser,
     hasReferral: !!referralCode,
     isLoading,
-    clearReferralCode
+    clearReferralCode,
+    setManualReferralCode
   };
 };
 
@@ -129,11 +152,17 @@ export const shareToTelegram = (message, url) => {
 
 // Utility to generate Telegram deep link
 export const generateTelegramDeepLink = (referralCode, startParam = 'start') => {
-  return `https://t.me/Zivurlbot?${startParam}=${referralCode}`;
+  const botUsername = 'Zivurlbot'; // Replace with your actual bot username
+  return `https://t.me/${botUsername}?${startParam}=${referralCode}`;
 };
 
 // Get current URL with referral code for sharing
 export const getCurrentUrlWithReferral = (referralCode) => {
   const currentUrl = window.location.origin + window.location.pathname;
   return `${currentUrl}?ref=${referralCode}`;
+};
+
+// Check if user is in Telegram
+export const isInTelegram = () => {
+  return window.Telegram?.WebApp || navigator.userAgent.toLowerCase().includes('telegram');
 };
