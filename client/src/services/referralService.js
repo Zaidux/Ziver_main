@@ -3,13 +3,13 @@ import api from './api';
 // Get referrer info by referral code - FIXED ENDPOINT
 const getReferrerInfo = async (referralCode) => {
   try {
-    // Changed from /referrals/referrer/ to /auth/referrer-info/
-    const response = await api.get(`/auth/referrer-info/${referralCode}`);
+    // Use the correct endpoint that matches your server routes
+    const response = await api.get(`/referrals/referrer-info/${referralCode}`);
     return response.data;
   } catch (error) {
     console.error('Error getting referrer info:', error);
-    
-    // Return a friendly error response
+
+    // Enhanced error handling
     if (error.response?.status === 404) {
       return {
         success: false,
@@ -17,41 +17,77 @@ const getReferrerInfo = async (referralCode) => {
         isValid: false
       };
     }
-    
-    throw error;
+
+    return {
+      success: false,
+      message: 'Error checking referral code',
+      isValid: false
+    };
   }
 };
 
 // Apply referral to user
 const applyReferral = async (referralCode, userId) => {
-  const response = await api.post('/referrals/apply', {
-    referralCode,
-    userId
-  });
-  return response.data;
+  try {
+    const response = await api.post('/referrals/apply', {
+      referralCode,
+      userId
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error applying referral:', error);
+    throw error;
+  }
 };
 
 // Fetch the current user's referral data
 const getReferralData = async () => {
-  const response = await api.get('/referrals');
-  return response.data;
+  try {
+    const response = await api.get('/referrals');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching referral data:', error);
+    throw error;
+  }
 };
 
 // Remove a specific referred user
 const removeReferral = async (userId) => {
-  const response = await api.delete(`/referrals/${userId}`);
-  return response.data;
+  try {
+    const response = await api.delete(`/referrals/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error removing referral:', error);
+    throw error;
+  }
 };
 
 // Get referral leaderboard
 const getLeaderboard = async () => {
-  const response = await api.get('/referrals/leaderboard');
-  return response.data;
+  try {
+    const response = await api.get('/referrals/leaderboard');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching leaderboard:', error);
+    throw error;
+  }
 };
 
-// Generate referral link
+// Clear pending referral
+const clearPendingReferral = async (referralCode) => {
+  try {
+    const response = await api.delete(`/referrals/pending/${referralCode}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error clearing pending referral:', error);
+    // Don't throw error for cleanup operations
+    return { success: false };
+  }
+};
+
+// Generate referral link for Telegram
 const generateReferralLink = (referralCode) => {
-  const botUsername = 'Zivurlbot';
+  const botUsername = 'Zivurlbot'; // Replace with your actual bot username
   return `https://t.me/${botUsername}?start=${referralCode}`;
 };
 
@@ -65,7 +101,7 @@ const generateWebReferralLink = (referralCode) => {
 const shareReferral = async (platform, referralCode) => {
   const telegramLink = generateReferralLink(referralCode);
   const webLink = generateWebReferralLink(referralCode);
-  
+
   const message = `Join me on Ziver and start earning ZP tokens! Use my referral link to get 100 ZP bonus!`;
   const fullMessage = `${message}\n\nTelegram: ${telegramLink}\nWeb: ${webLink}`;
 
@@ -80,8 +116,19 @@ const shareReferral = async (platform, referralCode) => {
       window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(fullMessage)}`, '_blank');
       break;
     case 'copy':
-      await navigator.clipboard.writeText(webLink);
-      return 'Link copied to clipboard!';
+      try {
+        await navigator.clipboard.writeText(webLink);
+        return 'Link copied to clipboard!';
+      } catch (error) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = webLink;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        return 'Link copied to clipboard!';
+      }
     default:
       return webLink;
   }
@@ -89,8 +136,25 @@ const shareReferral = async (platform, referralCode) => {
 
 // Create pending referral (for tracking)
 const createPendingReferral = async (referralData) => {
-  const response = await api.post('/auth/pending-referral', referralData);
-  return response.data;
+  try {
+    const response = await api.post('/auth/pending-referral', referralData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating pending referral:', error);
+    throw error;
+  }
+};
+
+// NEW: Get smart referrer suggestion (for when no referral is provided)
+const getSmartReferrerSuggestion = async () => {
+  try {
+    // This would call a new endpoint that implements the smart referral logic
+    const response = await api.get('/referrals/smart-suggestion');
+    return response.data;
+  } catch (error) {
+    console.error('Error getting smart referrer suggestion:', error);
+    return null;
+  }
 };
 
 const referralService = {
@@ -102,7 +166,9 @@ const referralService = {
   generateReferralLink,
   generateWebReferralLink,
   shareReferral,
-  createPendingReferral
+  createPendingReferral,
+  clearPendingReferral,
+  getSmartReferrerSuggestion
 };
 
 export default referralService;
