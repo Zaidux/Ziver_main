@@ -4,6 +4,7 @@ const { protect } = require('../middleware/authMiddleware');
 const {
   getAvailableTasks,
   completeTask,
+  getTaskStats
 } = require('../controllers/tasksController');
 
 // @route   GET /api/tasks
@@ -15,5 +16,10 @@ router.get('/', protect, getAvailableTasks);
 // @desc    Mark a task as complete for the logged-in user
 // @access  Private
 router.post('/:id/complete', protect, completeTask);
+
+// @route   GET /api/tasks/stats
+// @desc    Get user's task completion statistics
+// @access  Private
+router.get('/stats', protect, getTaskStats);
 
 module.exports = router;
