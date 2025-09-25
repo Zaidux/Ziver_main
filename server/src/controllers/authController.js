@@ -25,7 +25,42 @@ const generateToken = (user) => {
   );
 };
 
-// Helper function to apply referral with bonus
+// NEW: Smart referral assignment when no referrer is provided
+const assignSmartReferrer = async (client) => {
+  try {
+    // Find users with less than 50 referrals, ordered by ZP balance, SEB points, and streak
+    const result = await client.query(
+      `SELECT id, username, referral_count, zp_balance, social_capital_score, daily_streak_count 
+       FROM users 
+       WHERE referral_count < 50 
+       ORDER BY zp_balance DESC, social_capital_score DESC, daily_streak_count DESC 
+       LIMIT 1`
+    );
+
+    if (result.rows.length > 0) {
+      return {
+        id: result.rows[0].id,
+        username: result.rows[0].username,
+        referralCode: await getUserReferralCode(client, result.rows[0].id)
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Error assigning smart referrer:', error);
+    return null;
+  }
+};
+
+// NEW: Get user's referral code
+const getUserReferralCode = async (client, userId) => {
+  const result = await client.query(
+    'SELECT referral_code FROM users WHERE id = $1',
+    [userId]
+  );
+  return result.rows[0]?.referral_code;
+};
+
+// UPDATED: Enhanced referral application with SEB points
 const applyReferral = async (client, referralCode, userId) => {
   if (!referralCode) return null;
 
@@ -42,13 +77,20 @@ const applyReferral = async (client, referralCode, userId) => {
 
     const referrer = referrerResult.rows[0];
 
-    // Apply referral bonus to referrer (50 ZP)
+    // 🔥 FIXED: Apply proper rewards
+    // Referrer gets 150 ZP + 5-10 SEB points
+    const sebPointsReward = Math.floor(Math.random() * 6) + 5; // Random between 5-10
+    
     await client.query(
-      'UPDATE users SET zp_balance = zp_balance + 50, referral_count = referral_count + 1 WHERE id = $1',
-      [referrer.id]
+      `UPDATE users 
+       SET zp_balance = zp_balance + 150, 
+           referral_count = referral_count + 1,
+           social_capital_score = social_capital_score + $1
+       WHERE id = $2`,
+      [sebPointsReward, referrer.id]
     );
 
-    // Apply referral bonus to new user (100 ZP) and set referred_by
+    // New user gets 100 ZP and set referred_by
     await client.query(
       'UPDATE users SET zp_balance = zp_balance + 100, referred_by = $1 WHERE id = $2',
       [referrer.id, userId]
@@ -62,7 +104,9 @@ const applyReferral = async (client, referralCode, userId) => {
 
     return {
       id: referrer.id,
-      username: referrer.username
+      username: referrer.username,
+      sebPointsReward: sebPointsReward,
+      zpReward: 150
     };
 
   } catch (error) {
@@ -71,17 +115,17 @@ const applyReferral = async (client, referralCode, userId) => {
   }
 };
 
-// Get referrer info by referral code
+// Get referrer info by referral code - ENHANCED
 const getReferrerInfo = asyncHandler(async (req, res) => {
   const { referralCode } = req.params;
 
   try {
-    // First check pending referrals
+    // First check pending referrals for Telegram users
     const pendingResult = await db.query(
-      `SELECT pr.referrer_username, u.username as actual_username 
+      `SELECT pr.referral_code, pr.referrer_username, u.username as actual_username, u.id as referrer_id
        FROM pending_referrals pr 
        LEFT JOIN users u ON pr.referrer_id = u.id 
-       WHERE pr.referral_code = $1 AND pr.expires_at > NOW()`,
+       WHERE pr.referral_code = $1`,
       [referralCode]
     );
 
@@ -89,22 +133,42 @@ const getReferrerInfo = asyncHandler(async (req, res) => {
       const referrer = pendingResult.rows[0];
       return res.json({
         success: true,
-        referrerUsername: referrer.actual_username || referrer.referrer_username,
-        isValid: true
+        referrer: {
+          id: referrer.referrer_id,
+          username: referrer.actual_username || referrer.referrer_username
+        },
+        isValid: true,
+        source: 'pending'
       });
     }
 
     // Check if it's a valid user referral code
     const userResult = await db.query(
-      'SELECT username FROM users WHERE referral_code = $1',
+      'SELECT id, username, email, referral_count FROM users WHERE referral_code = $1',
       [referralCode]
     );
 
     if (userResult.rows.length > 0) {
+      const referrer = userResult.rows[0];
+      
+      // Check if referrer has reached max referrals (50)
+      if (referrer.referral_count >= 50) {
+        return res.json({
+          success: false,
+          message: 'This referrer has reached the maximum number of referrals (50)',
+          isValid: false
+        });
+      }
+
       return res.json({
         success: true,
-        referrerUsername: userResult.rows[0].username,
-        isValid: true
+        referrer: {
+          id: referrer.id,
+          username: referrer.username,
+          email: referrer.email
+        },
+        isValid: true,
+        source: 'direct'
       });
     }
 
@@ -123,29 +187,42 @@ const getReferrerInfo = asyncHandler(async (req, res) => {
   }
 });
 
-// Create pending referral
+// Create pending referral - ENHANCED
 const createPendingReferral = asyncHandler(async (req, res) => {
   const { referralCode, referrerUsername, telegramId, ipAddress, userAgent } = req.body;
 
   try {
-    // Get referrer ID if user exists
+    // Get referrer ID if user exists and check referral count
     const referrerResult = await db.query(
-      'SELECT id FROM users WHERE referral_code = $1 OR username = $2',
+      'SELECT id, referral_count FROM users WHERE referral_code = $1 OR username = $2',
       [referralCode, referrerUsername]
     );
 
     let referrerId = null;
+    let canAcceptReferrals = true;
+
     if (referrerResult.rows.length > 0) {
       referrerId = referrerResult.rows[0].id;
+      // Check if referrer has reached max referrals
+      if (referrerResult.rows[0].referral_count >= 50) {
+        canAcceptReferrals = false;
+      }
     }
 
-    // Create pending referral
+    if (!canAcceptReferrals) {
+      return res.status(400).json({
+        success: false,
+        message: 'This referrer has reached the maximum number of referrals (50)'
+      });
+    }
+
+    // Create pending referral with 24-hour expiry
     await db.query(
       `INSERT INTO pending_referrals 
-       (referral_code, referrer_username, referrer_id, telegram_id, ip_address, user_agent) 
-       VALUES ($1, $2, $3, $4, $5, $6)
+       (referral_code, referrer_username, referrer_id, telegram_id, ip_address, user_agent, expires_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, NOW() + INTERVAL '24 hours')
        ON CONFLICT (referral_code) 
-       DO UPDATE SET updated_at = NOW()`,
+       DO UPDATE SET updated_at = NOW(), expires_at = NOW() + INTERVAL '24 hours'`,
       [referralCode, referrerUsername, referrerId, telegramId, ipAddress, userAgent]
     );
 
@@ -163,7 +240,7 @@ const createPendingReferral = asyncHandler(async (req, res) => {
   }
 });
 
-// --- Controller for User Registration ---
+// --- UPDATED: Controller for User Registration with Smart Referral ---
 const registerUser = asyncHandler(async (req, res) => {
   const { email, password, username, referralCode, telegramId, ipAddress } = req.body;
 
@@ -173,7 +250,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const client = await db.getClient();
   try {
-    await client.query('BEGIN'); // Start transaction
+    await client.query('BEGIN');
 
     // Check if user already exists
     const userExists = await client.query('SELECT * FROM users WHERE email = $1 OR username = $2', [email, username]);
@@ -185,19 +262,56 @@ const registerUser = asyncHandler(async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
     const newReferralCode = generateReferralCode();
 
-    // Create new user
+    // Create new user with initial 100 ZP
     const newUserQuery = `
-      INSERT INTO users (username, email, password_hash, referral_code) 
-      VALUES ($1, $2, $3, $4) 
-      RETURNING id, username, email, created_at, role, zp_balance
+      INSERT INTO users (username, email, password_hash, referral_code, zp_balance) 
+      VALUES ($1, $2, $3, $4, 100) 
+      RETURNING id, username, email, created_at, role, zp_balance, social_capital_score
     `;
     const newUserResult = await client.query(newUserQuery, [username, email, hashedPassword, newReferralCode]);
     const user = newUserResult.rows[0];
 
-    // Apply referral if provided
+    // 🔥 ENHANCED REFERRAL LOGIC
     let referrerInfo = null;
-    if (referralCode) {
-      referrerInfo = await applyReferral(client, referralCode, user.id);
+    let effectiveReferralCode = referralCode;
+    
+    // If no direct referral code, check pending referrals (Telegram)
+    if (!effectiveReferralCode && telegramId) {
+      const pendingRef = await client.query(
+        'SELECT referral_code FROM pending_referrals WHERE telegram_id = $1 AND expires_at > NOW()',
+        [telegramId]
+      );
+      
+      if (pendingRef.rows.length > 0) {
+        effectiveReferralCode = pendingRef.rows[0].referral_code;
+        console.log('Using pending Telegram referral:', effectiveReferralCode);
+      }
+    }
+
+    // If still no referral code, assign a smart referrer
+    if (!effectiveReferralCode) {
+      const smartReferrer = await assignSmartReferrer(client);
+      if (smartReferrer) {
+        effectiveReferralCode = smartReferrer.referralCode;
+        console.log('Assigned smart referrer:', smartReferrer.username);
+      }
+    }
+
+    // Apply referral if we have a valid code
+    if (effectiveReferralCode) {
+      referrerInfo = await applyReferral(client, effectiveReferralCode, user.id);
+      
+      if (referrerInfo) {
+        console.log(`Referral applied: ${referrerInfo.username} -> ${username}`);
+      } else {
+        console.log('Referral code was invalid:', effectiveReferralCode);
+      }
+
+      // Clean up pending referrals
+      await client.query(
+        'DELETE FROM pending_referrals WHERE referral_code = $1 OR telegram_id = $2',
+        [effectiveReferralCode, telegramId]
+      );
     }
 
     // Link Telegram account if telegramId is provided
@@ -206,27 +320,32 @@ const registerUser = asyncHandler(async (req, res) => {
         'INSERT INTO telegram_user_map (telegram_id, user_id) VALUES ($1, $2) ON CONFLICT (telegram_id) DO NOTHING',
         [telegramId, user.id]
       );
-
-      // Clean up Telegram referrals
-      await client.query(
-        'DELETE FROM telegram_referrals WHERE telegram_id = $1',
-        [telegramId]
-      );
     }
 
     await client.query('COMMIT');
 
-    res.status(201).json({
+    // Prepare response
+    const responseData = {
       id: user.id,
       username: user.username,
       email: user.email,
       role: user.role,
       zp_balance: user.zp_balance,
+      social_capital_score: user.social_capital_score,
       token: generateToken(user),
       referralApplied: !!referrerInfo,
       referrer: referrerInfo,
       bonusReceived: referrerInfo ? 100 : 0
-    });
+    };
+
+    if (referrerInfo) {
+      responseData.referrerBonus = {
+        zp: referrerInfo.zpReward,
+        sebPoints: referrerInfo.sebPointsReward
+      };
+    }
+
+    res.status(201).json(responseData);
 
   } catch (error) {
     await client.query('ROLLBACK');
