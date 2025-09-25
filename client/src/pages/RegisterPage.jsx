@@ -15,7 +15,7 @@ function RegisterPage() {
   });
 
   // Get referral data from the hook
-  const { referralCode, isTelegram } = useTelegramReferral();
+  const { referralCode, isTelegram, telegramUser } = useTelegramReferral();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -23,6 +23,7 @@ function RegisterPage() {
   const [urlReferralCode, setUrlReferralCode] = useState(null);
   const [referrerInfo, setReferrerInfo] = useState(null);
   const [checkingReferral, setCheckingReferral] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -55,14 +56,24 @@ function RegisterPage() {
 
     console.log('Validating referral code:', code);
     setCheckingReferral(true);
-    
+
     try {
       const response = await referralService.getReferrerInfo(code);
       console.log('Referrer info response:', response);
-      
+
       if (response.success && response.referrer) {
         setReferrerInfo(response.referrer);
         console.log('Referrer found:', response.referrer.username);
+        
+        // Auto-suggest username based on referrer
+        if (!username) {
+          const suggestedUsername = `friend_of_${response.referrer.username}`
+            .toLowerCase()
+            .replace(/[^a-z0-9_]/g, '_')
+            .substring(0, 15);
+          
+          setFormData(prev => ({ ...prev, username: suggestedUsername }));
+        }
       } else {
         setReferrerInfo(null);
         console.log('Invalid referral code or no referrer found');
@@ -88,7 +99,9 @@ function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setRegistrationSuccess(false);
 
+    // Validation
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -104,9 +117,23 @@ function RegisterPage() {
       return;
     }
 
+    if (!email.includes('@')) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
     setLoading(true);
 
     try {
+      console.log('Starting registration with:', {
+        username,
+        email,
+        hasReferral: !!effectiveReferralCode,
+        referralCode: effectiveReferralCode,
+        isTelegram,
+        telegramUser: telegramUser?.id
+      });
+
       const response = await authService.register(
         username, 
         email, 
@@ -114,29 +141,75 @@ function RegisterPage() {
         effectiveReferralCode
       );
 
-      sessionStorage.removeItem('referralCode');
+      console.log('Registration successful:', response);
 
-      let successMessage = 'Account created successfully!';
-      if (response.referralApplied) {
-        successMessage += ` You received 100 ZP bonus!`;
+      // Clear referral storage
+      sessionStorage.removeItem('referralCode');
+      localStorage.removeItem('ziver_referral_code');
+
+      // Clear pending referral if exists
+      if (effectiveReferralCode) {
+        try {
+          await referralService.clearPendingReferral(effectiveReferralCode);
+        } catch (clearError) {
+          console.log('Note: Could not clear pending referral:', clearError);
+        }
       }
 
-      if (response.token) {
+      setRegistrationSuccess(true);
+
+      // Prepare success message
+      let successMessage = 'Account created successfully!';
+      if (response.referralApplied && response.referrer) {
+        successMessage += ` You received 100 ZP bonus from ${response.referrer.username}!`;
+        
+        if (response.referrerBonus) {
+          successMessage += ` They earned ${response.referrerBonus.zp} ZP and ${response.referrerBonus.sebPoints} SEB points.`;
+        }
+      } else if (!effectiveReferralCode) {
+        successMessage += ' A smart referrer was assigned to help you get started!';
+      }
+
+      // Login user and redirect
+      if (response.token && response.user) {
         login(response.token, response.user);
-        navigate('/mining', { 
-          state: { message: successMessage }
-        });
+        
+        // Small delay to show success message
+        setTimeout(() => {
+          navigate('/mining', { 
+            state: { 
+              message: successMessage,
+              showWelcome: true 
+            }
+          });
+        }, 1000);
       } else {
         navigate('/login', { 
           state: { message: successMessage }
         });
       }
+
     } catch (err) {
-      console.error('Registration error:', err);
-      const message = err.response?.data?.message || 
-                     err.response?.data?.error || 
-                     'Registration failed. Please try again.';
-      setError(message);
+      console.error('Registration error details:', err);
+      
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      // Handle specific error cases
+      if (errorMessage.includes('already exists')) {
+        if (errorMessage.includes('email')) {
+          errorMessage = 'An account with this email already exists.';
+        } else if (errorMessage.includes('username')) {
+          errorMessage = 'This username is already taken. Please choose another.';
+        }
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -145,7 +218,11 @@ function RegisterPage() {
   // Auto-fill username when referral is detected
   useEffect(() => {
     if (referrerInfo && effectiveReferralCode && !username) {
-      const suggestedUsername = `friend_of_${referrerInfo.username}`.toLowerCase().substring(0, 20);
+      const suggestedUsername = `friend_of_${referrerInfo.username}`
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, '_')
+        .substring(0, 15);
+      
       setFormData(prev => ({ ...prev, username: suggestedUsername }));
     }
   }, [referrerInfo, effectiveReferralCode, username]);
@@ -183,6 +260,13 @@ function RegisterPage() {
           <div className="telegram-badge">
             <span className="tg-icon">📱</span>
             Joining via Telegram
+            {telegramUser && ` (@${telegramUser.username})`}
+          </div>
+        )}
+
+        {registrationSuccess && (
+          <div className="success-message">
+            ✅ Account created successfully! Redirecting...
           </div>
         )}
 
@@ -202,6 +286,7 @@ function RegisterPage() {
               minLength="3"
               maxLength="20"
               className={`modern-input ${referrerInfo ? 'referral-username' : ''}`}
+              disabled={loading}
             />
             {referrerInfo && (
               <div className="referral-note">
@@ -221,6 +306,7 @@ function RegisterPage() {
               placeholder="your@email.com"
               required
               className="modern-input"
+              disabled={loading}
             />
           </div>
 
@@ -237,12 +323,14 @@ function RegisterPage() {
                 required
                 minLength="6"
                 className="modern-input"
+                disabled={loading}
               />
               <button
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex="-1"
+                disabled={loading}
               >
                 {showPassword ? '🙈' : '👁️'}
               </button>
@@ -262,12 +350,14 @@ function RegisterPage() {
                 required
                 minLength="6"
                 className="modern-input"
+                disabled={loading}
               />
               <button
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 tabIndex="-1"
+                disabled={loading}
               >
                 {showConfirmPassword ? '🙈' : '👁️'}
               </button>
@@ -288,6 +378,8 @@ function RegisterPage() {
               'Checking Referral...'
             ) : referrerInfo ? (
               `Join & Get 100 ZP from ${referrerInfo.username}`
+            ) : effectiveReferralCode ? (
+              'Join with Referral Bonus'
             ) : (
               'Create Account'
             )}
