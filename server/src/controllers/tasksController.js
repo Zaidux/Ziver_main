@@ -6,6 +6,7 @@ const db = require('../config/db');
 const getAvailableTasks = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
+  // FIXED: Removed invalid ORDER BY clause and fixed SQL syntax
   const query = `
     SELECT
       t.id, t.title, t.description, t.zp_reward, t.seb_reward, t.link_url,
@@ -15,13 +16,22 @@ const getAvailableTasks = asyncHandler(async (req, res) => {
     LEFT JOIN user_completed_tasks uct ON t.id = uct.task_id AND uct.user_id = $1
     WHERE t.is_active = true
     ORDER BY 
-      t.is_completed ASC,
+      is_completed ASC,  -- Use the computed column, not table column
       t.task_type DESC,
       t.created_at DESC;
   `;
 
-  const { rows } = await db.query(query, [userId]);
-  res.json(rows);
+  try {
+    const { rows } = await db.query(query, [userId]);
+    console.log(`Found ${rows.length} tasks for user ${userId}`);
+    res.json(rows);
+  } catch (error) {
+    console.error('Database error in getAvailableTasks:', error);
+    res.status(500).json({ 
+      message: 'Error fetching tasks',
+      error: error.message 
+    });
+  }
 });
 
 // @desc    Mark a task as complete for the logged-in user
@@ -29,6 +39,8 @@ const getAvailableTasks = asyncHandler(async (req, res) => {
 const completeTask = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const { id: taskId } = req.params;
+
+  console.log(`User ${userId} attempting to complete task ${taskId}`);
 
   const client = await db.getClient();
   try {
@@ -39,6 +51,7 @@ const completeTask = asyncHandler(async (req, res) => {
       'SELECT * FROM user_completed_tasks WHERE user_id = $1 AND task_id = $2',
       [userId, taskId]
     );
+    
     if (completedCheck.rows.length > 0) {
       throw new Error('Task already completed');
     }
@@ -48,19 +61,16 @@ const completeTask = asyncHandler(async (req, res) => {
       'SELECT zp_reward, seb_reward, task_type, link_url FROM tasks WHERE id = $1 AND is_active = true', 
       [taskId]
     );
-    
+
     if (taskResult.rows.length === 0) {
       throw new Error('Task not found or is not active');
     }
-    
+
     const task = taskResult.rows[0];
+    console.log(`Task found: ${task.zp_reward} ZP, ${task.seb_reward} SEB`);
 
     // 3. For link tasks with verification, we might want additional checks
-    // This is where you could add Telegram channel join verification, etc.
     if (task.task_type === 'link' && task.link_url) {
-      // Additional verification can be added here
-      // For example: check if user actually joined Telegram channel
-      // This would require integration with Telegram API
       console.log(`User ${userId} completing link task: ${task.link_url}`);
     }
 
@@ -87,7 +97,7 @@ const completeTask = asyncHandler(async (req, res) => {
                 mining_session_start_time, last_claim_time, daily_streak_count,
                 referral_code, referred_by;
     `;
-    
+
     const updatedUserResult = await client.query(userUpdateQuery, [
       task.zp_reward, 
       task.seb_reward, 
@@ -95,6 +105,8 @@ const completeTask = asyncHandler(async (req, res) => {
     ]);
 
     await client.query('COMMIT');
+
+    console.log(`Task ${taskId} completed successfully for user ${userId}`);
 
     res.json({
       message: 'Task completed successfully!',
@@ -107,8 +119,10 @@ const completeTask = asyncHandler(async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    res.status(400);
-    throw new Error(error.message);
+    console.error('Error completing task:', error);
+    res.status(400).json({ 
+      message: error.message 
+    });
   } finally {
     client.release();
   }
@@ -119,18 +133,26 @@ const completeTask = asyncHandler(async (req, res) => {
 const getTaskStats = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
-  const statsQuery = `
-    SELECT 
-      COUNT(*) as total_completed,
-      COALESCE(SUM(t.zp_reward), 0) as total_zp_earned,
-      COALESCE(SUM(t.seb_reward), 0) as total_seb_earned
-    FROM user_completed_tasks uct
-    JOIN tasks t ON uct.task_id = t.id
-    WHERE uct.user_id = $1
-  `;
+  try {
+    const statsQuery = `
+      SELECT 
+        COUNT(*) as total_completed,
+        COALESCE(SUM(t.zp_reward), 0) as total_zp_earned,
+        COALESCE(SUM(t.seb_reward), 0) as total_seb_earned
+      FROM user_completed_tasks uct
+      JOIN tasks t ON uct.task_id = t.id
+      WHERE uct.user_id = $1
+    `;
 
-  const { rows } = await db.query(statsQuery, [userId]);
-  res.json(rows[0] || { total_completed: 0, total_zp_earned: 0, total_seb_earned: 0 });
+    const { rows } = await db.query(statsQuery, [userId]);
+    res.json(rows[0] || { total_completed: 0, total_zp_earned: 0, total_seb_earned: 0 });
+  } catch (error) {
+    console.error('Error fetching task stats:', error);
+    res.status(500).json({ 
+      message: 'Error fetching task statistics',
+      error: error.message 
+    });
+  }
 });
 
 module.exports = {
