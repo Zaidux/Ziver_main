@@ -13,6 +13,37 @@ class TaskValidation {
         return { isValid: true, message: 'Task can be completed' };
       }
 
+      // Add this method to the TaskValidation class:
+
+// Create validation rule using existing client (for transactions)
+static async createValidationRuleWithClient(client, taskId, ruleData) {
+  const { rule_type, operator, value, priority = 10, is_active = true, additional_params = null } = ruleData;
+
+  // Validate rule data
+  if (!rule_type || !operator || value === undefined) {
+    throw new Error('Missing required rule fields: rule_type, operator, value');
+  }
+
+  const query = `
+    INSERT INTO task_validation_rules 
+    (task_id, rule_type, operator, value, priority, is_active, additional_params)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING *
+  `;
+
+  const { rows } = await client.query(query, [
+    taskId, 
+    rule_type, 
+    operator, 
+    value.toString(), // Ensure value is string
+    priority, 
+    is_active, 
+    additional_params ? JSON.stringify(additional_params) : null
+  ]);
+
+  return rows[0];
+}
+
       // Validate each rule
       const validationResults = [];
       
