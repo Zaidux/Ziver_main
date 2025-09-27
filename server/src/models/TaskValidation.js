@@ -7,46 +7,15 @@ class TaskValidation {
     try {
       // Get task validation rules
       const validationRules = await this.getTaskValidationRules(taskId);
-      
+
       if (!validationRules || validationRules.length === 0) {
         // If no specific rules, allow completion (backward compatibility)
         return { isValid: true, message: 'Task can be completed' };
       }
 
-      // Add this method to the TaskValidation class:
-
-// Create validation rule using existing client (for transactions)
-static async createValidationRuleWithClient(client, taskId, ruleData) {
-  const { rule_type, operator, value, priority = 10, is_active = true, additional_params = null } = ruleData;
-
-  // Validate rule data
-  if (!rule_type || !operator || value === undefined) {
-    throw new Error('Missing required rule fields: rule_type, operator, value');
-  }
-
-  const query = `
-    INSERT INTO task_validation_rules 
-    (task_id, rule_type, operator, value, priority, is_active, additional_params)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-    RETURNING *
-  `;
-
-  const { rows } = await client.query(query, [
-    taskId, 
-    rule_type, 
-    operator, 
-    value.toString(), // Ensure value is string
-    priority, 
-    is_active, 
-    additional_params ? JSON.stringify(additional_params) : null
-  ]);
-
-  return rows[0];
-}
-
       // Validate each rule
       const validationResults = [];
-      
+
       for (const rule of validationRules) {
         const result = await this.validateRule(userId, rule);
         validationResults.push(result);
@@ -54,7 +23,7 @@ static async createValidationRuleWithClient(client, taskId, ruleData) {
 
       // Check if all rules pass (AND logic)
       const allValid = validationResults.every(result => result.isValid);
-      
+
       if (allValid) {
         return { 
           isValid: true, 
@@ -78,6 +47,35 @@ static async createValidationRuleWithClient(client, taskId, ruleData) {
     }
   }
 
+  // Create validation rule using existing client (for transactions) - MOVED OUTSIDE
+  static async createValidationRuleWithClient(client, taskId, ruleData) {
+    const { rule_type, operator, value, priority = 10, is_active = true, additional_params = null } = ruleData;
+
+    // Validate rule data
+    if (!rule_type || !operator || value === undefined) {
+      throw new Error('Missing required rule fields: rule_type, operator, value');
+    }
+
+    const query = `
+      INSERT INTO task_validation_rules 
+      (task_id, rule_type, operator, value, priority, is_active, additional_params)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+    `;
+
+    const { rows } = await client.query(query, [
+      taskId, 
+      rule_type, 
+      operator, 
+      value.toString(), // Ensure value is string
+      priority, 
+      is_active, 
+      additional_params ? JSON.stringify(additional_params) : null
+    ]);
+
+    return rows[0];
+  }
+
   // Get validation rules for a task
   static async getTaskValidationRules(taskId) {
     const query = `
@@ -86,7 +84,7 @@ static async createValidationRuleWithClient(client, taskId, ruleData) {
       WHERE vr.task_id = $1 AND vr.is_active = true
       ORDER BY vr.priority ASC
     `;
-    
+
     const { rows } = await db.query(query, [taskId]);
     return rows;
   }
@@ -94,7 +92,7 @@ static async createValidationRuleWithClient(client, taskId, ruleData) {
   // Validate a single rule
   static async validateRule(userId, rule) {
     const { rule_type, operator, value, additional_params } = rule;
-    
+
     try {
       let isValid = false;
       let actualValue = null;
@@ -167,22 +165,22 @@ static async createValidationRuleWithClient(client, taskId, ruleData) {
     }
   }
 
-  // Create validation rules for a task
+  // Create validation rules for a task (standalone version)
   static async createValidationRule(taskId, ruleData) {
     const { rule_type, operator, value, priority = 10, is_active = true, additional_params = null } = ruleData;
-    
+
     const query = `
       INSERT INTO task_validation_rules 
       (task_id, rule_type, operator, value, priority, is_active, additional_params)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
-    
+
     const { rows } = await db.query(query, [
       taskId, rule_type, operator, value, priority, is_active, 
       additional_params ? JSON.stringify(additional_params) : null
     ]);
-    
+
     return rows[0];
   }
 
