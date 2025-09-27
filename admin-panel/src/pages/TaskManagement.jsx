@@ -113,30 +113,40 @@ const TaskManagement = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const taskData = {
-        ...formData,
-        validation_rules: formData.task_type === 'in_app' ? validationRules : []
-      };
+  try {
+    // Prepare task data with validation rules
+    const taskData = {
+      ...formData,
+      // Convert validation rules to the format expected by the server
+      validation_rules: formData.task_type === 'in_app' ? validationRules.map(rule => ({
+        rule_type: rule.rule_type,
+        operator: rule.operator,
+        value: rule.value.toString(), // Ensure value is string
+        priority: parseInt(rule.priority) || 10,
+        is_active: rule.is_active !== false
+      })) : [] // Empty array for link tasks
+    };
 
-      if (isEditing) {
-        await adminService.updateTask(isEditing, taskData);
-      } else {
-        await adminService.createTask(taskData);
-      }
-      
-      resetForm();
-      fetchTasks();
-    } catch (error) {
-      console.error('Error saving task:', error);
-      alert('Error saving task: ' + (error.response?.data?.message || error.message));
-    } finally {
-      setLoading(false);
+    console.log('Submitting task with rules:', taskData.validation_rules);
+
+    if (isEditing) {
+      await adminService.updateTask(isEditing, taskData);
+    } else {
+      await adminService.createTask(taskData);
     }
-  };
+    
+    resetForm();
+    fetchTasks();
+  } catch (error) {
+    console.error('Error saving task:', error);
+    alert('Error saving task: ' + (error.response?.data?.message || error.message));
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleEdit = (task) => {
     setIsEditing(task.id);
