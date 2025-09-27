@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const db = require('../config/db');
+const TaskValidation = require('../models/TaskValidation'); // ADDED THIS IMPORT
 
 // @desc    Get dashboard summary data
 // @route   GET /api/admin/summary
@@ -65,11 +66,21 @@ const getAllTasks = asyncHandler(async (req, res) => {
   res.json(rows);
 });
 
-// @desc    Create a new task
+// @desc    Create a new task WITH VALIDATION RULES
 // @route   POST /api/admin/tasks
 const createTask = asyncHandler(async (req, res) => {
-  const { title, description, zp_reward, seb_reward, link_url, task_type, verification_required, is_active } = req.body;
-  
+  const { 
+    title, 
+    description, 
+    zp_reward, 
+    seb_reward, 
+    link_url, 
+    task_type, 
+    verification_required, 
+    is_active,
+    validation_rules = []  // ADD THIS
+  } = req.body;
+
   if (!title || zp_reward === undefined || seb_reward === undefined) {
     res.status(400);
     throw new Error('Please provide title, ZP reward, and SEB reward');
@@ -87,52 +98,142 @@ const createTask = asyncHandler(async (req, res) => {
     throw new Error('Link tasks require a URL');
   }
 
-  const query = `
-    INSERT INTO tasks (title, description, zp_reward, seb_reward, link_url, task_type, verification_required, is_active)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    RETURNING *
-  `;
-  
-  const { rows } = await db.query(query, [
+  const client = await db.getClient(); // USE TRANSACTION
+  try {
+    await client.query('BEGIN');
+
+    // 1. Create the main task
+    const taskQuery = `
+      INSERT INTO tasks (title, description, zp_reward, seb_reward, link_url, task_type, verification_required, is_active)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *
+    `;
+
+    const taskResult = await client.query(taskQuery, [
+      title, 
+      description, 
+      zp_reward, 
+      seb_reward, 
+      link_url || null, 
+      task_type || 'in_app',
+      verification_required || false,
+      is_active !== false
+    ]);
+
+    const task = taskResult.rows[0];
+    console.log(`Created task: ${task.id} - ${task.title}`);
+
+    // 2. Save validation rules for in-app tasks
+    if (task_type === 'in_app' && validation_rules && validation_rules.length > 0) {
+      console.log(`Saving ${validation_rules.length} validation rules for task ${task.id}`);
+      
+      for (const ruleData of validation_rules) {
+        await TaskValidation.createValidationRuleWithClient(client, task.id, ruleData);
+      }
+      console.log(`Successfully saved validation rules for task ${task.id}`);
+    }
+
+    await client.query('COMMIT');
+
+    // 3. Return the task with rule count
+    const response = {
+      ...task,
+      validation_rules_count: validation_rules ? validation_rules.length : 0
+    };
+
+    res.status(201).json(response);
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error creating task:', error);
+    res.status(400);
+    throw new Error('Failed to create task: ' + error.message);
+  } finally {
+    client.release();
+  }
+});
+
+// @desc    Update an existing task WITH VALIDATION RULES
+// @route   PUT /api/admin/tasks/:id
+const updateTask = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { 
     title, 
     description, 
     zp_reward, 
     seb_reward, 
-    link_url || null, 
-    task_type || 'in_app',
-    verification_required || false,
-    is_active !== false
-  ]);
-  
-  res.status(201).json(rows[0]);
-});
+    link_url, 
+    task_type, 
+    verification_required, 
+    is_active,
+    validation_rules = []  // ADD THIS
+  } = req.body;
 
-// @desc    Update an existing task
-// @route   PUT /api/admin/tasks/:id
-const updateTask = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { title, description, zp_reward, seb_reward, link_url, task_type, verification_required, is_active } = req.body;
-  
-  const query = `
-    UPDATE tasks
-    SET title = $1, description = $2, zp_reward = $3, seb_reward = $4, 
-        link_url = $5, task_type = $6, verification_required = $7, is_active = $8,
-        updated_at = NOW()
-    WHERE id = $9
-    RETURNING *
-  `;
-  
-  const { rows } = await db.query(query, [
-    title, description, zp_reward, seb_reward, link_url, 
-    task_type, verification_required, is_active, id
-  ]);
-  
-  if (rows.length === 0) {
-    res.status(404);
-    throw new Error('Task not found');
+  const client = await db.getClient(); // USE TRANSACTION
+  try {
+    await client.query('BEGIN');
+
+    // 1. Update the main task
+    const taskQuery = `
+      UPDATE tasks
+      SET title = $1, description = $2, zp_reward = $3, seb_reward = $4, 
+          link_url = $5, task_type = $6, verification_required = $7, is_active = $8,
+          updated_at = NOW()
+      WHERE id = $9
+      RETURNING *
+    `;
+
+    const taskResult = await client.query(taskQuery, [
+      title, description, zp_reward, seb_reward, link_url, 
+      task_type, verification_required, is_active, id
+    ]);
+
+    if (taskResult.rows.length === 0) {
+      throw new Error('Task not found');
+    }
+
+    const task = taskResult.rows[0];
+    console.log(`Updated task: ${task.id} - ${task.title}`);
+
+    // 2. Handle validation rules for in-app tasks
+    if (task_type === 'in_app') {
+      // Delete existing rules
+      await client.query('DELETE FROM task_validation_rules WHERE task_id = $1', [id]);
+      console.log(`Deleted existing validation rules for task ${id}`);
+
+      // Save new rules
+      if (validation_rules && validation_rules.length > 0) {
+        console.log(`Saving ${validation_rules.length} validation rules for task ${id}`);
+        
+        for (const ruleData of validation_rules) {
+          await TaskValidation.createValidationRuleWithClient(client, id, ruleData);
+        }
+        console.log(`Successfully saved validation rules for task ${id}`);
+      }
+    } else {
+      // For link tasks, remove any existing validation rules
+      await client.query('DELETE FROM task_validation_rules WHERE task_id = $1', [id]);
+      console.log(`Removed validation rules for link task ${id}`);
+    }
+
+    await client.query('COMMIT');
+
+    // 3. Return the task with rule count
+    const response = {
+      ...task,
+      validation_rules_count: validation_rules ? validation_rules.length : 0
+    };
+
+    res.json(response);
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error updating task:', error);
+    res.status(400);
+    throw new Error('Failed to update task: ' + error.message);
+  } finally {
+    client.release();
   }
-  
-  res.json(rows[0]);
 });
 
 // @desc    Get task completion analytics
