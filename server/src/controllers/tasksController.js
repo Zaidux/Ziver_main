@@ -1,12 +1,13 @@
 const asyncHandler = require('express-async-handler');
 const db = require('../config/db');
+const TaskValidation = require('../models/TaskValidation');
+const TaskValidators = require('../utils/taskValidators');
 
-// @desc    Get all available tasks for the logged-in user
+// @desc    Get all available tasks for the logged-in user with progress
 // @route   GET /api/tasks
 const getAvailableTasks = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
-  // FIXED: Removed invalid ORDER BY clause and fixed SQL syntax
   const query = `
     SELECT
       t.id, t.title, t.description, t.zp_reward, t.seb_reward, t.link_url,
@@ -16,15 +17,37 @@ const getAvailableTasks = asyncHandler(async (req, res) => {
     LEFT JOIN user_completed_tasks uct ON t.id = uct.task_id AND uct.user_id = $1
     WHERE t.is_active = true
     ORDER BY 
-      is_completed ASC,  -- Use the computed column, not table column
+      is_completed ASC,
       t.task_type DESC,
       t.created_at DESC;
   `;
 
   try {
-    const { rows } = await db.query(query, [userId]);
-    console.log(`Found ${rows.length} tasks for user ${userId}`);
-    res.json(rows);
+    const { rows: tasks } = await db.query(query, [userId]);
+    
+    // Get progress for each task
+    const tasksWithProgress = await Promise.all(
+      tasks.map(async (task) => {
+        if (task.is_completed || task.task_type === 'link') {
+          return {
+            ...task,
+            progress: null, // No progress for completed or link tasks
+            canComplete: !task.is_completed
+          };
+        }
+
+        // For in-app tasks, get completion progress
+        const progress = await TaskValidation.getUserTaskProgress(userId, task.id);
+        return {
+          ...task,
+          progress,
+          canComplete: progress.canComplete && !task.is_completed
+        };
+      })
+    );
+
+    console.log(`Found ${tasks.length} tasks for user ${userId}`);
+    res.json(tasksWithProgress);
   } catch (error) {
     console.error('Database error in getAvailableTasks:', error);
     res.status(500).json({ 
@@ -51,7 +74,7 @@ const completeTask = asyncHandler(async (req, res) => {
       'SELECT * FROM user_completed_tasks WHERE user_id = $1 AND task_id = $2',
       [userId, taskId]
     );
-    
+
     if (completedCheck.rows.length > 0) {
       throw new Error('Task already completed');
     }
@@ -69,9 +92,18 @@ const completeTask = asyncHandler(async (req, res) => {
     const task = taskResult.rows[0];
     console.log(`Task found: ${task.zp_reward} ZP, ${task.seb_reward} SEB`);
 
-    // 3. For link tasks with verification, we might want additional checks
-    if (task.task_type === 'link' && task.link_url) {
+    // 3. VALIDATION: Check if user can complete this task
+    if (task.task_type === 'in_app') {
+      const validationResult = await TaskValidation.validateTaskCompletion(userId, taskId);
+      
+      if (!validationResult.isValid) {
+        throw new Error(`Task requirements not met: ${validationResult.failedRules?.join(', ') || validationResult.message}`);
+      }
+      console.log('In-app task validation passed');
+    } else if (task.task_type === 'link' && task.link_url) {
+      // Link task verification (to be implemented later)
       console.log(`User ${userId} completing link task: ${task.link_url}`);
+      // TODO: Add Telegram channel verification here
     }
 
     // 4. Insert completion record
@@ -155,8 +187,45 @@ const getTaskStats = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get user's statistics for task progress
+// @route   GET /api/tasks/user-stats
+const getUserStats = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const stats = await TaskValidators.getUserStatistics(userId);
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
+    res.status(500).json({ 
+      message: 'Error fetching user statistics',
+      error: error.message 
+    });
+  }
+});
+
+// @desc    Get task progress details
+// @route   GET /api/tasks/:id/progress
+const getTaskProgress = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const { id: taskId } = req.params;
+
+  try {
+    const progress = await TaskValidation.getUserTaskProgress(userId, taskId);
+    res.json(progress);
+  } catch (error) {
+    console.error('Error fetching task progress:', error);
+    res.status(500).json({ 
+      message: 'Error fetching task progress',
+      error: error.message 
+    });
+  }
+});
+
 module.exports = {
   getAvailableTasks,
   completeTask,
-  getTaskStats
+  getTaskStats,
+  getUserStats,
+  getTaskProgress
 };
