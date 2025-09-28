@@ -6,7 +6,9 @@ const {
   completeTask,
   getTaskStats,
   getUserStats,
-  getTaskProgress
+  getTaskProgress,
+  verifyLinkTask,
+  getTelegramStatus
 } = require('../controllers/tasksController');
 
 // @route   GET /api/tasks
@@ -18,6 +20,16 @@ router.get('/', protect, getAvailableTasks);
 // @desc    Mark a task as complete for the logged-in user
 // @access  Private
 router.post('/:id/complete', protect, completeTask);
+
+// @route   POST /api/tasks/:id/verify-link
+// @desc    Verify link task completion
+// @access  Private
+router.post('/:id/verify-link', protect, verifyLinkTask);
+
+// @route   GET /api/tasks/telegram-status
+// @desc    Check if user has Telegram connected
+// @access  Private
+router.get('/telegram-status', protect, getTelegramStatus);
 
 // @route   GET /api/tasks/stats
 // @desc    Get user's task completion statistics
