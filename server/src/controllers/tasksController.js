@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const db = require('../config/db');
 const TaskValidation = require('../models/TaskValidation');
 const TaskValidators = require('../utils/taskValidators');
+const TelegramUtils = require('../utils/telegramUtils');
 
 // @desc    Get all available tasks for the logged-in user with progress
 // @route   GET /api/tasks
@@ -24,7 +25,7 @@ const getAvailableTasks = asyncHandler(async (req, res) => {
 
   try {
     const { rows: tasks } = await db.query(query, [userId]);
-    
+
     // Get progress for each task
     const tasksWithProgress = await Promise.all(
       tasks.map(async (task) => {
@@ -81,7 +82,7 @@ const completeTask = asyncHandler(async (req, res) => {
 
     // 2. Get the task's details
     const taskResult = await client.query(
-      'SELECT zp_reward, seb_reward, task_type, link_url FROM tasks WHERE id = $1 AND is_active = true', 
+      'SELECT zp_reward, seb_reward, task_type, link_url, verification_required FROM tasks WHERE id = $1 AND is_active = true', 
       [taskId]
     );
 
@@ -95,15 +96,26 @@ const completeTask = asyncHandler(async (req, res) => {
     // 3. VALIDATION: Check if user can complete this task
     if (task.task_type === 'in_app') {
       const validationResult = await TaskValidation.validateTaskCompletion(userId, taskId);
-      
+
       if (!validationResult.isValid) {
         throw new Error(`Task requirements not met: ${validationResult.failedRules?.join(', ') || validationResult.message}`);
       }
       console.log('In-app task validation passed');
     } else if (task.task_type === 'link' && task.link_url) {
-      // Link task verification (to be implemented later)
+      // ENHANCED: Link task verification with Telegram integration
       console.log(`User ${userId} completing link task: ${task.link_url}`);
-      // TODO: Add Telegram channel verification here
+      
+      if (task.verification_required) {
+        const verificationResult = await TelegramUtils.verifyLinkTask(userId, task.link_url);
+        
+        if (!verificationResult.verified) {
+          throw new Error(`Link verification failed: ${verificationResult.error || 'Please complete the required action first'}`);
+        }
+        
+        console.log('Link task verification passed:', verificationResult);
+      } else {
+        console.log('Link task completed without verification');
+      }
     }
 
     // 4. Insert completion record
@@ -157,6 +169,83 @@ const completeTask = asyncHandler(async (req, res) => {
     });
   } finally {
     client.release();
+  }
+});
+
+// @desc    Verify link task completion (for external verification)
+// @route   POST /api/tasks/:id/verify-link
+const verifyLinkTask = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const { id: taskId } = req.params;
+
+  try {
+    // Get task details
+    const taskResult = await db.query(
+      'SELECT link_url, verification_required FROM tasks WHERE id = $1 AND is_active = true', 
+      [taskId]
+    );
+
+    if (taskResult.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Task not found' 
+      });
+    }
+
+    const task = taskResult.rows[0];
+
+    if (!task.verification_required) {
+      return res.json({ 
+        success: true, 
+        verified: true,
+        message: 'No verification required for this task' 
+      });
+    }
+
+    // Perform verification
+    const verificationResult = await TelegramUtils.verifyLinkTask(userId, task.link_url);
+    
+    res.json({
+      success: true,
+      verified: verificationResult.verified,
+      message: verificationResult.verified ? 'Verification successful' : verificationResult.error,
+      details: verificationResult
+    });
+
+  } catch (error) {
+    console.error('Error verifying link task:', error);
+    res.status(500).json({ 
+      success: false,
+      verified: false,
+      message: 'Verification failed: ' + error.message 
+    });
+  }
+});
+
+// @desc    Check if user has Telegram connected
+// @route   GET /api/tasks/telegram-status
+const getTelegramStatus = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const telegramResult = await db.query(
+      'SELECT telegram_id FROM telegram_user_map WHERE user_id = $1',
+      [userId]
+    );
+
+    const hasTelegram = telegramResult.rows.length > 0;
+    
+    res.json({
+      hasTelegram,
+      telegramId: hasTelegram ? telegramResult.rows[0].telegram_id : null
+    });
+
+  } catch (error) {
+    console.error('Error checking Telegram status:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error checking Telegram connection' 
+    });
   }
 });
 
@@ -227,5 +316,7 @@ module.exports = {
   completeTask,
   getTaskStats,
   getUserStats,
-  getTaskProgress
+  getTaskProgress,
+  verifyLinkTask,
+  getTelegramStatus
 };
