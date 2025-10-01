@@ -1,19 +1,19 @@
-/* Mobile-Friendly Bottom Navigation Bar */
+/* Professional Bottom Navigation Bar */
 .bottom-navbar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 70px;
-  background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%);
-  border-top: 2px solid #00FF80;
-  box-shadow: 0 -4px 25px rgba(0, 255, 128, 0.15);
+  height: 72px;
+  background: linear-gradient(180deg, #0d0d0d 0%, #1a1a1a 100%);
+  border-top: 1px solid rgba(0, 255, 128, 0.2);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.6), 0 -2px 8px rgba(0, 255, 128, 0.1), inset 0 1px 0 rgba(0, 255, 128, 0.1);
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 0 10px;
+  padding: 0 8px;
   z-index: 1000;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(20px) saturate(180%);
 }
 
 /* Navigation Items */
@@ -22,79 +22,131 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   flex: 1;
-  padding: 8px 4px;
+  padding: 10px 8px;
   text-decoration: none;
-  transition: all 0.3s ease;
-  border-radius: 12px;
-  margin: 0 2px;
-  min-width: 60px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 16px;
+  margin: 0 4px;
+  position: relative;
+  cursor: pointer;
+  max-width: 80px;
 }
 
+/* Hover Effect */
 .nav-item:hover {
-  background: rgba(0, 255, 128, 0.1);
-  transform: translateY(-2px);
+  background: rgba(0, 255, 128, 0.08);
+  transform: translateY(-3px);
 }
 
+.nav-item:hover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(0, 255, 128, 0.3), rgba(0, 255, 128, 0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Active State */
 .nav-item.active {
-  background: rgba(0, 255, 128, 0.15);
-  border: 1.5px solid #00FF80;
-  box-shadow: 0 4px 15px rgba(0, 255, 128, 0.25);
+  background: linear-gradient(135deg, rgba(0, 255, 128, 0.15), rgba(0, 255, 128, 0.08));
+  position: relative;
+}
+
+.nav-item.active::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1.5px;
+  background: linear-gradient(135deg, #00ff80, rgba(0, 255, 128, 0.4));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.nav-item.active::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #00ff80, transparent);
+  border-radius: 0 0 3px 3px;
+  box-shadow: 0 0 12px rgba(0, 255, 128, 0.6);
 }
 
 /* Navigation Icons */
 .nav-icon {
-  font-size: 22px;
-  margin-bottom: 4px;
-  transition: all 0.3s ease;
-  display: block;
+  width: 24px;
+  height: 24px;
+  color: #6b7280;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 0 transparent);
 }
 
-.nav-item .nav-icon {
-  color: #A5A5A5;
-}
-
-.nav-item.active .nav-icon,
 .nav-item:hover .nav-icon {
-  color: #00FF80;
-  transform: scale(1.15);
+  color: #00ff80;
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 8px rgba(0, 255, 128, 0.4));
+}
+
+.nav-item.active .nav-icon {
+  color: #00ff80;
+  filter: drop-shadow(0 0 12px rgba(0, 255, 128, 0.6));
+  animation: iconPulse 2s ease-in-out infinite;
 }
 
 /* Navigation Labels */
 .nav-label {
   font-size: 11px;
   font-weight: 600;
-  color: #A5A5A5;
+  color: #6b7280;
   text-align: center;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   line-height: 1.2;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
 }
 
-.nav-item.active .nav-label,
 .nav-item:hover .nav-label {
-  color: #00FF80;
+  color: #00ff80;
   font-weight: 700;
+  text-shadow: 0 0 8px rgba(0, 255, 128, 0.3);
+}
+
+.nav-item.active .nav-label {
+  color: #00ff80;
+  font-weight: 700;
+  text-shadow: 0 0 12px rgba(0, 255, 128, 0.4);
 }
 
 /* Active State Animation */
-.nav-item.active {
-  animation: pulseGlow 2s ease-in-out infinite;
-}
-
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 4px 15px rgba(0, 255, 128, 0.25);
+@keyframes iconPulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 12px rgba(0, 255, 128, 0.6));
   }
   50% {
-    box-shadow: 0 6px 20px rgba(0, 255, 128, 0.4);
+    filter: drop-shadow(0 0 20px rgba(0, 255, 128, 0.8));
   }
 }
 
 /* Safe area for notched phones */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .bottom-navbar {
-    padding-bottom: env(safe-area-inset-bottom);
-    height: calc(70px + env(safe-area-inset-bottom));
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    height: calc(72px + env(safe-area-inset-bottom));
   }
 }
 
@@ -105,12 +157,17 @@
   }
 
   .nav-icon {
-    font-size: 20px;
+    width: 22px;
+    height: 22px;
   }
 
   .nav-item {
-    padding: 6px 3px;
-    margin: 0 1px;
+    padding: 8px 6px;
+    margin: 0 2px;
+  }
+
+  .bottom-navbar {
+    height: 68px;
   }
 }
 
@@ -120,19 +177,26 @@
   }
 
   .nav-icon {
-    font-size: 18px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .nav-item {
+    padding: 6px 4px;
+    margin: 0 1px;
   }
 
   .bottom-navbar {
-    height: 65px;
-    padding: 0 8px;
+    height: 64px;
+    padding: 0 4px;
   }
 }
 
 /* Focus states for accessibility */
-.nav-item:focus {
-  outline: 2px solid #00FF80;
+.nav-item:focus-visible {
+  outline: 2px solid #00ff80;
   outline-offset: 2px;
+  background: rgba(0, 255, 128, 0.1);
 }
 
 /* Reduced motion for accessibility */
@@ -143,7 +207,7 @@
     transition: none;
   }
 
-  .nav-item.active {
+  .nav-item.active .nav-icon {
     animation: none;
   }
 
@@ -157,7 +221,7 @@
 }
 
 /* Loading animation */
-@keyframes navLoad {
+@keyframes navSlideUp {
   from {
     transform: translateY(100%);
     opacity: 0;
@@ -169,5 +233,16 @@
 }
 
 .bottom-navbar {
-  animation: navLoad 0.4s ease-out;
+  animation: navSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Prevent content from being hidden behind navbar */
+body {
+  padding-bottom: 72px;
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
 }
