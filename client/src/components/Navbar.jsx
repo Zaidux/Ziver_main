@@ -1,52 +1,53 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Pickaxe, ClipboardList, Users, Briefcase, User } from 'lucide-react';
 import './Navbar.css';
 
 const Navbar = () => {
-  const { logout, user } = useAuth();
+  const navItems = [
+    {
+      href: "/",
+      icon: Pickaxe,
+      label: "Mining",
+    },
+    {
+      href: "/tasks",
+      icon: ClipboardList,
+      label: "Tasks",
+    },
+    {
+      href: "/referrals",
+      icon: Users,
+      label: "Referrals",
+    },
+    {
+      href: "/job-marketplace", // Changed from /upgrade
+      icon: Briefcase, // Changed from Zap to Briefcase
+      label: "Jobs", // Changed from Upgrade to Jobs
+    },
+    {
+      href: "/profile",
+      icon: User,
+      label: "Profile",
+    },
+  ];
 
   return (
     <nav className="bottom-navbar">
-      <NavLink 
-        to="/" 
-        className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
-      >
-        <span className="nav-icon">⛏️</span>
-        <span className="nav-label">Mining</span>
-      </NavLink>
-
-      <NavLink 
-        to="/tasks" 
-        className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
-      >
-        <span className="nav-icon">📋</span>
-        <span className="nav-label">Tasks</span>
-      </NavLink>
-
-      <NavLink 
-        to="/referrals" 
-        className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
-      >
-        <span className="nav-icon">👥</span>
-        <span className="nav-label">Referrals</span>
-      </NavLink>
-
-      <NavLink 
-        to="/upgrade" 
-        className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
-      >
-        <span className="nav-icon">⚡</span>
-        <span className="nav-label">Upgrade</span>
-      </NavLink>
-
-      <NavLink 
-        to="/profile" 
-        className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
-      >
-        <span className="nav-icon">👤</span>
-        <span className="nav-label">Profile</span>
-      </NavLink>
+      {navItems.map((item) => {
+        const Icon = item.icon;
+        
+        return (
+          <NavLink 
+            key={item.href}
+            to={item.href}
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          >
+            <Icon className="nav-icon" strokeWidth={2.5} />
+            <span className="nav-label">{item.label}</span>
+          </NavLink>
+        );
+      })}
     </nav>
   );
 };
