@@ -132,5 +132,64 @@
   }
 }
 
+.mining-lockdown-indicator {
+  margin-bottom: 20px;
+}
+
+.lockdown-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #ff6b35, #ff8e53);
+  color: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  border: 2px solid #ff4444;
+  animation: pulseWarning 2s infinite;
+}
+
+.lockdown-icon {
+  font-size: 1.5rem;
+  animation: bounce 1s infinite;
+}
+
+.lockdown-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lockdown-info strong {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.lockdown-info span {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+@keyframes pulseWarning {
+  0%, 100% {
+    background: linear-gradient(135deg, #ff6b35, #ff8e53);
+  }
+  50% {
+    background: linear-gradient(135deg, #ff4444, #ff6b35);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-3px);
+  }
+  60% {
+    transform: translateY(-1px);
+  }
+}
+
 /* Font Import */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
