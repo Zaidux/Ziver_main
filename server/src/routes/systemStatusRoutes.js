@@ -1,10 +1,10 @@
-import express from 'express';
-import { 
+const express = require('express');
+const { 
   getSystemStatus, 
   toggleLockdown, 
   updateComponentStatus 
-} from '../controllers/systemStatusController.js';
-import { admin } from '../middleware/adminMiddleware.js';
+} = require('../controllers/systemStatusController.js');
+const { admin } = require('../middleware/adminMiddleware.js');
 
 const router = express.Router();
 
@@ -12,4 +12,4 @@ router.get('/status', getSystemStatus);
 router.post('/lockdown/toggle', admin, toggleLockdown);
 router.post('/component/status', admin, updateComponentStatus);
 
-export default router;
+module.exports = router;
