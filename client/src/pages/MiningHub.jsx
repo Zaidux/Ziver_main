@@ -5,11 +5,14 @@ import MiningDisplay from '../components/MiningDisplay';
 import './MiningHub.css';
 
 const MiningHub = () => {
-  const { user, appSettings, logout, updateUser } = useAuth();
+  const { user, appSettings, logout, updateUser, systemStatus } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [miningStatus, setMiningStatus] = useState(null);
   const [currentState, setCurrentState] = useState(1);
+
+  const isLockdown = systemStatus?.lockdownMode;
+  const isAdmin = user?.role === 'ADMIN';
 
   // Load mining status on component mount and user change
   useEffect(() => {
@@ -111,6 +114,19 @@ const MiningHub = () => {
   return (
     <div className="mining-hub-container">
       <div className="mining-content">
+        {/* Admin Lockdown Indicator - ONLY ADDED THIS SECTION */}
+        {isLockdown && isAdmin && (
+          <div className="mining-lockdown-indicator">
+            <div className="lockdown-alert">
+              <span className="lockdown-icon">🔒</span>
+              <div className="lockdown-info">
+                <strong>System Lockdown Active</strong>
+                <span>Regular users cannot access the app</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <header className="mining-hub-header">
           <h1 className="hub-title">Mining Hub</h1>
           <button onClick={logout} className="logout-button">Logout</button>
