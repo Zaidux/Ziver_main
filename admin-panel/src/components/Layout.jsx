@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  Tasks, 
+  ClipboardList,  // Changed from Tasks
   Settings, 
   Users, 
   Network,
@@ -21,7 +21,7 @@ const Layout = () => {
   const navItems = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/users', icon: Users, label: 'Users' },
-    { to: '/tasks', icon: Tasks, label: 'Tasks' },
+    { to: '/tasks', icon: ClipboardList, label: 'Tasks' },
     { to: '/system-status', icon: Network, label: 'System Status' },
     { to: '/settings', icon: Settings, label: 'Settings' },
   ];
