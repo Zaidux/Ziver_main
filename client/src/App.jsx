@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import api from './services/api';
 
@@ -15,20 +15,31 @@ import LockdownPage from './pages/LockdownPage';
 import ComingSoonPage from './pages/ComingSoonPage';
 
 function App() {
-  const { user, logout } = useAuth();
+  const { user, logout, systemStatus } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isLockdown, setIsLockdown] = useState(false);
 
   // Check lockdown status and heartbeat
   useEffect(() => {
     let intervalId;
-    
+
     const checkLockdown = async () => {
       try {
         const response = await api.get('/system/status');
-        const systemStatus = response.data;
-        
+        const systemData = response.data;
+        setIsLockdown(systemData.lockdownMode);
+
         // Redirect to lockdown page if system is locked down and user is not admin
-        if (systemStatus.lockdownMode && user && user.role !== 'ADMIN') {
-          window.location.href = '/lockdown';
+        if (systemData.lockdownMode && user && user.role !== 'ADMIN' && location.pathname !== '/lockdown') {
+          console.log('🔒 Redirecting to lockdown page');
+          navigate('/lockdown', { replace: true });
+        }
+        
+        // Redirect back to app if lockdown is lifted and user is on lockdown page
+        if (!systemData.lockdownMode && location.pathname === '/lockdown') {
+          console.log('🔓 Lockdown lifted, redirecting to app');
+          navigate('/', { replace: true });
         }
       } catch (error) {
         console.error('Error checking system status:', error);
@@ -49,8 +60,8 @@ function App() {
       // Check lockdown status immediately
       checkLockdown();
       // Set up interval for subsequent checks
-      const lockdownInterval = setInterval(checkLockdown, 30000); // Check every 30 seconds
-      
+      const lockdownInterval = setInterval(checkLockdown, 10000); // Check every 10 seconds
+
       // Immediate heartbeat check
       doHeartbeat();
       // Set up interval for subsequent heartbeats
@@ -63,7 +74,7 @@ function App() {
         }
       };
     }
-  }, [user, logout]);
+  }, [user, logout, navigate, location]);
 
   return (
     <div className="app-container">
@@ -73,18 +84,26 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/lockdown" element={<LockdownPage />} />
 
-        {/* Protected Routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<Layout />}>
-            <Route path="/" element={<MiningHub />} />
-            <Route path="/tasks" element={<TasksPage />} />
-            <Route path="/referrals" element={<ReferralsPage />} />
-            
-            {/* Coming Soon Pages */}
-            <Route path="/job-marketplace" element={<ComingSoonPage featureName="Job Marketplace" />} />
-            <Route path="/wallet" element={<ComingSoonPage featureName="Wallet" />} />
-            <Route path="/profile" element={<ComingSoonPage featureName="Profile" />} />
-          </Route>
+        {/* Protected Routes - Only accessible if not in lockdown OR user is admin */}
+        <Route 
+          element={
+            <ProtectedRoute>
+              {isLockdown && user?.role !== 'ADMIN' ? (
+                <LockdownPage />
+              ) : (
+                <Layout />
+              )}
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/" element={<MiningHub />} />
+          <Route path="/tasks" element={<TasksPage />} />
+          <Route path="/referrals" element={<ReferralsPage />} />
+          
+          {/* Coming Soon Pages */}
+          <Route path="/job-marketplace" element={<ComingSoonPage featureName="Job Marketplace" />} />
+          <Route path="/wallet" element={<ComingSoonPage featureName="Wallet" />} />
+          <Route path="/profile" element={<ComingSoonPage featureName="Profile" />} />
         </Route>
 
         {/* Fallback route for 404 errors */}
