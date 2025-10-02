@@ -84,26 +84,24 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/lockdown" element={<LockdownPage />} />
 
-        {/* Protected Routes - Only accessible if not in lockdown OR user is admin */}
-        <Route 
-          element={
-            <ProtectedRoute>
-              {isLockdown && user?.role !== 'ADMIN' ? (
-                <LockdownPage />
-              ) : (
-                <Layout />
-              )}
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/" element={<MiningHub />} />
-          <Route path="/tasks" element={<TasksPage />} />
-          <Route path="/referrals" element={<ReferralsPage />} />
-          
-          {/* Coming Soon Pages */}
-          <Route path="/job-marketplace" element={<ComingSoonPage featureName="Job Marketplace" />} />
-          <Route path="/wallet" element={<ComingSoonPage featureName="Wallet" />} />
-          <Route path="/profile" element={<ComingSoonPage featureName="Profile" />} />
+        {/* Protected Routes - Show Layout for all authenticated users */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout />}>
+            {/* Only show these routes if not in lockdown OR user is admin */}
+            {(!isLockdown || user?.role === 'ADMIN') ? (
+              <>
+                <Route path="/" element={<MiningHub />} />
+                <Route path="/tasks" element={<TasksPage />} />
+                <Route path="/referrals" element={<ReferralsPage />} />
+                <Route path="/job-marketplace" element={<ComingSoonPage featureName="Job Marketplace" />} />
+                <Route path="/wallet" element={<ComingSoonPage featureName="Wallet" />} />
+                <Route path="/profile" element={<ComingSoonPage featureName="Profile" />} />
+              </>
+            ) : (
+              // If in lockdown and not admin, show lockdown page within layout
+              <Route path="*" element={<LockdownPage />} />
+            )}
+          </Route>
         </Route>
 
         {/* Fallback route for 404 errors */}
