@@ -114,3 +114,27 @@
     font-size: 1rem;
   }
 }
+
+.email-address {
+  color: #00ff80;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: all 0.3s ease;
+}
+
+.email-address:hover {
+  color: #00ff99;
+  text-decoration: none;
+}
+
+.copy-hint {
+  font-size: 0.8rem;
+  color: #888;
+  margin-left: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.email-address:hover + .copy-hint {
+  opacity: 1;
+}
