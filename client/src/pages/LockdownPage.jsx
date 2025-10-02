@@ -2,6 +2,15 @@ import React from 'react';
 import './LockdownPage.css';
 
 const LockdownPage = () => {
+  const handleContactSupport = () => {
+    // Open email client with support email
+    const email = 'ziverofficial567@gmail.com';
+    const subject = 'System Lockdown Support Request';
+    const body = 'Hello Ziver Support,\n\nI am experiencing issues with the system lockdown. Please assist me.\n\nThank you.';
+    
+    window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
   return (
     <div className="lockdown-container">
       <div className="lockdown-content">
@@ -16,11 +25,14 @@ const LockdownPage = () => {
           <p>📞 Contact support if this persists</p>
         </div>
         <button 
-          className="retry-button"
-          onClick={() => window.location.reload()}
+          className="support-button"
+          onClick={handleContactSupport}
         >
-          Check Status
+          Contact Support
         </button>
+        <div className="support-email">
+          Email: <a href="mailto:ziverofficial567@gmail.com">ziverofficial567@gmail.com</a>
+        </div>
       </div>
     </div>
   );
