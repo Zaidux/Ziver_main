@@ -1,0 +1,266 @@
+.telegram-connection {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.telegram-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #333;
+}
+
+.telegram-header h3 {
+  color: #00ff80;
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.connection-status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.connection-status.connected {
+  background: rgba(0, 255, 128, 0.2);
+  color: #00ff80;
+  border: 1px solid rgba(0, 255, 128, 0.3);
+}
+
+.connection-status.disconnected {
+  background: rgba(255, 77, 77, 0.2);
+  color: #ff4d4d;
+  border: 1px solid rgba(255, 77, 77, 0.3);
+}
+
+.connected-state .telegram-info {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #333;
+}
+
+.telegram-info p {
+  margin: 8px 0;
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+.telegram-info strong {
+  color: #00ff80;
+}
+
+.notification-settings {
+  background: rgba(0, 255, 128, 0.1);
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(0, 255, 128, 0.2);
+}
+
+.notification-settings h4 {
+  color: #00ff80;
+  margin: 0 0 10px 0;
+  font-size: 1rem;
+}
+
+.notification-settings ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #ccc;
+}
+
+.notification-settings li {
+  margin: 5px 0;
+  font-size: 0.9rem;
+}
+
+.disconnect-btn {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.disconnect-btn:hover {
+  background: linear-gradient(135deg, #ff5252, #e53935);
+  transform: translateY(-2px);
+}
+
+.connection-instructions h4 {
+  color: #00ff80;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.connection-instructions p {
+  color: #ccc;
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+}
+
+.connection-instructions ul {
+  color: #ccc;
+  margin-bottom: 20px;
+  padding-left: 20px;
+}
+
+.connection-instructions li {
+  margin: 8px 0;
+  font-size: 0.9rem;
+}
+
+.connection-steps {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 12px;
+  margin: 20px 0;
+  border: 1px solid #333;
+}
+
+.connection-steps h5 {
+  color: #00ff80;
+  margin: 0 0 10px 0;
+  font-size: 1rem;
+}
+
+.connection-steps ol {
+  color: #ccc;
+  padding-left: 20px;
+  margin: 0;
+}
+
+.connection-steps li {
+  margin: 8px 0;
+  font-size: 0.9rem;
+}
+
+.connection-steps code {
+  background: rgba(0, 255, 128, 0.2);
+  color: #00ff80;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.generate-code-btn,
+.connect-btn,
+.new-code-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 5px 0;
+}
+
+.generate-code-btn {
+  background: linear-gradient(135deg, #00ff80, #00cc66);
+  color: #1a1a1a;
+}
+
+.generate-code-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #00ff99, #00e673);
+  transform: translateY(-2px);
+}
+
+.generate-code-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.connect-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.connect-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #764ba2, #667eea);
+  transform: translateY(-2px);
+}
+
+.new-code-btn {
+  background: transparent;
+  color: #ccc;
+  border: 1px solid #555;
+}
+
+.new-code-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #777;
+}
+
+.code-section {
+  text-align: center;
+}
+
+.code-display {
+  background: rgba(0, 255, 128, 0.1);
+  padding: 20px;
+  border-radius: 12px;
+  margin: 15px 0;
+  border: 1px solid rgba(0, 255, 128, 0.3);
+}
+
+.code-display label {
+  display: block;
+  color: #00ff80;
+  font-weight: 600;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+.code-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #00ff80;
+  letter-spacing: 8px;
+  margin: 15px 0;
+  text-shadow: 0 0 10px rgba(0, 255, 128, 0.5);
+}
+
+.code-display small {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .telegram-connection {
+    padding: 15px;
+    margin: 15px 0;
+  }
+
+  .telegram-header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .code-value {
+    font-size: 1.5rem;
+    letter-spacing: 4px;
+  }
+
+  .connection-steps ol {
+    padding-left: 15px;
+  }
+}
