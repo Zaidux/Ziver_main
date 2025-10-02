@@ -5,21 +5,22 @@ import {
 } from 'lucide-react';
 import SystemNode from '../components/SystemNode';
 import StatusIndicator from '../components/StatusIndicator';
-import { getSystemStatus, toggleLockdown, updateComponentStatus } from '../services/adminService';
+import { getSystemStatus, toggleLockdown } from '../services/adminService';
 
 const SystemStatus = () => {
   const [systemStatus, setSystemStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
+  const [lockdownLoading, setLockdownLoading] = useState(false);
 
-  // Enhanced component definitions with dependencies
   const components = [
     { 
       key: 'database', 
       name: 'Database', 
       icon: Database, 
       color: 'red',
-      dependencies: [] // Root dependency
+      dependencies: []
     },
     { 
       key: 'authentication', 
@@ -58,30 +59,14 @@ const SystemStatus = () => {
     }
   ];
 
-  // Calculate affected components based on dependencies
-  const getAffectedComponents = (componentKey) => {
-    if (!systemStatus) return [];
-    
-    const affected = new Set();
-    const checkDependents = (key) => {
-      components.forEach(comp => {
-        if (comp.dependencies.includes(key)) {
-          affected.add(comp.key);
-          checkDependents(comp.key);
-        }
-      });
-    };
-    
-    checkDependents(componentKey);
-    return Array.from(affected);
-  };
-
   const fetchStatus = async () => {
     try {
+      setError(null);
       const status = await getSystemStatus();
       setSystemStatus(status);
     } catch (error) {
       console.error('Error fetching system status:', error);
+      setError('Failed to load system status. Please check backend connection.');
     } finally {
       setLoading(false);
     }
@@ -89,18 +74,23 @@ const SystemStatus = () => {
 
   const handleToggleLockdown = async () => {
     try {
+      setLockdownLoading(true);
       const result = await toggleLockdown();
-      setSystemStatus(prev => ({ ...prev, lockdownMode: result.lockdownMode }));
-      alert(result.message);
+      setSystemStatus(prev => ({ 
+        ...prev, 
+        lockdownMode: result.lockdownMode 
+      }));
+      alert(`✅ ${result.message}`);
     } catch (error) {
-      alert('Error toggling lockdown mode');
+      console.error('Error toggling lockdown:', error);
+      alert('❌ Error toggling lockdown mode. Please check console for details.');
+    } finally {
+      setLockdownLoading(false);
     }
   };
 
   const handleNodeClick = (component) => {
     setSelectedNode(component);
-    const affected = getAffectedComponents(component.key);
-    console.log(`${component.name} affects:`, affected);
   };
 
   useEffect(() => {
@@ -111,7 +101,37 @@ const SystemStatus = () => {
 
   if (loading) return <div className="p-6">Loading system status...</div>;
 
-  const affectedComponents = selectedNode ? getAffectedComponents(selectedNode.key) : [];
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-900/20 border border-red-500 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-red-400">
+            <AlertTriangle className="w-5 h-5" />
+            <span className="font-semibold">Error</span>
+          </div>
+          <p className="text-red-300 mt-2">{error}</p>
+          <button
+            onClick={fetchStatus}
+            className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!systemStatus) {
+    return (
+      <div className="p-6">
+        <div className="bg-yellow-900/20 border border-yellow-500 rounded-lg p-4">
+          <p className="text-yellow-300">No system status data available</p>
+        </div>
+      </div>
+    );
+  }
+
+  const affectedComponents = selectedNode ? [] : [];
 
   return (
     <div className="p-6 space-y-6">
@@ -128,18 +148,28 @@ const SystemStatus = () => {
                 <Network className="w-6 h-6 text-blue-400" />
               </h1>
               <p className="text-gray-400">Real-time monitoring with dependency tracking</p>
+              <div className={`mt-2 px-3 py-1 rounded-full text-sm font-semibold ${
+                systemStatus.lockdownMode 
+                  ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
+                  : 'bg-green-500/20 text-green-400 border border-green-500/30'
+              }`}>
+                {systemStatus.lockdownMode ? '🔒 System in Lockdown' : '✅ System Operational'}
+              </div>
             </div>
           </div>
-          
+
           <button
             onClick={handleToggleLockdown}
+            disabled={lockdownLoading}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
               systemStatus.lockdownMode
                 ? 'bg-green-600 hover:bg-green-700 text-white'
                 : 'bg-red-600 hover:bg-red-700 text-white'
-            }`}
+            } ${lockdownLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {systemStatus.lockdownMode ? (
+            {lockdownLoading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            ) : systemStatus.lockdownMode ? (
               <>
                 <Play className="w-4 h-4" />
                 Disable Lockdown
@@ -152,28 +182,30 @@ const SystemStatus = () => {
             )}
           </button>
         </div>
+        
+        {systemStatus.lockdownMode && (
+          <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <p className="text-red-300 text-sm">
+              <strong>Lockdown Message:</strong> {systemStatus.lockdownMessage}
+            </p>
+          </div>
+        )}
       </div>
 
+      {/* Rest of your component remains the same */}
       {/* System Topology Grid */}
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
           <Cpu className="w-5 h-5" />
           System Topology
         </h3>
-        
-        <div className="relative">
-          {/* Connection Lines Container */}
-          <div className="absolute inset-0 pointer-events-none">
-            {/* This is where SVG connection lines would go */}
-            {/* For now, we'll use CSS for simple visual connections */}
-          </div>
 
-          {/* Components Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 relative z-10">
+        <div className="relative">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {components.map((component) => {
               const status = systemStatus.componentStatuses[component.key];
               const isAffected = affectedComponents.includes(component.key);
-              
+
               return (
                 <SystemNode
                   key={component.key}
@@ -188,7 +220,6 @@ const SystemStatus = () => {
           </div>
         </div>
 
-        {/* Selected Node Info */}
         {selectedNode && (
           <div className="mt-6 p-4 bg-gray-700 rounded-lg border border-gray-600">
             <h4 className="font-semibold text-white mb-2">
