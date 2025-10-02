@@ -1,5 +1,6 @@
 import api from './api';
 
+// System Status Methods
 export const getSystemStatus = async () => {
   const response = await api.get('/system/status');
   return response.data;
@@ -19,7 +20,7 @@ export const updateComponentStatus = async (component, status, error = null) => 
   return response.data;
 };
 
-
+// Existing Admin Methods
 const getSummary = () => api.get('/admin/summary');
 const getTasks = () => api.get('/admin/tasks');
 const createTask = (taskData) => api.post('/admin/tasks', taskData);
@@ -35,6 +36,12 @@ const updateValidationRule = (ruleId, ruleData) => api.put(`/admin/validation-ru
 const deleteValidationRule = (ruleId) => api.delete(`/admin/validation-rules/${ruleId}`);
 
 const adminService = {
+  // System Status Methods
+  getSystemStatus,
+  toggleLockdown,
+  updateComponentStatus,
+  
+  // Existing Admin Methods
   getSummary,
   getTasks,
   createTask,
