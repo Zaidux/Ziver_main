@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Pickaxe, ClipboardList, Users, Briefcase, User } from 'lucide-react';
+import { Pickaxe, ClipboardList, Users, Briefcase, Wallet, User } from 'lucide-react';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -21,9 +21,14 @@ const Navbar = () => {
       label: "Referrals",
     },
     {
-      href: "/job-marketplace", // Changed from /upgrade
-      icon: Briefcase, // Changed from Zap to Briefcase
-      label: "Jobs", // Changed from Upgrade to Jobs
+      href: "/job-marketplace",
+      icon: Briefcase,
+      label: "Jobs",
+    },
+    {
+      href: "/wallet",
+      icon: Wallet,
+      label: "Wallet",
     },
     {
       href: "/profile",
@@ -36,7 +41,7 @@ const Navbar = () => {
     <nav className="bottom-navbar">
       {navItems.map((item) => {
         const Icon = item.icon;
-        
+
         return (
           <NavLink 
             key={item.href}
