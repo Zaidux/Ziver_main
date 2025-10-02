@@ -37,7 +37,7 @@ const ComingSoonPage = ({ featureName = "this feature" }) => {
               We're working hard to bring you an amazing experience. Stay tuned!
             </p>
             <div className="countdown">
-              <p>Launching in: <span className="countdown-timer">Q1 2024</span></p>
+              <p>Launching in: <span className="countdown-timer">Q4 2025</span></p>
             </div>
           </div>
         )}
