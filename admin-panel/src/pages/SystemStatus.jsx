@@ -1,19 +1,80 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Server, Database, Users, Key, AlertTriangle, Play, Pause } from 'lucide-react';
+import { 
+  Shield, Server, Database, Users, Key, AlertTriangle, 
+  Play, Pause, Network, Cpu, Activity 
+} from 'lucide-react';
+import SystemNode from '../components/SystemNode';
+import StatusIndicator from '../components/StatusIndicator';
 import { getSystemStatus, toggleLockdown, updateComponentStatus } from '../services/adminService';
 
 const SystemStatus = () => {
   const [systemStatus, setSystemStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedNode, setSelectedNode] = useState(null);
 
+  // Enhanced component definitions with dependencies
   const components = [
-    { key: 'authentication', name: 'Authentication', icon: Key, color: 'blue' },
-    { key: 'mining', name: 'Mining System', icon: Server, color: 'green' },
-    { key: 'tasks', name: 'Task System', icon: Database, color: 'purple' },
-    { key: 'referrals', name: 'Referral System', icon: Users, color: 'orange' },
-    { key: 'database', name: 'Database', icon: Database, color: 'red' },
-    { key: 'telegram', name: 'Telegram Bot', icon: Shield, color: 'teal' }
+    { 
+      key: 'database', 
+      name: 'Database', 
+      icon: Database, 
+      color: 'red',
+      dependencies: [] // Root dependency
+    },
+    { 
+      key: 'authentication', 
+      name: 'Authentication', 
+      icon: Key, 
+      color: 'blue',
+      dependencies: ['database']
+    },
+    { 
+      key: 'mining', 
+      name: 'Mining System', 
+      icon: Server, 
+      color: 'green',
+      dependencies: ['database', 'authentication']
+    },
+    { 
+      key: 'tasks', 
+      name: 'Task System', 
+      icon: Database, 
+      color: 'purple',
+      dependencies: ['database', 'authentication']
+    },
+    { 
+      key: 'referrals', 
+      name: 'Referral System', 
+      icon: Users, 
+      color: 'orange',
+      dependencies: ['database', 'authentication']
+    },
+    { 
+      key: 'telegram', 
+      name: 'Telegram Bot', 
+      icon: Shield, 
+      color: 'teal',
+      dependencies: ['database']
+    }
   ];
+
+  // Calculate affected components based on dependencies
+  const getAffectedComponents = (componentKey) => {
+    if (!systemStatus) return [];
+    
+    const affected = new Set();
+    const checkDependents = (key) => {
+      components.forEach(comp => {
+        if (comp.dependencies.includes(key)) {
+          affected.add(comp.key);
+          checkDependents(comp.key);
+        }
+      });
+    };
+    
+    checkDependents(componentKey);
+    return Array.from(affected);
+  };
 
   const fetchStatus = async () => {
     try {
@@ -36,31 +97,40 @@ const SystemStatus = () => {
     }
   };
 
+  const handleNodeClick = (component) => {
+    setSelectedNode(component);
+    const affected = getAffectedComponents(component.key);
+    console.log(`${component.name} affects:`, affected);
+  };
+
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 10000); // Refresh every 10 seconds
+    const interval = setInterval(fetchStatus, 10000);
     return () => clearInterval(interval);
   }, []);
 
   if (loading) return <div className="p-6">Loading system status...</div>;
 
+  const affectedComponents = selectedNode ? getAffectedComponents(selectedNode.key) : [];
+
   return (
     <div className="p-6 space-y-6">
-      {/* Lockdown Control Card */}
+      {/* Header with System Overview */}
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Shield className="w-6 h-6" />
-              System Lockdown Control
-            </h2>
-            <p className="text-gray-400 mt-1">
-              {systemStatus.lockdownMode 
-                ? 'System is in lockdown mode - only admins can access the application'
-                : 'System is running normally'
-              }
-            </p>
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-500/20 rounded-lg">
+              <Activity className="w-8 h-8 text-blue-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                System Status Dashboard
+                <Network className="w-6 h-6 text-blue-400" />
+              </h1>
+              <p className="text-gray-400">Real-time monitoring with dependency tracking</p>
+            </div>
           </div>
+          
           <button
             onClick={handleToggleLockdown}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
@@ -84,39 +154,76 @@ const SystemStatus = () => {
         </div>
       </div>
 
-      {/* System Components Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {components.map((component) => {
-          const Icon = component.icon;
-          const status = systemStatus.componentStatuses[component.key];
-          const statusColors = {
-            healthy: 'bg-green-500',
-            degraded: 'bg-yellow-500',
-            down: 'bg-red-500'
-          };
+      {/* System Topology Grid */}
+      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <Cpu className="w-5 h-5" />
+          System Topology
+        </h3>
+        
+        <div className="relative">
+          {/* Connection Lines Container */}
+          <div className="absolute inset-0 pointer-events-none">
+            {/* This is where SVG connection lines would go */}
+            {/* For now, we'll use CSS for simple visual connections */}
+          </div>
 
-          return (
-            <div key={component.key} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg bg-${component.color}-500 bg-opacity-20`}>
-                    <Icon className={`w-5 h-5 text-${component.color}-400`} />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-white">{component.name}</h3>
-                    <p className={`text-sm capitalize ${
-                      status === 'healthy' ? 'text-green-400' :
-                      status === 'degraded' ? 'text-yellow-400' : 'text-red-400'
-                    }`}>
-                      {status}
-                    </p>
-                  </div>
-                </div>
-                <div className={`w-3 h-3 rounded-full ${statusColors[status]}`}></div>
+          {/* Components Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 relative z-10">
+            {components.map((component) => {
+              const status = systemStatus.componentStatuses[component.key];
+              const isAffected = affectedComponents.includes(component.key);
+              
+              return (
+                <SystemNode
+                  key={component.key}
+                  component={component}
+                  status={status}
+                  dependencies={component.dependencies}
+                  onNodeClick={handleNodeClick}
+                  isAffected={isAffected && selectedNode?.key !== component.key}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Selected Node Info */}
+        {selectedNode && (
+          <div className="mt-6 p-4 bg-gray-700 rounded-lg border border-gray-600">
+            <h4 className="font-semibold text-white mb-2">
+              Selected: {selectedNode.name}
+            </h4>
+            <p className="text-gray-300 text-sm">
+              Status: <StatusIndicator status={systemStatus.componentStatuses[selectedNode.key]} showLabel />
+            </p>
+            {affectedComponents.length > 0 && (
+              <p className="text-orange-300 text-sm mt-2">
+                Affects: {affectedComponents.length} other component(s)
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Quick Status Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {components.map((component) => (
+          <div key={component.key} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <StatusIndicator 
+                  status={systemStatus.componentStatuses[component.key]} 
+                  size="medium"
+                  propagationLevel={
+                    systemStatus.componentStatuses[component.key] === 'down' ? 2 : 0
+                  }
+                />
+                <span className="text-white text-sm font-medium">{component.name}</span>
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
       {/* Error Logs */}
