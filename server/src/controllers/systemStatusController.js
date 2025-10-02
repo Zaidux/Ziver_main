@@ -1,6 +1,6 @@
-import SystemStatus from '../models/SystemStatus.js';
+const SystemStatus = require('../models/SystemStatus.js');
 
-export const getSystemStatus = async (req, res) => {
+const getSystemStatus = async (req, res) => {
   try {
     let status = await SystemStatus.findOne();
     if (!status) {
@@ -12,7 +12,7 @@ export const getSystemStatus = async (req, res) => {
   }
 };
 
-export const toggleLockdown = async (req, res) => {
+const toggleLockdown = async (req, res) => {
   try {
     let status = await SystemStatus.findOne();
     if (!status) {
@@ -31,7 +31,7 @@ export const toggleLockdown = async (req, res) => {
   }
 };
 
-export const updateComponentStatus = async (req, res) => {
+const updateComponentStatus = async (req, res) => {
   try {
     const { component, status, error } = req.body;
     
@@ -64,4 +64,10 @@ export const updateComponentStatus = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error updating component status' });
   }
+};
+
+module.exports = {
+  getSystemStatus,
+  toggleLockdown,
+  updateComponentStatus
 };
