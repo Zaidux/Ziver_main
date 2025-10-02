@@ -9,6 +9,23 @@ export const AuthProvider = ({ children, navigate }) => {
   const [appSettings, setAppSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [referralData, setReferralData] = useState(null);
+  const [systemStatus, setSystemStatus] = useState(null);
+
+  // Check system status (including lockdown)
+  const checkSystemStatus = async () => {
+    try {
+      const response = await api.get('/system/status');
+      setSystemStatus(response.data);
+      
+      // If system is in lockdown and user is not admin, redirect to lockdown page
+      if (response.data.lockdownMode && user && user.role !== 'ADMIN') {
+        if (navigate) navigate('/lockdown');
+        else window.location.href = '/lockdown';
+      }
+    } catch (error) {
+      console.error('Error checking system status:', error);
+    }
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -25,7 +42,10 @@ export const AuthProvider = ({ children, navigate }) => {
             if (response.data && response.data.valid === true) {
               setUser(storedUser);
               setAppSettings(storedSettings);
-              
+
+              // Check system status after auth
+              await checkSystemStatus();
+
               // Load referral data after auth
               try {
                 const referralResponse = await api.get('/referrals');
@@ -68,7 +88,8 @@ export const AuthProvider = ({ children, navigate }) => {
     // Set default auth header
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-    // Load referral data
+    // Check system status and load referral data
+    checkSystemStatus();
     loadReferralData();
 
     if (navigate) navigate('/');
@@ -79,6 +100,7 @@ export const AuthProvider = ({ children, navigate }) => {
     setUser(null);
     setAppSettings(null);
     setReferralData(null);
+    setSystemStatus(null);
     delete api.defaults.headers.common['Authorization'];
     if (navigate) navigate('/login');
   };
@@ -121,13 +143,15 @@ export const AuthProvider = ({ children, navigate }) => {
     user, 
     appSettings, 
     referralData,
+    systemStatus,
     loading, 
     login, 
     logout, 
     updateUser, 
     updateAppSettings,
     refreshReferralData,
-    loadReferralData
+    loadReferralData,
+    checkSystemStatus
   };
 
   return (
