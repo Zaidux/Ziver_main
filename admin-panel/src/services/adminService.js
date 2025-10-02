@@ -1,5 +1,25 @@
 import api from './api';
 
+export const getSystemStatus = async () => {
+  const response = await api.get('/system/status');
+  return response.data;
+};
+
+export const toggleLockdown = async () => {
+  const response = await api.post('/system/lockdown/toggle');
+  return response.data;
+};
+
+export const updateComponentStatus = async (component, status, error = null) => {
+  const response = await api.post('/system/component/status', {
+    component,
+    status,
+    error
+  });
+  return response.data;
+};
+
+
 const getSummary = () => api.get('/admin/summary');
 const getTasks = () => api.get('/admin/tasks');
 const createTask = (taskData) => api.post('/admin/tasks', taskData);
