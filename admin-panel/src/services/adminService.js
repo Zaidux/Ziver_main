@@ -1,5 +1,10 @@
 import api from './api';
 
+// Helper function to get admin token
+const getAdminToken = () => {
+  return localStorage.getItem('admin_token') || localStorage.getItem('adminToken');
+};
+
 // System Status Methods
 export const getSystemStatus = async () => {
   const response = await api.get('/system/status');
@@ -7,18 +12,30 @@ export const getSystemStatus = async () => {
 };
 
 export const toggleLockdown = async () => {
-  const response = await api.post('/system/lockdown/toggle');
+  const adminToken = getAdminToken();
+  const response = await api.post('/system/lockdown/toggle', {}, {
+    headers: {
+      'Admin-Token': adminToken
+    }
+  });
   return response.data;
 };
 
 export const updateComponentStatus = async (component, status, error = null) => {
+  const adminToken = getAdminToken();
   const response = await api.post('/system/component/status', {
     component,
     status,
     error
+  }, {
+    headers: {
+      'Admin-Token': adminToken
+    }
   });
   return response.data;
 };
+
+// ... rest of your code remains the same
 
 // Existing Admin Methods
 const getSummary = () => api.get('/admin/summary');
