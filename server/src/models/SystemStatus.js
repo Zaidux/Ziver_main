@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const systemStatusSchema = new mongoose.Schema({
   lockdownMode: {
@@ -31,4 +31,4 @@ const systemStatusSchema = new mongoose.Schema({
   timestamps: true
 });
 
-export default mongoose.model('SystemStatus', systemStatusSchema);
+module.exports = mongoose.model('SystemStatus', systemStatusSchema);
