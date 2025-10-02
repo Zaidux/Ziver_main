@@ -72,31 +72,41 @@ const TasksPage = () => {
   };
 
   const handleLinkTask = async (task) => {
-    // Enhanced link handling with better UX
+  try {
+    // Open the link in a new tab
     const newWindow = window.open(task.link_url, '_blank', 'noopener,noreferrer');
-
+    
     if (newWindow) {
-      if (task.verification_required) {
-        // Improved verification flow
-        setTimeout(() => {
+      // For Telegram links, we need special handling
+      if (task.link_url.includes('t.me') || task.link_url.includes('telegram.org')) {
+        // Show verification prompt after a delay for Telegram tasks
+        setTimeout(async () => {
           const confirmed = window.confirm(
-            `Have you completed the action? Click OK to verify completion.`
+            `Have you joined the Telegram group/channel?\n\nClick OK to verify your membership and claim your reward.`
           );
-          
+
           if (confirmed) {
-            completeInAppTask(task);
+            await completeInAppTask(task);
+          } else {
+            showNotification('Please complete the action and try again.', 'info');
           }
-        }, 2000);
+        }, 3000);
       } else {
-        // Auto-complete after a short delay for non-verified links
-        setTimeout(() => {
-          completeInAppTask(task);
-        }, 1000);
+        // For non-Telegram links, auto-complete after delay
+        setTimeout(async () => {
+          await completeInAppTask(task);
+        }, 2000);
       }
     } else {
       showNotification('Please allow popups to complete this task.', 'warning');
+      // Alternative: Open in same tab if popup blocked
+      window.location.href = task.link_url;
     }
-  };
+  } catch (error) {
+    console.error('Error handling link task:', error);
+    showNotification('Error opening link. Please try again.', 'error');
+  }
+};
 
   const completeInAppTask = async (task) => {
     const response = await taskService.completeTask(task.id);
