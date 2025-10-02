@@ -11,19 +11,15 @@ export const AuthProvider = ({ children, navigate }) => {
   const [referralData, setReferralData] = useState(null);
   const [systemStatus, setSystemStatus] = useState(null);
 
-  // Check system status (including lockdown)
+  // Check system status
   const checkSystemStatus = async () => {
     try {
       const response = await api.get('/system/status');
       setSystemStatus(response.data);
-      
-      // If system is in lockdown and user is not admin, redirect to lockdown page
-      if (response.data.lockdownMode && user && user.role !== 'ADMIN') {
-        if (navigate) navigate('/lockdown');
-        else window.location.href = '/lockdown';
-      }
+      return response.data;
     } catch (error) {
       console.error('Error checking system status:', error);
+      return null;
     }
   };
 
