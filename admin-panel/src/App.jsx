@@ -1,15 +1,16 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Add Router import
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import AdminLoginPage from './pages/AdminLoginPage';
 import Dashboard from './pages/Dashboard';
 import TaskManagement from './pages/TaskManagement';
 import Settings from './pages/Settings';
 import UserManagement from './pages/UserManagement';
+import SystemStatus from './pages/SystemStatus'; // NEW IMPORT
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
-    <Router> {/* Add Router wrapper here */}
+    <Router>
       <Routes>
         <Route path="/login" element={<AdminLoginPage />} />
 
@@ -20,6 +21,7 @@ function App() {
             <Route path="/tasks" element={<TaskManagement />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/users" element={<UserManagement />} />
+            <Route path="/system-status" element={<SystemStatus />} /> {/* NEW ROUTE */}
           </Route>
         </Route>
 
