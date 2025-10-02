@@ -2,13 +2,31 @@ const SystemStatus = require('../models/SystemStatus.js');
 
 const getSystemStatus = async (req, res) => {
   try {
+    console.log('🔍 Fetching system status from Supabase...');
+    
     let status = await SystemStatus.findOne();
     if (!status) {
+      console.log('📝 No system status found, creating default...');
       status = await SystemStatus.create({});
     }
-    res.json(status);
+    
+    // Convert database fields to camelCase for frontend
+    const formattedStatus = {
+      lockdownMode: status.lockdown_mode,
+      lockdownMessage: status.lockdown_message,
+      componentStatuses: status.component_statuses || {},
+      errorLogs: status.error_logs || [],
+      lastUpdated: status.last_updated
+    };
+    
+    console.log('✅ System status fetched from Supabase:', formattedStatus.lockdownMode);
+    res.json(formattedStatus);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching system status' });
+    console.error('❌ Error in getSystemStatus:', error);
+    res.status(500).json({ 
+      message: 'Error fetching system status',
+      error: error.message 
+    });
   }
 };
 
@@ -19,49 +37,76 @@ const toggleLockdown = async (req, res) => {
       status = await SystemStatus.create({});
     }
     
-    status.lockdownMode = !status.lockdownMode;
-    await status.save();
+    const updatedStatus = await SystemStatus.findOneAndUpdate(
+      { id: 1 },
+      {
+        lockdownMode: !status.lockdown_mode,
+        lockdownMessage: status.lockdown_message,
+        componentStatuses: status.component_statuses,
+        errorLogs: status.error_logs
+      }
+    );
     
     res.json({ 
-      lockdownMode: status.lockdownMode,
-      message: `Lockdown mode ${status.lockdownMode ? 'activated' : 'deactivated'}`
+      lockdownMode: updatedStatus.lockdown_mode,
+      message: `Lockdown mode ${updatedStatus.lockdown_mode ? 'activated' : 'deactivated'}`
     });
   } catch (error) {
+    console.error('❌ Error in toggleLockdown:', error);
     res.status(500).json({ message: 'Error toggling lockdown mode' });
   }
 };
 
 const updateComponentStatus = async (req, res) => {
   try {
-    const { component, status, error } = req.body;
+    const { component, status: newStatus, error } = req.body;
     
     let systemStatus = await SystemStatus.findOne();
     if (!systemStatus) {
       systemStatus = await SystemStatus.create({});
     }
     
-    if (systemStatus.componentStatuses[component]) {
-      systemStatus.componentStatuses[component] = status;
+    // Update component status
+    const componentStatuses = systemStatus.component_statuses || {};
+    if (componentStatuses[component] !== undefined) {
+      componentStatuses[component] = newStatus;
     }
     
+    // Add error log if provided
+    let errorLogs = systemStatus.error_logs || [];
     if (error) {
-      systemStatus.errorLogs.unshift({
+      errorLogs.unshift({
         component,
         error: error.message || error,
-        severity: 'medium'
+        severity: 'medium',
+        timestamp: new Date()
       });
       
       // Keep only last 50 error logs
-      if (systemStatus.errorLogs.length > 50) {
-        systemStatus.errorLogs = systemStatus.errorLogs.slice(0, 50);
+      if (errorLogs.length > 50) {
+        errorLogs = errorLogs.slice(0, 50);
       }
     }
     
-    systemStatus.lastUpdated = new Date();
-    await systemStatus.save();
+    const updatedStatus = await SystemStatus.findOneAndUpdate(
+      { id: 1 },
+      {
+        lockdownMode: systemStatus.lockdown_mode,
+        lockdownMessage: systemStatus.lockdown_message,
+        componentStatuses,
+        errorLogs
+      }
+    );
     
-    res.json(systemStatus);
+    res.json({
+      lockdownMode: updatedStatus.lockdown_mode,
+      lockdownMessage: updatedStatus.lockdown_message,
+      componentStatuses: updatedStatus.component_statuses,
+      errorLogs: updatedStatus.error_logs,
+      lastUpdated: updatedStatus.last_updated
+    });
   } catch (error) {
+    console.error('❌ Error in updateComponentStatus:', error);
     res.status(500).json({ message: 'Error updating component status' });
   }
 };
