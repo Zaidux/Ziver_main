@@ -59,10 +59,10 @@ const TasksPage = () => {
       }
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Failed to complete task.';
-      
+
       // Show toast-like notification instead of alert
       showNotification(errorMessage, 'error');
-      
+
       if (errorMessage.includes('requirements not met')) {
         fetchTasks(); // Refresh to update progress
       }
@@ -72,53 +72,89 @@ const TasksPage = () => {
   };
 
   const handleLinkTask = async (task) => {
-  try {
-    // Open the link in a new tab
-    const newWindow = window.open(task.link_url, '_blank', 'noopener,noreferrer');
-    
-    if (newWindow) {
-      // For Telegram links, we need special handling
-      if (task.link_url.includes('t.me') || task.link_url.includes('telegram.org')) {
-        // Show verification prompt after a delay for Telegram tasks
-        setTimeout(async () => {
-          const confirmed = window.confirm(
-            `Have you joined the Telegram group/channel?\n\nClick OK to verify your membership and claim your reward.`
-          );
+    try {
+      // Show instructions first
+      const userAction = window.confirm(
+        `📱 Task Instructions:\n\n1. Click OK to open the link\n2. Complete the required action\n3. Return to this app\n4. Click "Verify Completion" to claim your reward\n\nReady to continue?`
+      );
 
-          if (confirmed) {
-            await completeInAppTask(task);
-          } else {
-            showNotification('Please complete the action and try again.', 'info');
+      if (!userAction) return;
+
+      // Create a custom popup with better UX
+      const popupWidth = 500;
+      const popupHeight = 600;
+      const left = (window.screen.width - popupWidth) / 2;
+      const top = (window.screen.height - popupHeight) / 2;
+
+      const popup = window.open(
+        task.link_url,
+        'taskPopup',
+        `width=${popupWidth},height=${popupHeight},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
+
+      if (popup) {
+        // Focus on the popup
+        popup.focus();
+        
+        // Check if popup is closed periodically
+        const checkPopup = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkPopup);
+            // When popup closes, ask for verification
+            setTimeout(async () => {
+              const verified = window.confirm(
+                `Have you completed the task?\n\nClick OK to verify and claim your ${task.zp_reward} ZP reward!`
+              );
+              
+              if (verified) {
+                await completeInAppTask(task);
+              } else {
+                showNotification('Task not completed. You can try again anytime.', 'info');
+              }
+            }, 500);
           }
-        }, 3000);
+        }, 1000);
+
+        // Fallback: if popup is blocked, use same tab
+        setTimeout(() => {
+          if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+            clearInterval(checkPopup);
+            const useSameTab = window.confirm(
+              `Popups are blocked. Open in this tab instead?\n\nDon't worry - you can return and verify later.`
+            );
+            
+            if (useSameTab) {
+              window.location.href = task.link_url;
+            }
+          }
+        }, 1000);
       } else {
-        // For non-Telegram links, auto-complete after delay
-        setTimeout(async () => {
-          await completeInAppTask(task);
-        }, 2000);
+        // Popup blocked - use same tab with clear instructions
+        const useSameTab = window.confirm(
+          `🔗 Open Link\n\nWe'll open the link in this tab. After completing the task:\n\n1. Return to this app\n2. Go back to Tasks\n3. Tap the task again to verify\n\nContinue?`
+        );
+        
+        if (useSameTab) {
+          window.location.href = task.link_url;
+        }
       }
-    } else {
-      showNotification('Please allow popups to complete this task.', 'warning');
-      // Alternative: Open in same tab if popup blocked
-      window.location.href = task.link_url;
+    } catch (error) {
+      console.error('Error handling link task:', error);
+      showNotification('Error opening task link. Please try again.', 'error');
     }
-  } catch (error) {
-    console.error('Error handling link task:', error);
-    showNotification('Error opening link. Please try again.', 'error');
-  }
-};
+  };
 
   const completeInAppTask = async (task) => {
     const response = await taskService.completeTask(task.id);
     updateUser(response.user);
-    
+
     // Optimistic UI update
     setTasks(currentTasks => 
       currentTasks.map(t => 
         t.id === task.id ? { ...t, is_completed: true, progress: null } : t
       )
     );
-    
+
     showNotification(`Task completed! +${task.zp_reward} ZP`, 'success');
     fetchUserStats();
   };
@@ -139,9 +175,9 @@ const TasksPage = () => {
       z-index: 1000;
       animation: slideIn 0.3s ease;
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
       notification.remove();
     }, 3000);
@@ -152,7 +188,7 @@ const TasksPage = () => {
     if (completingTask === task.id) return 'Completing...';
 
     if (task.link_url) {
-      return task.verification_required ? 'Visit & Verify' : 'Visit Link';
+      return 'Open Task 🔗'; // Clearer text
     }
 
     if (task.progress && !task.progress.canComplete) {
@@ -250,7 +286,7 @@ const TasksPage = () => {
             <p>Complete tasks to earn rewards</p>
           </div>
         </div>
-        
+
         <div className="loading-skeleton">
           {[1, 2, 3].map(i => (
             <div key={i} className="task-skeleton">
@@ -291,7 +327,7 @@ const TasksPage = () => {
           <h1>Tasks</h1>
           <p>Complete tasks to earn ZP and SEB points</p>
         </div>
-        
+
         <div className="header-actions">
           <button 
             className={`refresh-button ${refreshing ? 'refreshing' : ''}`}
@@ -334,7 +370,7 @@ const TasksPage = () => {
         ) : (
           tasks.map((task) => {
             const status = getTaskStatus(task);
-            
+
             return (
               <div 
                 key={task.id} 
@@ -343,7 +379,7 @@ const TasksPage = () => {
               >
                 <div className="task-main">
                   <div className="task-icon">{getTaskIcon(task)}</div>
-                  
+
                   <div className="task-content">
                     <div className="task-header">
                       <h3 className="task-title">{task.title}</h3>
@@ -356,13 +392,13 @@ const TasksPage = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     <p className="task-description">{task.description}</p>
-                    
+
                     {/* Progress and Requirements */}
                     {getProgressBar(task)}
                     {getRequirementsList(task)}
-                    
+
                     {task.link_url && (
                       <div className="link-preview">
                         <span className="link-domain">
@@ -378,7 +414,7 @@ const TasksPage = () => {
                     <span className="reward zp">+{task.zp_reward} ZP</span>
                     <span className="reward seb">+{task.seb_reward} SEB</span>
                   </div>
-                  
+
                   <button
                     className={`action-button ${status}`}
                     onClick={() => handleCompleteTask(task)}
@@ -408,7 +444,7 @@ const TasksPage = () => {
               <strong>In-App Tasks:</strong> Meet all requirements, then tap "Complete Task"
             </div>
             <div className="help-item">
-              <strong>Link Tasks:</strong> Tap "Visit Link" to open in browser
+              <strong>Link Tasks:</strong> Tap "Open Task" to open in browser
             </div>
             <div className="help-item">
               <strong>Progress:</strong> Track your completion status above each task
