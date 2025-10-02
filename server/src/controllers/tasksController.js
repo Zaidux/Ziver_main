@@ -94,34 +94,29 @@ const completeTask = asyncHandler(async (req, res) => {
     console.log(`Task found: ${task.zp_reward} ZP, ${task.seb_reward} SEB`);
 
     // 3. VALIDATION: Check if user can complete this task
-if (task.task_type === 'in_app') {
-  const validationResult = await TaskValidation.validateTaskCompletion(userId, taskId);
+    if (task.task_type === 'in_app') {
+      const validationResult = await TaskValidation.validateTaskCompletion(userId, taskId);
 
-  if (!validationResult.isValid) {
-    throw new Error(`Task requirements not met: ${validationResult.failedRules?.join(', ') || validationResult.message}`);
-  }
-  console.log('In-app task validation passed');
-} else if (task.task_type === 'link' && task.link_url) {
-  // ENHANCED: Link task verification
-  console.log(`User ${userId} completing link task: ${task.link_url}`);
-
-  if (task.verification_required) {
-    // For Telegram tasks, we need to verify group membership
-    if (task.link_url.includes('t.me') || task.link_url.includes('telegram.org')) {
-      const verificationResult = await verifyTelegramMembership(userId, task.link_url);
-      
-      if (!verificationResult.verified) {
-        throw new Error(`Telegram verification failed: ${verificationResult.error || 'Please join the group/channel first'}`);
+      if (!validationResult.isValid) {
+        throw new Error(`Task requirements not met: ${validationResult.failedRules?.join(', ') || validationResult.message}`);
       }
-      console.log('Telegram task verification passed');
-    } else {
-      // For other link tasks, we trust the user completed it
-      console.log('Non-Telegram link task completed (trust-based)');
+      console.log('In-app task validation passed');
+    } else if (task.task_type === 'link' && task.link_url) {
+      console.log(`User ${userId} completing link task: ${task.link_url}`);
+
+      if (task.verification_required) {
+        // Use the TelegramUtils for verification (FIXED VERSION)
+        const verificationResult = await TelegramUtils.verifyLinkTask(userId, task.link_url);
+        
+        if (!verificationResult.verified) {
+          throw new Error(`Link verification failed: ${verificationResult.error || 'Please complete the required action first'}`);
+        }
+        
+        console.log('Link task verification passed:', verificationResult);
+      } else {
+        console.log('Link task completed without verification (trust-based)');
+      }
     }
-  } else {
-    console.log('Link task completed without verification');
-  }
-}
 
     // 4. Insert completion record
     await client.query(
@@ -209,7 +204,7 @@ const verifyLinkTask = asyncHandler(async (req, res) => {
 
     // Perform verification
     const verificationResult = await TelegramUtils.verifyLinkTask(userId, task.link_url);
-    
+
     res.json({
       success: true,
       verified: verificationResult.verified,
@@ -239,7 +234,7 @@ const getTelegramStatus = asyncHandler(async (req, res) => {
     );
 
     const hasTelegram = telegramResult.rows.length > 0;
-    
+
     res.json({
       hasTelegram,
       telegramId: hasTelegram ? telegramResult.rows[0].telegram_id : null
