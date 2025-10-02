@@ -140,6 +140,41 @@ class TelegramUtils {
     }
   }
 
+// Verify if a user is member of a Telegram group/channel
+const verifyGroupMembership = async (telegramId, groupUsername) => {
+  try {
+    // This requires your bot to be admin in the target group/channel
+    // and the 'getChatMember' method to be available
+    
+    const response = await axios.get(`${TELEGRAM_API_URL}/getChatMember`, {
+      params: {
+        chat_id: `@${groupUsername}`,
+        user_id: telegramId
+      }
+    });
+
+    const status = response.data.result.status;
+    // Valid statuses: 'creator', 'administrator', 'member'
+    const isMember = ['creator', 'administrator', 'member'].includes(status);
+    
+    return {
+      verified: isMember,
+      status: status,
+      error: isMember ? null : 'User is not a member of the group'
+    };
+
+  } catch (error) {
+    console.error('Telegram API error:', error.response?.data || error.message);
+    
+    // If we can't verify, return trust-based result
+    return {
+      verified: true, // Trust the user for now
+      status: 'unknown',
+      error: 'Verification unavailable, using trust system'
+    };
+  }
+};
+
   // Create a Telegram deep link for task completion verification
   static createTaskVerificationDeepLink(taskId, userId) {
     const baseUrl = process.env.FRONTEND_URL || 'https://ziver-main.onrender.com';
