@@ -56,3 +56,37 @@ a {
 a:hover {
   text-decoration: underline;
 }
+
+/* Add to your existing index.css */
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom scrollbar for admin panel */
+.admin-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-track {
+  background: #2a2a2a;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb {
+  background: #00ff80;
+  border-radius: 4px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #00cc66;
+}
