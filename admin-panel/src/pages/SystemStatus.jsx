@@ -1,11 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Activity, Database, Key, Server, Users, Shield, AlertTriangle, CheckCircle, XCircle, Play, Pause } from 'lucide-react';
-import { getSystemStatus, toggleLockdown } from '../services/adminService';
+"use client"
+
+import { useState, useEffect } from "react"
+import {
+  Activity,
+  Database,
+  Key,
+  Server,
+  Users,
+  Shield,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Play,
+  Pause,
+} from "lucide-react"
+import { getSystemStatus, toggleLockdown } from "../services/adminService"
 
 const SystemStatus = () => {
-  const [systemStatus, setSystemStatus] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [lockdownLoading, setLockdownLoading] = useState(false);
+  const [systemStatus, setSystemStatus] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [lockdownLoading, setLockdownLoading] = useState(false)
 
   const components = [
     { key: "database", name: "Database", icon: Database, color: "#EF4444" },
@@ -14,15 +28,14 @@ const SystemStatus = () => {
     { key: "tasks", name: "Task System", icon: AlertTriangle, color: "#A855F7" },
     { key: "referrals", name: "Referral System", icon: Users, color: "#F59E0B" },
     { key: "telegram", name: "Telegram Bot", icon: Shield, color: "#14B8A6" },
-  ];
+  ]
 
   const fetchStatus = async () => {
     try {
-      const status = await getSystemStatus();
-      setSystemStatus(status);
+      const status = await getSystemStatus()
+      setSystemStatus(status)
     } catch (error) {
-      console.error('Error fetching system status:', error);
-      // Fallback to mock data if API fails
+      console.error("Error fetching system status:", error)
       setSystemStatus({
         lockdownMode: false,
         componentStatuses: {
@@ -34,104 +47,102 @@ const SystemStatus = () => {
           telegram: "operational",
         },
         errorLogs: [],
-      });
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleToggleLockdown = async () => {
     try {
-      setLockdownLoading(true);
-      const result = await toggleLockdown();
-      setSystemStatus(prev => ({ 
-        ...prev, 
-        lockdownMode: result.lockdownMode 
-      }));
-      alert(`✅ ${result.message}`);
+      setLockdownLoading(true)
+      const result = await toggleLockdown()
+      setSystemStatus((prev) => ({
+        ...prev,
+        lockdownMode: result.lockdownMode,
+      }))
+      alert(`✅ ${result.message}`)
     } catch (error) {
-      console.error('Error toggling lockdown:', error);
-      alert('❌ Error toggling lockdown mode. Please check console for details.');
+      console.error("Error toggling lockdown:", error)
+      alert("❌ Error toggling lockdown mode. Please check console for details.")
     } finally {
-      setLockdownLoading(false);
+      setLockdownLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 10000);
-    return () => clearInterval(interval);
-  }, []);
+    fetchStatus()
+    const interval = setInterval(fetchStatus, 10000)
+    return () => clearInterval(interval)
+  }, [])
 
   const getStatusIcon = (status) => {
     switch (status) {
       case "operational":
-        return <CheckCircle className="w-5 h-5 text-green-400" />;
+        return <CheckCircle size={20} className="text-success" />
       case "degraded":
-        return <AlertTriangle className="w-5 h-5 text-yellow-400" />;
+        return <AlertTriangle size={20} className="text-warning" />
       case "down":
-        return <XCircle className="w-5 h-5 text-red-400" />;
+        return <XCircle size={20} className="text-danger" />
       default:
-        return <AlertTriangle className="w-5 h-5 text-gray-400" />;
+        return <AlertTriangle size={20} className="text-muted" />
     }
-  };
+  }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="loading-container">
+        <div className="spinner-large"></div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-3 mb-2">
-          <Activity className="w-8 h-8 text-blue-400" />
-          System Status
-        </h1>
-        <p className="text-gray-400">Real-time monitoring of all system components</p>
+    <div className="page-container">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">
+            <Activity size={32} />
+            System Status
+          </h1>
+          <p className="page-subtitle">Real-time monitoring of all system components</p>
+        </div>
       </div>
 
       {/* System Health Overview */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-6">
-        <div className="flex items-center justify-between">
+      <div className="card system-health-card">
+        <div className="system-health-content">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-2">
+            <h2 className="system-health-title">
               {systemStatus.lockdownMode ? "System in Lockdown Mode" : "All Systems Operational"}
             </h2>
-            <p className="text-gray-400">
+            <p className="system-health-subtitle">
               {systemStatus.lockdownMode ? "🔒 Restricted access mode active" : "✅ All services running normally"}
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center">
+          <div className="system-health-actions">
+            <div className="system-health-icon">
               {systemStatus.lockdownMode ? (
-                <XCircle className="w-8 h-8 text-red-400" />
+                <XCircle size={32} className="text-danger" />
               ) : (
-                <CheckCircle className="w-8 h-8 text-green-400" />
+                <CheckCircle size={32} className="text-success" />
               )}
             </div>
             <button
               onClick={handleToggleLockdown}
               disabled={lockdownLoading}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
-                systemStatus.lockdownMode
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : 'bg-red-600 hover:bg-red-700 text-white'
-              } ${lockdownLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`btn ${systemStatus.lockdownMode ? "btn-success" : "btn-danger"}`}
             >
               {lockdownLoading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="spinner"></div>
               ) : systemStatus.lockdownMode ? (
                 <>
-                  <Play className="w-4 h-4" />
+                  <Play size={16} />
                   Disable Lockdown
                 </>
               ) : (
                 <>
-                  <Pause className="w-4 h-4" />
+                  <Pause size={16} />
                   Enable Lockdown
                 </>
               )}
@@ -141,79 +152,65 @@ const SystemStatus = () => {
       </div>
 
       {/* Component Status Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+      <div className="components-grid">
         {components.map((component) => {
-          const Icon = component.icon;
-          const status = systemStatus.componentStatuses[component.key];
-
+          const Icon = component.icon
+          const status = systemStatus.componentStatuses[component.key]
           return (
-            <div key={component.key} className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-12 h-12 rounded-lg flex items-center justify-center"
-                    style={{ background: `${component.color}20` }}
-                  >
-                    <Icon className="w-6 h-6" style={{ color: component.color }} />
+            <div key={component.key} className="component-card">
+              <div className="component-header">
+                <div className="component-info">
+                  <div className="component-icon" style={{ background: `${component.color}20` }}>
+                    <Icon size={24} style={{ color: component.color }} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white">{component.name}</h3>
-                    <p className="text-sm text-gray-400 capitalize">{status}</p>
+                    <h3 className="component-name">{component.name}</h3>
+                    <p className="component-status">{status}</p>
                   </div>
                 </div>
                 {getStatusIcon(status)}
               </div>
-              <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+              <div className="component-progress">
                 <div
-                  className="h-full transition-all duration-500"
+                  className="component-progress-bar"
                   style={{
                     width: status === "operational" ? "100%" : status === "degraded" ? "60%" : "0%",
-                    background:
-                      status === "operational"
-                        ? "#10B981"
-                        : status === "degraded"
-                          ? "#F59E0B"
-                          : "#EF4444",
+                    background: status === "operational" ? "#10B981" : status === "degraded" ? "#F59E0B" : "#EF4444",
                   }}
                 ></div>
               </div>
             </div>
-          );
+          )
         })}
       </div>
 
       {/* Error Logs */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <div className="flex items-center gap-2 mb-4">
-          <AlertTriangle className="w-5 h-5 text-yellow-400" />
-          <h2 className="text-lg font-semibold text-white">Recent Error Logs</h2>
+      <div className="card">
+        <div className="card-header">
+          <AlertTriangle size={20} />
+          <h2 className="card-title">Recent Error Logs</h2>
         </div>
         {systemStatus.errorLogs.length === 0 ? (
-          <div className="text-center py-12">
-            <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
-            <p className="text-gray-400">No recent errors. System is running smoothly!</p>
+          <div className="empty-state">
+            <CheckCircle size={48} className="text-success" />
+            <p>No recent errors. System is running smoothly!</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="error-logs">
             {systemStatus.errorLogs.map((log, index) => (
-              <div
-                key={index}
-                className="p-4 bg-gray-700/50 rounded-lg border-l-4 border-red-500"
-              >
-                <div className="flex justify-between items-start">
-                  <span className="font-semibold text-white capitalize">{log.component}</span>
-                  <span className="text-xs text-gray-400">
-                    {new Date(log.timestamp).toLocaleString()}
-                  </span>
+              <div key={index} className="error-log-item">
+                <div className="error-log-header">
+                  <span className="error-log-component">{log.component}</span>
+                  <span className="error-log-time">{new Date(log.timestamp).toLocaleString()}</span>
                 </div>
-                <p className="text-gray-300 text-sm mt-1">{log.error}</p>
+                <p className="error-log-message">{log.error}</p>
               </div>
             ))}
           </div>
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default SystemStatus;
+export default SystemStatus
