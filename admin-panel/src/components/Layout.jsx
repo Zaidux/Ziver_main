@@ -1,88 +1,101 @@
-import React from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
+import { useState } from "react"
+import { NavLink, Outlet, useNavigate } from "react-router-dom"
+import {
+  LayoutDashboard,
   ClipboardList,
-  Settings, 
-  Users, 
+  Settings,
+  Users,
   Network,
   LogOut,
-  Shield
-} from 'lucide-react';
+  Shield,
+  Menu,
+  X,
+  Sun,
+  Moon,
+} from "lucide-react"
+import { useTheme } from "../context/ThemeContext"
 
 const Layout = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+  const { theme, toggleTheme } = useTheme()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const handleLogout = () => {
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('admin_user');
-    navigate('/login');
-  };
+    localStorage.removeItem("admin_token")
+    localStorage.removeItem("admin_user")
+    navigate("/login")
+  }
 
   const navItems = [
-    { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/users', icon: Users, label: 'Users' },
-    { to: '/tasks', icon: ClipboardList, label: 'Tasks' },
-    { to: '/system-status', icon: Network, label: 'System Status' },
-    { to: '/settings', icon: Settings, label: 'Settings' },
-  ];
+    { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/users", icon: Users, label: "Users" },
+    { to: "/tasks", icon: ClipboardList, label: "Tasks" },
+    { to: "/system-status", icon: Network, label: "System Status" },
+    { to: "/settings", icon: Settings, label: "Settings" },
+  ]
+
+  const closeMobileMenu = () => setIsMobileMenuOpen(false)
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white">
-      {/* Enhanced Sidebar */}
-      <nav className="w-64 bg-gray-800 border-r border-green-500/20 flex flex-col">
-        <div className="p-6 border-b border-green-500/20 flex items-center gap-3">
-          <Shield className="w-6 h-6 text-green-400" />
-          <h1 className="text-xl font-bold text-white">Admin Panel</h1>
-        </div>
+    <div className="layout-container">
+      {/* Top Navigation Bar */}
+      <header className="top-nav">
+        <div className="top-nav-content">
+          <div className="top-nav-left">
+            <button
+              className="mobile-menu-btn"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+            <div className="brand">
+              <Shield className="brand-icon" />
+              <h1 className="brand-title">Ziver Admin</h1>
+            </div>
+          </div>
 
-        <div className="flex-1 p-4 space-y-2">
+          <div className="top-nav-right">
+            <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
+              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <button className="logout-btn" onClick={handleLogout} aria-label="Logout">
+              <LogOut size={20} />
+              <span className="logout-text">Logout</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Sidebar Navigation */}
+      <nav className={`sidebar ${isMobileMenuOpen ? "sidebar-open" : ""}`}>
+        <div className="sidebar-content">
           {navItems.map((item) => {
-            const Icon = item.icon;
+            const Icon = item.icon
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative ${
-                    isActive
-                      ? 'bg-green-500/20 text-green-400 border border-green-500/30 shadow-lg shadow-green-500/10'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white hover:translate-x-1'
-                  }`
-                }
+                onClick={closeMobileMenu}
+                className={({ isActive }) => `nav-item ${isActive ? "nav-item-active" : ""}`}
               >
-                {({ isActive }) => (
-                  <>
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                    {isActive && (
-                      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-green-400 rounded-r-full"></div>
-                    )}
-                  </>
-                )}
+                <Icon className="nav-icon" />
+                <span className="nav-label">{item.label}</span>
               </NavLink>
-            );
+            )
           })}
-        </div>
-
-        {/* Logout Button */}
-        <div className="p-4 border-t border-green-500/20">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:bg-red-600 hover:text-white transition-all duration-200 w-full text-left"
-          >
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium">Logout</span>
-          </button>
         </div>
       </nav>
 
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && <div className="mobile-overlay" onClick={closeMobileMenu} />}
+
       {/* Main Content */}
-      <main className="flex-1 overflow-auto bg-gray-900">
+      <main className="main-content">
         <Outlet />
       </main>
     </div>
-  );
-};
+  )
+}
 
-export default Layout;
+export default Layout
