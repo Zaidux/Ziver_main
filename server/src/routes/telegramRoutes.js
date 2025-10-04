@@ -11,7 +11,7 @@ const {
   setWebhookManual,
   getWebhookInfo,
   sendTestMessage
-} = require('../controllers/telegramControllers');
+} = require('../controllers/telegramController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Public routes (no authentication required)
