@@ -22,7 +22,7 @@
   --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
-  --info: #3b82f6;
+  --info: #2a2a2a;
 
   /* Component Specific */
   --nav-bg: #ffffff;
@@ -50,21 +50,21 @@
 
 /* Dark Theme */
 [data-theme="dark"] {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #2a2a2a;
   --text-primary: #f1f5f9;
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
-  --border-color: #334155;
+  --border-color: #3a3a3a;
   --shadow: rgba(0, 0, 0, 0.3);
   --shadow-lg: rgba(0, 0, 0, 0.5);
 
-  --nav-bg: #1e293b;
-  --nav-border: #334155;
-  --card-bg: #1e293b;
-  --input-bg: #334155;
-  --input-border: #475569;
+  --nav-bg: #1a1a1a;
+  --nav-border: #2a2a2a;
+  --card-bg: #1a1a1a;
+  --input-bg: #2a2a2a;
+  --input-border: #3a3a3a;
 }
 
 /* Global Styles */
@@ -358,8 +358,8 @@ body {
 }
 
 .stat-card-blue .stat-icon {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: var(--info);
+  background-color: rgba(42, 42, 42, 0.3);
+  color: #2a2a2a;
 }
 
 .stat-card-green .stat-icon {
@@ -451,8 +451,8 @@ body {
 }
 
 .action-card-primary {
-  background-color: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.2);
+  background-color: rgba(42, 42, 42, 0.1);
+  border-color: rgba(42, 42, 42, 0.2);
 }
 
 .action-card h4 {
@@ -505,7 +505,7 @@ body {
 }
 
 .activity-dot-blue {
-  background-color: var(--info);
+  background-color: #2a2a2a;
 }
 
 .activity-time {
@@ -764,9 +764,9 @@ body {
 }
 
 .badge-primary {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: var(--info);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background-color: rgba(42, 42, 42, 0.1);
+  color: #2a2a2a;
+  border: 1px solid rgba(42, 42, 42, 0.2);
 }
 
 .badge-success {
@@ -782,9 +782,9 @@ body {
 }
 
 .badge-info {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: var(--info);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background-color: rgba(42, 42, 42, 0.1);
+  color: #2a2a2a;
+  border: 1px solid rgba(42, 42, 42, 0.2);
 }
 
 /* Alerts */
@@ -951,7 +951,7 @@ body {
 
 /* System Status Specific */
 .system-health-card {
-  background: linear-gradient(135deg, rgba(0, 230, 118, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(0, 230, 118, 0.05) 0%, rgba(42, 42, 42, 0.05) 100%);
 }
 
 .system-health-content {
