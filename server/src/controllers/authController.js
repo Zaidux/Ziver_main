@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('../config/db');
+const { sendReferralNotification } = require('./telegramControllers');
 
 // Helper function to generate a unique referral code
 const generateReferralCode = (length = 6) => {
