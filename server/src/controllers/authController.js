@@ -81,7 +81,7 @@ const applyReferral = async (client, referralCode, userId) => {
     // 🔥 FIXED: Apply proper rewards
     // Referrer gets 150 ZP + 5-10 SEB points
     const sebPointsReward = Math.floor(Math.random() * 6) + 5; // Random between 5-10
-    
+
     await client.query(
       `UPDATE users 
        SET zp_balance = zp_balance + 150, 
@@ -151,7 +151,7 @@ const getReferrerInfo = asyncHandler(async (req, res) => {
 
     if (userResult.rows.length > 0) {
       const referrer = userResult.rows[0];
-      
+
       // Check if referrer has reached max referrals (50)
       if (referrer.referral_count >= 50) {
         return res.json({
@@ -275,14 +275,14 @@ const registerUser = asyncHandler(async (req, res) => {
     // 🔥 ENHANCED REFERRAL LOGIC
     let referrerInfo = null;
     let effectiveReferralCode = referralCode;
-    
+
     // If no direct referral code, check pending referrals (Telegram)
     if (!effectiveReferralCode && telegramId) {
       const pendingRef = await client.query(
         'SELECT referral_code FROM pending_referrals WHERE telegram_id = $1 AND expires_at > NOW()',
         [telegramId]
       );
-      
+
       if (pendingRef.rows.length > 0) {
         effectiveReferralCode = pendingRef.rows[0].referral_code;
         console.log('Using pending Telegram referral:', effectiveReferralCode);
@@ -301,9 +301,18 @@ const registerUser = asyncHandler(async (req, res) => {
     // Apply referral if we have a valid code
     if (effectiveReferralCode) {
       referrerInfo = await applyReferral(client, effectiveReferralCode, user.id);
-      
+
       if (referrerInfo) {
         console.log(`Referral applied: ${referrerInfo.username} -> ${username}`);
+        
+        // 🔥 NEW: Send Telegram notification to referrer
+        try {
+          await sendReferralNotification(referrerInfo.id, username);
+          console.log(`Telegram referral notification sent to: ${referrerInfo.username}`);
+        } catch (notificationError) {
+          console.error('Error sending Telegram referral notification:', notificationError);
+          // Don't fail registration if notification fails
+        }
       } else {
         console.log('Referral code was invalid:', effectiveReferralCode);
       }
