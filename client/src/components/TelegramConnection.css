@@ -1,266 +1,272 @@
 .telegram-connection {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
   border: 1px solid #333;
   border-radius: 16px;
-  padding: 20px;
-  margin: 20px 0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-.telegram-header {
+.connection-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #333;
 }
 
-.telegram-header h3 {
-  color: #00ff80;
+.connection-icon {
+  width: 32px;
+  height: 32px;
+  color: #0088cc;
+}
+
+.connection-header h2 {
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 700;
   margin: 0;
-  font-size: 1.25rem;
+}
+
+.connection-description {
+  background: rgba(0, 136, 204, 0.1);
+  border: 1px solid rgba(0, 136, 204, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.connection-description p {
+  color: #e0e0e0;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.connection-description ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.connection-description li {
+  color: #b0b0b0;
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .connection-status {
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
 }
 
 .connection-status.connected {
-  background: rgba(0, 255, 128, 0.2);
-  color: #00ff80;
-  border: 1px solid rgba(0, 255, 128, 0.3);
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.3);
 }
 
 .connection-status.disconnected {
-  background: rgba(255, 77, 77, 0.2);
-  color: #ff4d4d;
-  border: 1px solid rgba(255, 77, 77, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-.connected-state .telegram-info {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 15px;
-  border-radius: 12px;
-  margin-bottom: 15px;
-  border: 1px solid #333;
+.status-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.telegram-info p {
-  margin: 8px 0;
-  color: #ccc;
-  font-size: 0.9rem;
+.status-icon {
+  width: 24px;
+  height: 24px;
 }
 
-.telegram-info strong {
-  color: #00ff80;
-}
-
-.notification-settings {
-  background: rgba(0, 255, 128, 0.1);
-  padding: 15px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  border: 1px solid rgba(0, 255, 128, 0.2);
-}
-
-.notification-settings h4 {
-  color: #00ff80;
-  margin: 0 0 10px 0;
-  font-size: 1rem;
-}
-
-.notification-settings ul {
-  margin: 0;
-  padding-left: 20px;
-  color: #ccc;
-}
-
-.notification-settings li {
-  margin: 5px 0;
-  font-size: 0.9rem;
-}
-
-.disconnect-btn {
-  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 10px;
+.status-header h3 {
+  color: #ffffff;
+  font-size: 1.2rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: 100%;
+  margin: 0;
 }
 
-.disconnect-btn:hover {
-  background: linear-gradient(135deg, #ff5252, #e53935);
-  transform: translateY(-2px);
-}
-
-.connection-instructions h4 {
-  color: #00ff80;
-  margin-bottom: 15px;
-  font-size: 1.1rem;
-}
-
-.connection-instructions p {
-  color: #ccc;
-  margin-bottom: 15px;
-  font-size: 0.95rem;
-}
-
-.connection-instructions ul {
-  color: #ccc;
+.connection-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin-bottom: 20px;
-  padding-left: 20px;
 }
 
-.connection-instructions li {
-  margin: 8px 0;
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e0e0e0;
   font-size: 0.9rem;
+}
+
+.info-icon {
+  width: 16px;
+  height: 16px;
+  color: #0088cc;
+}
+
+.connection-code-section {
+  text-align: center;
+}
+
+.connection-code-section p {
+  color: #e0e0e0;
+  margin-bottom: 16px;
+}
+
+.code-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.connection-code {
+  font-family: 'Courier New', monospace;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #00ff88;
+  letter-spacing: 2px;
+  background: rgba(0, 255, 136, 0.1);
+  padding: 8px 16px;
+  border-radius: 6px;
 }
 
 .connection-steps {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 15px;
-  border-radius: 12px;
-  margin: 20px 0;
-  border: 1px solid #333;
+  text-align: left;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
 }
 
-.connection-steps h5 {
-  color: #00ff80;
-  margin: 0 0 10px 0;
+.connection-steps h4 {
+  color: #ffffff;
+  margin-bottom: 12px;
   font-size: 1rem;
 }
 
 .connection-steps ol {
-  color: #ccc;
+  color: #b0b0b0;
   padding-left: 20px;
   margin: 0;
 }
 
 .connection-steps li {
-  margin: 8px 0;
-  font-size: 0.9rem;
+  margin-bottom: 8px;
+  line-height: 1.4;
 }
 
 .connection-steps code {
-  background: rgba(0, 255, 128, 0.2);
-  color: #00ff80;
+  background: rgba(0, 136, 204, 0.2);
+  color: #0088cc;
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: monospace;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
 }
 
-.generate-code-btn,
-.connect-btn,
-.new-code-btn {
-  width: 100%;
-  padding: 14px;
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   font-weight: 600;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin: 5px 0;
+  transition: all 0.2s ease;
+  text-decoration: none;
 }
 
-.generate-code-btn {
-  background: linear-gradient(135deg, #00ff80, #00cc66);
-  color: #1a1a1a;
-}
-
-.generate-code-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #00ff99, #00e673);
-  transform: translateY(-2px);
-}
-
-.generate-code-btn:disabled {
+.btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.connect-btn {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
+.btn-primary {
+  background: #00ff88;
+  color: #000000;
 }
 
-.connect-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #764ba2, #667eea);
-  transform: translateY(-2px);
+.btn-primary:hover:not(:disabled) {
+  background: #00cc6a;
+  transform: translateY(-1px);
 }
 
-.new-code-btn {
-  background: transparent;
-  color: #ccc;
-  border: 1px solid #555;
+.btn-secondary {
+  background: #0088cc;
+  color: #ffffff;
 }
 
-.new-code-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: #777;
+.btn-secondary:hover:not(:disabled) {
+  background: #006699;
 }
 
-.code-section {
-  text-align: center;
+.btn-danger {
+  background: #ef4444;
+  color: #ffffff;
 }
 
-.code-display {
-  background: rgba(0, 255, 128, 0.1);
-  padding: 20px;
-  border-radius: 12px;
-  margin: 15px 0;
-  border: 1px solid rgba(0, 255, 128, 0.3);
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
 }
 
-.code-display label {
-  display: block;
-  color: #00ff80;
-  font-weight: 600;
-  margin-bottom: 10px;
-  font-size: 0.9rem;
+.btn-icon {
+  width: 16px;
+  height: 16px;
 }
 
-.code-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #00ff80;
-  letter-spacing: 8px;
-  margin: 15px 0;
-  text-shadow: 0 0 10px rgba(0, 255, 128, 0.5);
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-weight: 500;
 }
 
-.code-display small {
-  color: #888;
-  font-size: 0.8rem;
+.alert-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
 }
 
-/* Mobile responsiveness */
+.alert-success {
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  color: #00ff88;
+}
+
+.alert-icon {
+  width: 20px;
+  height: 20px;
+}
+
 @media (max-width: 768px) {
   .telegram-connection {
-    padding: 15px;
-    margin: 15px 0;
+    padding: 16px;
   }
-
-  .telegram-header {
+  
+  .code-display {
     flex-direction: column;
-    gap: 10px;
-    text-align: center;
+    gap: 12px;
   }
-
-  .code-value {
-    font-size: 1.5rem;
-    letter-spacing: 4px;
-  }
-
-  .connection-steps ol {
-    padding-left: 15px;
+  
+  .connection-steps {
+    font-size: 0.9rem;
   }
 }
