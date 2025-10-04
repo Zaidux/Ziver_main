@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { usePlatformDetection } from './hooks/usePlatformDetection';
 import api from './services/api';
 
 // Layout and Component Imports
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import LandingPage from './pages/LandingPage';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import MiningHub from './pages/MiningHub';
@@ -14,8 +16,10 @@ import ReferralsPage from './pages/ReferralsPage';
 import LockdownPage from './pages/LockdownPage';
 import ComingSoonPage from './pages/ComingSoonPage';
 
-function App() {
+// Component to handle platform-based routing
+const PlatformRouter = () => {
   const { user, logout, systemStatus } = useAuth();
+  const { platform, isWeb, isLoading } = usePlatformDetection();
   const navigate = useNavigate();
   const location = useLocation();
   const [isLockdown, setIsLockdown] = useState(false);
@@ -35,7 +39,7 @@ function App() {
           console.log('🔒 Redirecting to lockdown page');
           navigate('/lockdown', { replace: true });
         }
-        
+
         // Redirect back to app if lockdown is lifted and user is on lockdown page
         if (!systemData.lockdownMode && location.pathname === '/lockdown') {
           console.log('🔓 Lockdown lifted, redirecting to app');
@@ -76,38 +80,76 @@ function App() {
     }
   }, [user, logout, navigate, location]);
 
-  return (
-    <div className="app-container">
+  // Show loading screen while detecting platform
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white text-lg">Loading Ziver...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show landing page only for web users (not Telegram or mobile app)
+  if (isWeb && !user) {
+    return (
       <Routes>
-        {/* Public Routes */}
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/lockdown" element={<LockdownPage />} />
-
-        {/* Protected Routes - Show Layout for all authenticated users */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<Layout />}>
-            {/* Only show these routes if not in lockdown OR user is admin */}
-            {(!isLockdown || user?.role === 'ADMIN') ? (
-              <>
-                <Route path="/" element={<MiningHub />} />
-                <Route path="/tasks" element={<TasksPage />} />
-                <Route path="/referrals" element={<ReferralsPage />} />
-                <Route path="/job-marketplace" element={<ComingSoonPage featureName="Job Marketplace" />} />
-                <Route path="/wallet" element={<ComingSoonPage featureName="Wallet" />} />
-                <Route path="/profile" element={<ComingSoonPage featureName="Profile" />} />
-              </>
-            ) : (
-              // If in lockdown and not admin, show lockdown page within layout
-              <Route path="*" element={<LockdownPage />} />
-            )}
-          </Route>
-        </Route>
-
-        {/* Fallback route for 404 errors */}
-        <Route path="*" element={<LoginPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </div>
+    );
+  }
+
+  // For Telegram, mobile app, or authenticated users, show the app
+  return <AppRoutes user={user} isLockdown={isLockdown} />;
+};
+
+// Regular app routes
+const AppRoutes = ({ user, isLockdown }) => (
+  <Routes>
+    {/* Public Routes */}
+    <Route path="/register" element={<RegisterPage />} />
+    <Route path="/login" element={<LoginPage />} />
+    <Route path="/lockdown" element={<LockdownPage />} />
+
+    {/* Protected Routes - Show Layout for all authenticated users */}
+    <Route element={<ProtectedRoute />}>
+      <Route element={<Layout />}>
+        {/* Only show these routes if not in lockdown OR user is admin */}
+        {(!isLockdown || user?.role === 'ADMIN') ? (
+          <>
+            <Route path="/" element={<MiningHub />} />
+            <Route path="/mining" element={<MiningHub />} />
+            <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/referrals" element={<ReferralsPage />} />
+            <Route path="/job-marketplace" element={<ComingSoonPage featureName="Job Marketplace" />} />
+            <Route path="/wallet" element={<ComingSoonPage featureName="Wallet" />} />
+            <Route path="/profile" element={<ComingSoonPage featureName="Profile" />} />
+          </>
+        ) : (
+          // If in lockdown and not admin, show lockdown page within layout
+          <Route path="*" element={<LockdownPage />} />
+        )}
+      </Route>
+    </Route>
+
+    {/* Fallback route for 404 errors */}
+    <Route path="*" element={<Navigate to={user ? "/" : "/login"} replace />} />
+  </Routes>
+);
+
+function App() {
+  return (
+    <Router>
+      <div className="app-container">
+        <PlatformRouter />
+      </div>
+    </Router>
   );
 }
 
