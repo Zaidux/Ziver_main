@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const db = require('../config/db');
+const { sendMiningNotification } = require('./telegramControllers');
 
 function getRandomPoints(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -90,6 +91,16 @@ const claimReward = asyncHandler(async (req, res) => {
   const { rows } = await db.query(query, [zpToAdd, pointsToAdd, newStreak, userId]);
 
   const updatedUser = rows[0];
+  
+  // 🔥 NEW: Send Telegram notification for mining completion
+  try {
+    await sendMiningNotification(userId, zpToAdd);
+    console.log(`Telegram mining notification sent to user: ${userId}`);
+  } catch (notificationError) {
+    console.error('Error sending Telegram mining notification:', notificationError);
+    // Don't fail the claim if notification fails
+  }
+
   res.json({
     success: true,
     message: 'Reward claimed successfully',
