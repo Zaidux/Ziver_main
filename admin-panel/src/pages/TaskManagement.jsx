@@ -425,32 +425,41 @@ const TaskManagement = () => {
           </div>
         ) : (
           <div className="tasks-grid">
-            {tasks.map((task) => (
-              <div key={task.id} className={`task-card ${task.is_active ? "" : "task-inactive"}`}>
-                <div className="task-card-header">
-                  <h4>{task.title}</h4>
-                  <div className="task-badges">
-                    <span className={`badge ${task.link_url ? "badge-info" : "badge-primary"}`}>
-                      {task.link_url ? "🔗 Link" : "📱 In-App"}
-                    </span>
-                    <span className={`badge ${task.is_active ? "badge-success" : "badge-secondary"}`}>
-                      {task.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-                </div>
-                <p className="task-description">{task.description}</p>
-                <div className="task-details">
-                  <span>
-                    💰 {task.zp_reward} ZP + {task.seb_reward} SEB
-                  </span>
-                  <span>✅ {task.completion_count || 0} completions</span>
-                </div>
-                <button onClick={() => handleEdit(task)} className="btn btn-sm btn-secondary">
-                  <Edit2 size={14} />
-                  Edit
-                </button>
-              </div>
-            ))}
+            // In the tasks list section, update the task card to show validation rules:
+{tasks.map((task) => (
+  <div key={task.id} className={`task-card ${task.is_active ? "" : "task-inactive"}`}>
+    <div className="task-card-header">
+      <h4>{task.title}</h4>
+      <div className="task-badges">
+        <span className={`badge ${task.link_url ? "badge-info" : "badge-primary"}`}>
+          {task.link_url ? "🔗 Link" : "📱 In-App"}
+        </span>
+        <span className={`badge ${task.is_active ? "badge-success" : "badge-secondary"}`}>
+          {task.is_active ? "Active" : "Inactive"}
+        </span>
+        {task.validation_rules && task.validation_rules.length > 0 && (
+          <span className="badge badge-warning">
+            📋 {task.validation_rules.length} Rule{task.validation_rules.length !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+    </div>
+    <p className="task-description">{task.description}</p>
+    <div className="task-details">
+      <span>
+        💰 {task.zp_reward} ZP + {task.seb_reward} SEB
+      </span>
+      <span>✅ {task.completion_count || 0} completions</span>
+      {task.validation_rules && task.validation_rules.length > 0 && (
+        <span>📋 {task.validation_rules.length} validation rule{task.validation_rules.length !== 1 ? 's' : ''}</span>
+      )}
+    </div>
+    <button onClick={() => handleEdit(task)} className="btn btn-sm btn-secondary">
+      <Edit2 size={14} />
+      Edit
+    </button>
+  </div>
+))}
           </div>
         )}
       </div>
