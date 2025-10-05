@@ -17,22 +17,26 @@ const BackendStatus = () => {
     try {
       const baseUrl = process.env.REACT_APP_API_URL || 'https://your-backend-url.onrender.com'
       
-      // Check main API
+      // Check main API - use the ping endpoint
       let mainApiStatus = 'down'
       try {
-        const response = await fetch(`${baseUrl}/api/system/status`, {
+        const response = await fetch(`${baseUrl}/api/system/ping`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
-          timeout: 5000
         })
-        mainApiStatus = response.ok ? 'operational' : 'degraded'
+        if (response.ok) {
+          const data = await response.json()
+          mainApiStatus = data.status === 'ok' ? 'operational' : 'degraded'
+        } else {
+          mainApiStatus = 'degraded'
+        }
       } catch (error) {
         mainApiStatus = 'down'
       }
 
-      // Check Telegram bot health
+      // Check Telegram bot health - use the health endpoint
       let telegramBotStatus = 'down'
       try {
         const response = await fetch(`${baseUrl}/api/telegram/health`, {
@@ -40,21 +44,31 @@ const BackendStatus = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          timeout: 5000
         })
-        telegramBotStatus = response.ok ? 'operational' : 'degraded'
+        if (response.ok) {
+          telegramBotStatus = 'operational'
+        } else {
+          telegramBotStatus = 'degraded'
+        }
       } catch (error) {
         telegramBotStatus = 'down'
       }
 
-      // Check database connectivity (via a simple endpoint)
+      // Check database connectivity via health endpoint
       let databaseStatus = 'down'
       try {
-        const response = await fetch(`${baseUrl}/`, {
+        const response = await fetch(`${baseUrl}/api/system/health`, {
           method: 'GET',
-          timeout: 5000
+          headers: {
+            'Content-Type': 'application/json',
+          },
         })
-        databaseStatus = response.ok ? 'operational' : 'degraded'
+        if (response.ok) {
+          const data = await response.json()
+          databaseStatus = data.database === 'connected' ? 'operational' : 'degraded'
+        } else {
+          databaseStatus = 'degraded'
+        }
       } catch (error) {
         databaseStatus = 'down'
       }
@@ -67,13 +81,12 @@ const BackendStatus = () => {
       })
     } catch (error) {
       console.error('Error checking backend health:', error)
-      setBackendStatus(prev => ({
-        ...prev,
+      setBackendStatus({
         mainApi: 'down',
-        telegramBot: 'down',
+        telegramBot: 'down', 
         database: 'down',
         lastChecked: new Date().toLocaleString()
-      }))
+      })
     } finally {
       setLoading(false)
     }
@@ -136,7 +149,7 @@ const BackendStatus = () => {
       key: "mainApi",
       name: "Main API",
       description: "REST API endpoints and business logic",
-      endpoint: "/api/system/status"
+      endpoint: "/api/system/ping"
     },
     {
       key: "telegramBot",
@@ -148,7 +161,7 @@ const BackendStatus = () => {
       key: "database",
       name: "Database",
       description: "PostgreSQL database connectivity",
-      endpoint: "/"
+      endpoint: "/api/system/health"
     }
   ]
 
@@ -213,11 +226,11 @@ const BackendStatus = () => {
           <div className="status-summary">
             <span className="summary-item">
               <CheckCircle size={14} className="text-success" />
-              Operational: {Object.values(backendStatus).filter(status => status === 'operational').length - 1}
+              Operational: {Object.values(backendStatus).filter(status => status === 'operational').length}
             </span>
             <span className="summary-item">
               <AlertTriangle size={14} className="text-warning" />
-              Issues: {Object.values(backendStatus).filter(status => status === 'degraded' || status === 'down').length - 1}
+              Issues: {Object.values(backendStatus).filter(status => status === 'degraded' || status === 'down').length}
             </span>
           </div>
         </div>
