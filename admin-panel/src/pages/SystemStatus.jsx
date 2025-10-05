@@ -15,6 +15,7 @@ import {
   Pause,
 } from "lucide-react"
 import { getSystemStatus, toggleLockdown } from "../services/adminService"
+import BackendStatus from "../components/BackendStatus"
 
 const SystemStatus = () => {
   const [systemStatus, setSystemStatus] = useState(null)
@@ -108,6 +109,9 @@ const SystemStatus = () => {
           <p className="page-subtitle">Real-time monitoring of all system components</p>
         </div>
       </div>
+
+      {/* Backend Services Status - NEW SECTION */}
+      <BackendStatus />
 
       {/* System Health Overview */}
       <div className="card system-health-card">
