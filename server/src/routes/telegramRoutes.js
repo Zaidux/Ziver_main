@@ -17,6 +17,16 @@ const { protect } = require('../middleware/authMiddleware');
 // Public routes (no authentication required)
 router.post('/webhook', handleTelegramWebhook);
 
+// NEW: Health check endpoint (public)
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'operational',
+    timestamp: new Date().toISOString(),
+    hasBotToken: !!process.env.TELEGRAM_BOT_TOKEN,
+    webhookUrl: process.env.TELEGRAM_WEBHOOK_URL || `${process.env.BASE_URL}/api/telegram/webhook`
+  });
+});
+
 // Protected routes (require authentication)
 router.post('/generate-connection-code', protect, generateConnectionCode);
 router.post('/verify-connection', protect, verifyConnectionCode);
