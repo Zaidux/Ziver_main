@@ -142,20 +142,37 @@ const TaskManagement = () => {
     }
   }
 
-  const handleEdit = (task) => {
-    setIsEditing(task.id)
-    setFormData({
-      title: task.title,
-      description: task.description,
-      zp_reward: task.zp_reward,
-      seb_reward: task.seb_reward,
-      link_url: task.link_url || "",
-      task_type: task.link_url ? "link" : "in_app",
-      verification_required: task.verification_required || false,
-      is_active: task.is_active,
-    })
-    setValidationRules([])
+  const handleEdit = async (task) => {
+  setIsEditing(task.id);
+  setFormData({
+    title: task.title,
+    description: task.description,
+    zp_reward: task.zp_reward,
+    seb_reward: task.seb_reward,
+    link_url: task.link_url || "",
+    task_type: task.link_url ? "link" : "in_app",
+    verification_required: task.verification_required || false,
+    is_active: task.is_active,
+  });
+
+  // Load existing validation rules if available
+  if (task.validation_rules && task.validation_rules.length > 0) {
+    console.log(`Loading ${task.validation_rules.length} existing validation rules`);
+    const formattedRules = task.validation_rules.map(rule => ({
+      id: rule.id,
+      rule_type: rule.rule_type,
+      operator: rule.operator,
+      value: rule.value,
+      priority: rule.priority,
+      is_active: rule.is_active
+    }));
+    setValidationRules(formattedRules);
+  } else {
+    setValidationRules([]);
   }
+  
+  setActiveTab("basic");
+};
 
   const resetForm = () => {
     setIsEditing(null)
