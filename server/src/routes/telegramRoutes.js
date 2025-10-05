@@ -12,21 +12,21 @@ const {
   getWebhookInfo,
   sendTestMessage
 } = require('../controllers/telegramController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 
 // Public routes (no authentication required)
 router.post('/webhook', handleTelegramWebhook);
 
 // Protected routes (require authentication)
-router.post('/generate-connection-code', authMiddleware, generateConnectionCode);
-router.post('/verify-connection', authMiddleware, verifyConnectionCode);
-router.get('/connection-status', authMiddleware, getConnectionStatus);
-router.post('/disconnect', authMiddleware, disconnectTelegram);
-router.put('/notification-settings', authMiddleware, updateNotificationSettings);
+router.post('/generate-connection-code', protect, generateConnectionCode);
+router.post('/verify-connection', protect, verifyConnectionCode);
+router.get('/connection-status', protect, getConnectionStatus);
+router.post('/disconnect', protect, disconnectTelegram);
+router.put('/notification-settings', protect, updateNotificationSettings);
 
 // Admin/utility routes
-router.post('/set-webhook', authMiddleware, setWebhookManual);
-router.get('/webhook-info', authMiddleware, getWebhookInfo);
-router.post('/test-message', authMiddleware, sendTestMessage);
+router.post('/set-webhook', protect, setWebhookManual);
+router.get('/webhook-info', protect, getWebhookInfo);
+router.post('/test-message', protect, sendTestMessage);
 
 module.exports = router;
