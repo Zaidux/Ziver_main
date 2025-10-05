@@ -27,4 +27,13 @@ router.get('/referrer-info/:referralCode', getReferrerInfo);
 // @access  Public
 router.post('/pending-referral', createPendingReferral);
 
+// Add a public health check endpoint
+router.get('/health', (req, res) => {
+  res.json({ 
+    status: 'operational', 
+    service: 'authentication',
+    timestamp: new Date().toISOString()
+  });
+});
+
 module.exports = router;
