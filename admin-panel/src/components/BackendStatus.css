@@ -1,0 +1,118 @@
+/* Backend Status Styles */
+.backend-status-content {
+  space-y: 4;
+}
+
+.backend-component {
+  padding: 16px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.backend-component:last-child {
+  border-bottom: none;
+}
+
+.backend-component-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.backend-component-details {
+  flex: 1;
+}
+
+.backend-component-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #1f2937;
+}
+
+.backend-component-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 8px 0;
+}
+
+.backend-component-endpoint {
+  font-size: 12px;
+  color: #9ca3af;
+  font-family: monospace;
+}
+
+.backend-component-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  justify-content: flex-end;
+}
+
+.status-text {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.backend-component-progress {
+  height: 4px;
+  background: #f3f4f6;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.backend-progress-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.backend-status-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 16px;
+}
+
+.last-checked {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.status-summary {
+  display: flex;
+  gap: 16px;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.card-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Spinner animation for refresh */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Status colors */
+.text-success { color: #10B981; }
+.text-warning { color: #F59E0B; }
+.text-danger { color: #EF4444; }
+.text-muted { color: #6B7280; }
