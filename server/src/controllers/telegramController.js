@@ -419,7 +419,7 @@ const verifyConnectionCode = asyncHandler(async (req, res) => {
     }
 
     const session = sessionResult.rows[0];
-    const sessionData = JSON.parse(session.data);
+    const sessionData = session.data;
     const telegramId = sessionData.telegramId;
     const chatId = session.chat_id;
 
