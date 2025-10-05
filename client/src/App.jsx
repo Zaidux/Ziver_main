@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'; // Remove BrowserRouter import
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { usePlatformDetection } from './hooks/usePlatformDetection';
 import api from './services/api';
@@ -127,25 +127,26 @@ const AppRoutes = ({ user, isLockdown }) => (
             <Route path="/mining" element={<MiningHub />} />
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/referrals" element={<ReferralsPage />} />
-            // In your App.jsx, update these routes:
-<Route path="/job-marketplace" element={
-  <ComingSoonPage featureName="Job Marketplace">
-    {/* This would be your actual JobMarketplace component */}
-    <div>Real Job Marketplace Content Here</div>
-  </ComingSoonPage>
-} />
-<Route path="/wallet" element={
-  <ComingSoonPage featureName="Wallet">
-    {/* This would be your actual Wallet component */}
-    <div>Real Wallet Content Here</div>
-  </ComingSoonPage>
-} />
-<Route path="/profile" element={
-  <ComingSoonPage featureName="Profile">
-    {/* This would be your actual Profile component */}
-    <div>Real Profile Content Here</div>
-  </ComingSoonPage>
-} />
+            
+            {/* Updated Coming Soon routes with admin bypass */}
+            <Route path="/job-marketplace" element={
+              <ComingSoonPage featureName="Job Marketplace">
+                {/* This would be your actual JobMarketplace component */}
+                <div>Real Job Marketplace Content Here</div>
+              </ComingSoonPage>
+            } />
+            <Route path="/wallet" element={
+              <ComingSoonPage featureName="Wallet">
+                {/* This would be your actual Wallet component */}
+                <div>Real Wallet Content Here</div>
+              </ComingSoonPage>
+            } />
+            <Route path="/profile" element={
+              <ComingSoonPage featureName="Profile">
+                {/* This would be your actual Profile component */}
+                <div>Real Profile Content Here</div>
+              </ComingSoonPage>
+            } />
           </>
         ) : (
           // If in lockdown and not admin, show lockdown page within layout
@@ -161,7 +162,6 @@ const AppRoutes = ({ user, isLockdown }) => (
 
 function App() {
   return (
-    // REMOVED the Router wrapper here - it should be in main.jsx instead
     <div className="app-container">
       <PlatformRouter />
     </div>
