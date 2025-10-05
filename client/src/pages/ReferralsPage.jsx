@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import referralService from '../services/referralService';
+import api from '../services/api';
 import './ReferralsPage.css';
 
 const ReferralsPage = () => {
@@ -9,9 +10,16 @@ const ReferralsPage = () => {
   const [error, setError] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
   const [activeTab, setActiveTab] = useState('referrals');
+  
+  // Telegram connection states
+  const [telegramConnected, setTelegramConnected] = useState(false);
+  const [connectionCode, setConnectionCode] = useState('');
+  const [generatingCode, setGeneratingCode] = useState(false);
+  const [telegramLoading, setTelegramLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
+    checkTelegramStatus();
   }, []);
 
   const fetchData = async () => {
@@ -24,6 +32,44 @@ const ReferralsPage = () => {
       setError('Failed to load referral data. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkTelegramStatus = async () => {
+    try {
+      setTelegramLoading(true);
+      const response = await api.get('/telegram/connection-status');
+      setTelegramConnected(response.data.hasTelegram);
+    } catch (error) {
+      console.error('Error checking Telegram status:', error);
+    } finally {
+      setTelegramLoading(false);
+    }
+  };
+
+  const generateConnectionCode = async () => {
+    setGeneratingCode(true);
+    try {
+      const response = await api.post('/telegram/generate-connection-code');
+      setConnectionCode(response.data.connectionCode);
+      // Code will expire in 10 minutes
+      setTimeout(() => setConnectionCode(''), 10 * 60 * 1000);
+    } catch (error) {
+      console.error('Error generating connection code:', error);
+      setError('Failed to generate connection code');
+    } finally {
+      setGeneratingCode(false);
+    }
+  };
+
+  const disconnectTelegram = async () => {
+    try {
+      await api.post('/telegram/disconnect');
+      setTelegramConnected(false);
+      setCopySuccess('Telegram disconnected successfully');
+    } catch (error) {
+      console.error('Error disconnecting Telegram:', error);
+      setError('Failed to disconnect Telegram');
     }
   };
 
@@ -116,6 +162,66 @@ const ReferralsPage = () => {
 
       {error && <div className="error-message">{error}</div>}
       {copySuccess && <div className="success-message">{copySuccess}</div>}
+
+      {/* Telegram Connection Section - NEW */}
+      <div className="referral-card telegram-card">
+        <div className="card-header">
+          <h3>🔗 Connect Telegram</h3>
+          <div className="premium-badge">BOT</div>
+        </div>
+        
+        {telegramLoading ? (
+          <div className="telegram-loading">
+            <div className="spinner"></div>
+            <p>Checking Telegram connection...</p>
+          </div>
+        ) : telegramConnected ? (
+          <div className="telegram-connected">
+            <div className="connection-status">
+              <span className="status-indicator connected">✅ Connected</span>
+              <p>Your Telegram account is linked! You'll receive notifications for new referrals and mining completions.</p>
+            </div>
+            <button 
+              onClick={disconnectTelegram}
+              className="btn btn-secondary disconnect-btn"
+            >
+              Disconnect Telegram
+            </button>
+          </div>
+        ) : (
+          <div className="telegram-connection">
+            <div className="connection-steps">
+              <p>Connect your Telegram to get notifications and share referrals easily!</p>
+              
+              <button 
+                onClick={generateConnectionCode} 
+                disabled={generatingCode}
+                className="btn btn-primary generate-btn"
+              >
+                {generatingCode ? 'Generating Code...' : 'Generate Connection Code'}
+              </button>
+              
+              {connectionCode && (
+                <div className="connection-code-section">
+                  <div className="code-display">
+                    <span className="code-label">Your connection code:</span>
+                    <span className="code-value">{connectionCode}</span>
+                  </div>
+                  <div className="code-instructions">
+                    <p><strong>Instructions:</strong></p>
+                    <ol>
+                      <li>Go to <strong>@Zivurlbot</strong> on Telegram</li>
+                      <li>Send the command: <code>/connect</code></li>
+                      <li>Enter this code when prompted</li>
+                      <li>Code expires in 10 minutes</li>
+                    </ol>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Referral Link Card */}
       <div className="referral-card main-card">
