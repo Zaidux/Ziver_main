@@ -536,122 +536,212 @@
   }
 }
 
-/* Telegram Connection Styles */
+/* Telegram Connection Styles - UPDATED TO MATCH DESIGN */
 .telegram-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: rgba(30, 30, 30, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .telegram-card .card-header {
-  border-bottom: 1px solid rgba(255,255,255,0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1.5rem;
 }
 
 .telegram-card h3 {
-  color: white;
+  color: #FFFFFF;
+  font-size: 1.4rem;
+  font-weight: 600;
 }
 
 .telegram-loading {
   text-align: center;
-  padding: 20px;
+  padding: 2rem;
+  color: #A0A0A0;
+}
+
+.telegram-loading .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid #00FF80;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
 }
 
 .telegram-connected {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 1.5rem;
 }
 
 .connection-status {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 1rem;
 }
 
 .status-indicator {
-  padding: 8px 16px;
-  border-radius: 20px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.9rem;
   display: inline-block;
   width: fit-content;
 }
 
 .status-indicator.connected {
-  background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  background: rgba(0, 255, 128, 0.15);
+  color: #00FF80;
+  border: 1px solid rgba(0, 255, 128, 0.3);
 }
 
 .disconnect-btn {
   align-self: flex-start;
-  background: rgba(239, 68, 68, 0.2);
-  color: white;
-  border: 1px solid rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.15);
+  color: #FF4D4D;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .disconnect-btn:hover {
-  background: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.25);
+  transform: translateY(-1px);
 }
 
 .telegram-connection {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 1.5rem;
 }
 
-.generate-btn {
-  align-self: flex-start;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+.connection-steps p {
+  color: #A0A0A0;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
 }
 
-.generate-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+.connection-instructions {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
-.connection-code-section {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 15px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.code-display {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.code-label {
+.connection-instructions h4 {
+  color: #FFFFFF;
+  font-size: 1.1rem;
   font-weight: 600;
+  margin-bottom: 1rem;
 }
 
-.code-value {
-  font-family: monospace;
-  font-size: 18px;
-  font-weight: bold;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 5px 10px;
-  border-radius: 5px;
+.connection-instructions ol {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #A0A0A0;
 }
 
-.code-instructions {
-  font-size: 14px;
+.connection-instructions li {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
 }
 
-.code-instructions ol {
-  margin: 10px 0 0 0;
-  padding-left: 20px;
-}
-
-.code-instructions li {
-  margin-bottom: 5px;
-}
-
-.code-instructions code {
-  background: rgba(255, 255, 255, 0.2);
-  padding: 2px 6px;
+.connection-instructions code {
+  background: rgba(255, 255, 255, 0.1);
+  color: #00FF80;
+  padding: 0.2rem 0.5rem;
   border-radius: 4px;
-  font-family: monospace;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+
+.code-input-section {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.code-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #FFFFFF;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.2em;
+  font-family: 'Fira Code', 'Courier New', monospace;
+}
+
+.code-input:focus {
+  outline: none;
+  border-color: #00FF80;
+  box-shadow: 0 0 0 2px rgba(0, 255, 128, 0.2);
+}
+
+.code-input::placeholder {
+  color: #666;
+  letter-spacing: normal;
+  font-weight: normal;
+}
+
+.verify-btn {
+  background: linear-gradient(135deg, #00FF80 0%, #00CC66 100%);
+  color: #1A1A1A;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.verify-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(0, 255, 128, 0.3);
+}
+
+.verify-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.code-note {
+  color: #A0A0A0;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+/* Responsive Design for Telegram Section */
+@media (max-width: 768px) {
+  .code-input-section {
+    flex-direction: column;
+  }
+  
+  .code-input {
+    text-align: center;
+  }
+  
+  .verify-btn {
+    width: 100%;
+  }
+  
+  .connection-instructions {
+    padding: 1rem;
+  }
 }
