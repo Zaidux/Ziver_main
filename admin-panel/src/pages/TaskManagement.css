@@ -553,6 +553,36 @@ html {
   animation: fadeIn 0.3s ease;
 }
 
+/* Add to your admin panel CSS */
+.existing-rules-notice {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.existing-rules-notice p {
+  margin: 0;
+  color: #856404;
+  font-size: 14px;
+}
+
+.badge-warning {
+  background: #ffc107;
+  color: #212529;
+}
+
+.rule-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
 /* Better focus states for accessibility */
 button:focus-visible,
 input:focus-visible,
