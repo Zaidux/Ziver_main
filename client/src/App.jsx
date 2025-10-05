@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'; // Remove BrowserRouter import
 import { useAuth } from './context/AuthContext';
 import { usePlatformDetection } from './hooks/usePlatformDetection';
 import api from './services/api';
@@ -145,11 +145,10 @@ const AppRoutes = ({ user, isLockdown }) => (
 
 function App() {
   return (
-    <Router>
-      <div className="app-container">
-        <PlatformRouter />
-      </div>
-    </Router>
+    // REMOVED the Router wrapper here - it should be in main.jsx instead
+    <div className="app-container">
+      <PlatformRouter />
+    </div>
   );
 }
 
