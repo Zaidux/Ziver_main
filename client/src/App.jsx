@@ -127,9 +127,25 @@ const AppRoutes = ({ user, isLockdown }) => (
             <Route path="/mining" element={<MiningHub />} />
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/referrals" element={<ReferralsPage />} />
-            <Route path="/job-marketplace" element={<ComingSoonPage featureName="Job Marketplace" />} />
-            <Route path="/wallet" element={<ComingSoonPage featureName="Wallet" />} />
-            <Route path="/profile" element={<ComingSoonPage featureName="Profile" />} />
+            // In your App.jsx, update these routes:
+<Route path="/job-marketplace" element={
+  <ComingSoonPage featureName="Job Marketplace">
+    {/* This would be your actual JobMarketplace component */}
+    <div>Real Job Marketplace Content Here</div>
+  </ComingSoonPage>
+} />
+<Route path="/wallet" element={
+  <ComingSoonPage featureName="Wallet">
+    {/* This would be your actual Wallet component */}
+    <div>Real Wallet Content Here</div>
+  </ComingSoonPage>
+} />
+<Route path="/profile" element={
+  <ComingSoonPage featureName="Profile">
+    {/* This would be your actual Profile component */}
+    <div>Real Profile Content Here</div>
+  </ComingSoonPage>
+} />
           </>
         ) : (
           // If in lockdown and not admin, show lockdown page within layout
