@@ -514,7 +514,7 @@ const getConnectionStatus = asyncHandler(async (req, res) => {
     const userId = req.user.id;
 
     const result = await db.query(
-      `SELECT tum.telegram_id, tum.created_at as connected_at, 
+      `SELECT tum.telegram_id, tum.connected_at as connected_at,  // CHANGED: tum.created_at → tum.connected_at
               u.telegram_username, tn.referral_alerts, tn.mining_alerts, tn.system_updates
        FROM telegram_user_map tum
        LEFT JOIN users u ON tum.user_id = u.id
