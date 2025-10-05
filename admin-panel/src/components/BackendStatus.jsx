@@ -15,50 +15,61 @@ const BackendStatus = () => {
   const checkBackendHealth = async () => {
     setLoading(true)
     try {
-      // Use the exact backend URL - replace this with your actual backend URL
-      const baseUrl = process.env.REACT_APP_API_URL || 'https://ziver-main.onrender.com'
+      // Use the EXACT backend URL that's working
+      const baseUrl = 'https://ziver-api.onrender.com'
       
       console.log('Checking backend health at:', baseUrl)
 
-      // Helper function to check endpoints safely
-      const checkEndpoint = async (endpoint) => {
-        try {
-          const response = await fetch(`${baseUrl}${endpoint}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          })
-          
-          // Get response as text first to check if it's HTML
-          const responseText = await response.text()
-          
-          // Check if response is HTML (starts with <)
-          if (responseText.trim().startsWith('<!') || responseText.trim().startsWith('<html')) {
-            console.log(`Endpoint ${endpoint} returned HTML, likely 404`)
-            return 'down'
-          }
-          
-          // Try to parse as JSON
-          try {
-            const data = JSON.parse(responseText)
-            return response.ok ? 'operational' : 'degraded'
-          } catch (parseError) {
-            console.log(`Endpoint ${endpoint} returned non-JSON:`, responseText.substring(0, 100))
-            return 'degraded'
-          }
-        } catch (error) {
-          console.error(`Endpoint ${endpoint} check failed:`, error)
-          return 'down'
+      // Check main API - use the ping endpoint
+      let mainApiStatus = 'down'
+      try {
+        const response = await fetch(`${baseUrl}/api/system/ping`)
+        if (response.ok) {
+          const data = await response.json()
+          mainApiStatus = data.status === 'ok' ? 'operational' : 'degraded'
+          console.log('Main API status:', mainApiStatus, data)
+        } else {
+          mainApiStatus = 'degraded'
+          console.log('Main API degraded, status:', response.status)
         }
+      } catch (error) {
+        mainApiStatus = 'down'
+        console.error('Main API check failed:', error)
       }
 
-      // Check all endpoints
-      const [mainApiStatus, telegramBotStatus, databaseStatus] = await Promise.all([
-        checkEndpoint('/api/system/ping'),
-        checkEndpoint('/api/telegram/health'),
-        checkEndpoint('/api/system/health')
-      ])
+      // Check Telegram bot health - use the health endpoint
+      let telegramBotStatus = 'down'
+      try {
+        const response = await fetch(`${baseUrl}/api/telegram/health`)
+        if (response.ok) {
+          const data = await response.json()
+          telegramBotStatus = data.status === 'ok' ? 'operational' : 'degraded'
+          console.log('Telegram Bot status:', telegramBotStatus, data)
+        } else {
+          telegramBotStatus = 'degraded'
+          console.log('Telegram Bot degraded, status:', response.status)
+        }
+      } catch (error) {
+        telegramBotStatus = 'down'
+        console.error('Telegram Bot check failed:', error)
+      }
+
+      // Check database connectivity via health endpoint
+      let databaseStatus = 'down'
+      try {
+        const response = await fetch(`${baseUrl}/api/system/health`)
+        if (response.ok) {
+          const data = await response.json()
+          databaseStatus = data.database === 'connected' ? 'operational' : 'degraded'
+          console.log('Database status:', databaseStatus, data)
+        } else {
+          databaseStatus = 'degraded'
+          console.log('Database degraded, status:', response.status)
+        }
+      } catch (error) {
+        databaseStatus = 'down'
+        console.error('Database check failed:', error)
+      }
 
       setBackendStatus({
         mainApi: mainApiStatus,
