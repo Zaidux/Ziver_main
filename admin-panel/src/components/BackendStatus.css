@@ -111,6 +111,87 @@
   to { transform: rotate(360deg); }
 }
 
+/* API Services Grid */
+.api-service-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.api-service-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.api-service-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.api-service-icon {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.api-service-info {
+  flex: 1;
+}
+
+.api-service-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 0.25rem;
+}
+
+.api-endpoint {
+  font-size: 0.75rem;
+  color: #A0A0A0;
+  font-family: 'Fira Code', monospace;
+}
+
+.api-service-status {
+  display: flex;
+  align-items: center;
+}
+
+.api-service-progress {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.api-progress-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Grid layout */
+.grid {
+  display: grid;
+}
+
+.grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+.gap-4 { gap: 1rem; }
+.p-4 { padding: 1rem; }
+
+.space-y-6 > * + * {
+  margin-top: 1.5rem;
+}
+
 /* Status colors */
 .text-success { color: #10B981; }
 .text-warning { color: #F59E0B; }
