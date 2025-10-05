@@ -48,7 +48,7 @@ const searchUsers = asyncHandler(async (req, res) => {
   res.json(rows);
 });
 
-// @desc    Get all tasks with completion stats
+// @desc    Get all tasks with completion stats AND VALIDATION RULES
 // @route   GET /api/admin/tasks
 const getAllTasks = asyncHandler(async (req, res) => {
   const query = `
@@ -61,9 +61,27 @@ const getAllTasks = asyncHandler(async (req, res) => {
     GROUP BY t.id
     ORDER BY t.created_at DESC
   `;
+
+  const { rows: tasks } = await db.query(query);
   
-  const { rows } = await db.query(query);
-  res.json(rows);
+  // Get validation rules for each task
+  const tasksWithRules = await Promise.all(
+    tasks.map(async (task) => {
+      const rulesQuery = `
+        SELECT * FROM task_validation_rules 
+        WHERE task_id = $1 
+        ORDER BY priority DESC, created_at ASC
+      `;
+      const { rows: rules } = await db.query(rulesQuery, [task.id]);
+      
+      return {
+        ...task,
+        validation_rules: rules
+      };
+    })
+  );
+
+  res.json(tasksWithRules);
 });
 
 // @desc    Create a new task WITH VALIDATION RULES
