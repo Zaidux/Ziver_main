@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const db = require('../config/db');
 const axios = require('axios');
+const asyncHandler = require('express-async-handler');
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
