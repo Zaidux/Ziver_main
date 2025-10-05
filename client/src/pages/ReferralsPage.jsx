@@ -10,11 +10,11 @@ const ReferralsPage = () => {
   const [error, setError] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
   const [activeTab, setActiveTab] = useState('referrals');
-  
+
   // Telegram connection states
   const [telegramConnected, setTelegramConnected] = useState(false);
   const [connectionCode, setConnectionCode] = useState('');
-  const [generatingCode, setGeneratingCode] = useState(false);
+  const [verifyingCode, setVerifyingCode] = useState(false);
   const [telegramLoading, setTelegramLoading] = useState(false);
 
   useEffect(() => {
@@ -47,18 +47,26 @@ const ReferralsPage = () => {
     }
   };
 
-  const generateConnectionCode = async () => {
-    setGeneratingCode(true);
+  const verifyConnectionCode = async () => {
+    if (!connectionCode.trim()) {
+      setError('Please enter the connection code');
+      return;
+    }
+
+    setVerifyingCode(true);
     try {
-      const response = await api.post('/telegram/generate-connection-code');
-      setConnectionCode(response.data.connectionCode);
-      // Code will expire in 10 minutes
-      setTimeout(() => setConnectionCode(''), 10 * 60 * 1000);
+      const response = await api.post('/telegram/verify-connection', {
+        connectionCode: connectionCode.trim()
+      });
+      
+      setCopySuccess('✅ Telegram connected successfully!');
+      setConnectionCode('');
+      await checkTelegramStatus(); // Refresh connection status
     } catch (error) {
-      console.error('Error generating connection code:', error);
-      setError('Failed to generate connection code');
+      console.error('Error verifying connection code:', error);
+      setError(error.response?.data?.message || 'Failed to verify connection code');
     } finally {
-      setGeneratingCode(false);
+      setVerifyingCode(false);
     }
   };
 
@@ -163,13 +171,13 @@ const ReferralsPage = () => {
       {error && <div className="error-message">{error}</div>}
       {copySuccess && <div className="success-message">{copySuccess}</div>}
 
-      {/* Telegram Connection Section - NEW */}
+      {/* Telegram Connection Section - UPDATED */}
       <div className="referral-card telegram-card">
         <div className="card-header">
           <h3>🔗 Connect Telegram</h3>
           <div className="premium-badge">BOT</div>
         </div>
-        
+
         {telegramLoading ? (
           <div className="telegram-loading">
             <div className="spinner"></div>
@@ -193,31 +201,35 @@ const ReferralsPage = () => {
             <div className="connection-steps">
               <p>Connect your Telegram to get notifications and share referrals easily!</p>
               
-              <button 
-                onClick={generateConnectionCode} 
-                disabled={generatingCode}
-                className="btn btn-primary generate-btn"
-              >
-                {generatingCode ? 'Generating Code...' : 'Generate Connection Code'}
-              </button>
+              <div className="connection-instructions">
+                <h4>How to connect:</h4>
+                <ol>
+                  <li>Go to <strong>@Zivurlbot</strong> on Telegram</li>
+                  <li>Send the command: <code>/connect</code></li>
+                  <li>Copy the 6-digit code from the bot</li>
+                  <li>Enter it below to verify</li>
+                </ol>
+              </div>
+
+              <div className="code-input-section">
+                <input
+                  type="text"
+                  placeholder="Enter 6-digit code from Telegram"
+                  value={connectionCode}
+                  onChange={(e) => setConnectionCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="code-input"
+                  maxLength={6}
+                />
+                <button 
+                  onClick={verifyConnectionCode} 
+                  disabled={verifyingCode || connectionCode.length !== 6}
+                  className="btn btn-primary verify-btn"
+                >
+                  {verifyingCode ? 'Verifying...' : 'Verify Connection'}
+                </button>
+              </div>
               
-              {connectionCode && (
-                <div className="connection-code-section">
-                  <div className="code-display">
-                    <span className="code-label">Your connection code:</span>
-                    <span className="code-value">{connectionCode}</span>
-                  </div>
-                  <div className="code-instructions">
-                    <p><strong>Instructions:</strong></p>
-                    <ol>
-                      <li>Go to <strong>@Zivurlbot</strong> on Telegram</li>
-                      <li>Send the command: <code>/connect</code></li>
-                      <li>Enter this code when prompted</li>
-                      <li>Code expires in 10 minutes</li>
-                    </ol>
-                  </div>
-                </div>
-              )}
+              <p className="code-note">Code expires in 10 minutes</p>
             </div>
           </div>
         )}
