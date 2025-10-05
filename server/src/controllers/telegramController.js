@@ -442,12 +442,12 @@ const verifyConnectionCode = asyncHandler(async (req, res) => {
 
       // Create or update the connection between Telegram and user
       await client.query(
-        `INSERT INTO telegram_user_map (telegram_id, user_id) 
-         VALUES ($1, $2)
-         ON CONFLICT (telegram_id) 
-         DO UPDATE SET user_id = $2, updated_at = NOW()`,
-        [telegramId, userId]
-      );
+  `INSERT INTO telegram_user_map (telegram_id, user_id) 
+   VALUES ($1, $2)
+   ON CONFLICT (telegram_id) 
+   DO UPDATE SET user_id = $2`,  // ← Remove updated_at
+  [telegramId, userId]
+);
 
       // Initialize notification settings
       await client.query(
