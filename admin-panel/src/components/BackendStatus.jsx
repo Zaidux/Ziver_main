@@ -15,8 +15,11 @@ const BackendStatus = () => {
   const checkBackendHealth = async () => {
     setLoading(true)
     try {
-      const baseUrl = process.env.REACT_APP_API_URL || 'https://your-backend-url.onrender.com'
+      // Use the current window location to determine the backend URL
+      const baseUrl = process.env.REACT_APP_API_URL || window.location.origin.replace(/:\d+$/, ':5000')
       
+      console.log('Checking backend health at:', baseUrl)
+
       // Check main API - use the ping endpoint
       let mainApiStatus = 'down'
       try {
@@ -29,11 +32,14 @@ const BackendStatus = () => {
         if (response.ok) {
           const data = await response.json()
           mainApiStatus = data.status === 'ok' ? 'operational' : 'degraded'
+          console.log('Main API status:', mainApiStatus, data)
         } else {
           mainApiStatus = 'degraded'
+          console.log('Main API degraded, status:', response.status)
         }
       } catch (error) {
         mainApiStatus = 'down'
+        console.error('Main API check failed:', error)
       }
 
       // Check Telegram bot health - use the health endpoint
@@ -46,12 +52,16 @@ const BackendStatus = () => {
           },
         })
         if (response.ok) {
-          telegramBotStatus = 'operational'
+          const data = await response.json()
+          telegramBotStatus = data.status === 'operational' ? 'operational' : 'degraded'
+          console.log('Telegram Bot status:', telegramBotStatus, data)
         } else {
           telegramBotStatus = 'degraded'
+          console.log('Telegram Bot degraded, status:', response.status)
         }
       } catch (error) {
         telegramBotStatus = 'down'
+        console.error('Telegram Bot check failed:', error)
       }
 
       // Check database connectivity via health endpoint
@@ -66,11 +76,14 @@ const BackendStatus = () => {
         if (response.ok) {
           const data = await response.json()
           databaseStatus = data.database === 'connected' ? 'operational' : 'degraded'
+          console.log('Database status:', databaseStatus, data)
         } else {
           databaseStatus = 'degraded'
+          console.log('Database degraded, status:', response.status)
         }
       } catch (error) {
         databaseStatus = 'down'
+        console.error('Database check failed:', error)
       }
 
       setBackendStatus({
