@@ -25,13 +25,4 @@ router.post('/activity', protect, updateUserActivity);
 // @access  Private
 router.post('/heartbeat', protect, recordHeartbeat);
 
-// Add a public health check endpoint  
-router.get('/health', (req, res) => {
-  res.json({ 
-    status: 'operational',
-    service: 'user',
-    timestamp: new Date().toISOString()
-  });
-});
-
 module.exports = router;
