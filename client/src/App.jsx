@@ -15,6 +15,7 @@ import TasksPage from './pages/TasksPage';
 import ReferralsPage from './pages/ReferralsPage';
 import LockdownPage from './pages/LockdownPage';
 import ComingSoonPage from './pages/ComingSoonPage';
+import LoadingScreen from './components/LoadingScreen';
 
 // Component to handle platform-based routing
 const PlatformRouter = () => {
@@ -82,15 +83,8 @@ const PlatformRouter = () => {
 
   // Show loading screen while detecting platform
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-lg">Loading Ziver...</p>
-        </div>
-      </div>
-    );
-  }
+  return <LoadingScreen message="I recognize you! Logging you in..." />;
+}
 
   // Show landing page only for web users (not Telegram or mobile app)
   if (isWeb && !user) {
