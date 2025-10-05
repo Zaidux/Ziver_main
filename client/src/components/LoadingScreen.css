@@ -1,0 +1,113 @@
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.z-logo-container {
+  text-align: center;
+}
+
+.z-logo {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+}
+
+.z-half {
+  position: absolute;
+  width: 100%;
+  height: 50%;
+  background: #10b981;
+  transition: all 0.6s ease-in-out;
+}
+
+.z-half-1 {
+  top: 0;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+  animation: zHalf1 2s infinite alternate;
+}
+
+.z-half-2 {
+  bottom: 0;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  animation: zHalf2 2s infinite alternate;
+}
+
+.z-outline {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 2px solid #10b981;
+  border-radius: 50%;
+  animation: rotateOutline 1.5s linear infinite;
+  opacity: 0.7;
+}
+
+.loading-text {
+  color: #10b981;
+  font-size: 16px;
+  font-weight: 500;
+  animation: pulseText 2s infinite;
+}
+
+@keyframes zHalf1 {
+  0%, 20% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  40%, 60% {
+    opacity: 0.3;
+    transform: translateX(-10px);
+  }
+  80%, 100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes zHalf2 {
+  0%, 20% {
+    opacity: 0.3;
+    transform: translateX(10px);
+  }
+  40%, 60% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  80%, 100% {
+    opacity: 0.3;
+    transform: translateX(10px);
+  }
+}
+
+@keyframes rotateOutline {
+  0% {
+    transform: rotate(0deg);
+    border-color: #10b981;
+  }
+  50% {
+    border-color: #34d399;
+  }
+  100% {
+    transform: rotate(360deg);
+    border-color: #10b981;
+  }
+}
+
+@keyframes pulseText {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
