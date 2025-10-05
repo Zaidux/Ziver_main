@@ -78,7 +78,7 @@ const handleStatusCommand = async (chatId, from) => {
 
   try {
     const connection = await db.query(
-      `SELECT tum.*, u.username, u.zp_balance, u.created_at as user_created
+      `SELECT tum.*, u.username, u.zp_balance, tum.connected_at as connected_at
        FROM telegram_user_map tum 
        JOIN users u ON tum.user_id = u.id 
        WHERE tum.telegram_id = $1`,
@@ -90,7 +90,7 @@ const handleStatusCommand = async (chatId, from) => {
       const statusMessage = `✅ *Account Connected*\n\n` +
                            `👤 Ziver Username: @${user.username}\n` +
                            `💎 ZP Balance: ${user.zp_balance}\n` +
-                           `🔗 Connected: ${new Date(user.created_at).toLocaleDateString()}\n\n` +
+                           `🔗 Connected: ${new Date(user.connected_at).toLocaleDateString()}\n\n` +
                            `You will receive notifications for:\n` +
                            `• New referral registrations\n` +
                            `• Mining session completions\n` +
@@ -396,7 +396,7 @@ const generateConnectionCode = asyncHandler(async (req, res) => {
   }
 });
 
-// Verify connection code from the app - UPDATED
+// Verify connection code from the app - FIXED
 const verifyConnectionCode = asyncHandler(async (req, res) => {
   const { connectionCode } = req.body;
   const userId = req.user.id;
@@ -442,12 +442,12 @@ const verifyConnectionCode = asyncHandler(async (req, res) => {
 
       // Create or update the connection between Telegram and user
       await client.query(
-  `INSERT INTO telegram_user_map (telegram_id, user_id) 
-   VALUES ($1, $2)
-   ON CONFLICT (telegram_id) 
-   DO UPDATE SET user_id = $2`,  // ← Remove updated_at
-  [telegramId, userId]
-);
+        `INSERT INTO telegram_user_map (telegram_id, user_id) 
+         VALUES ($1, $2)
+         ON CONFLICT (telegram_id) 
+         DO UPDATE SET user_id = $2`,
+        [telegramId, userId]
+      );
 
       // Initialize notification settings
       await client.query(
@@ -457,10 +457,10 @@ const verifyConnectionCode = asyncHandler(async (req, res) => {
         [userId]
       );
 
-      // Update user's telegram connection status
+      // Update user's telegram connection status - FIXED: removed telegram_username
       await client.query(
-        'UPDATE users SET telegram_connected = true, telegram_username = $1 WHERE id = $2',
-        [sessionData.telegramUsername, userId]
+        'UPDATE users SET telegram_connected = true WHERE id = $1',
+        [userId]
       );
 
       // Clear the session
@@ -508,14 +508,14 @@ const verifyConnectionCode = asyncHandler(async (req, res) => {
   }
 });
 
-// Get connection status
+// Get connection status - FIXED
 const getConnectionStatus = asyncHandler(async (req, res) => {
   try {
     const userId = req.user.id;
 
     const result = await db.query(
-      `SELECT tum.telegram_id, tum.connected_at as connected_at,  // CHANGED: tum.created_at → tum.connected_at
-              u.telegram_username, tn.referral_alerts, tn.mining_alerts, tn.system_updates
+      `SELECT tum.telegram_id, tum.connected_at as connected_at,
+              u.username, tn.referral_alerts, tn.mining_alerts, tn.system_updates
        FROM telegram_user_map tum
        LEFT JOIN users u ON tum.user_id = u.id
        LEFT JOIN telegram_notifications tn ON tum.user_id = tn.user_id
@@ -528,7 +528,7 @@ const getConnectionStatus = asyncHandler(async (req, res) => {
       res.json({
         hasTelegram: true,
         telegramId: connection.telegram_id,
-        telegramUsername: connection.telegram_username,
+        telegramUsername: connection.username,
         connectedAt: connection.connected_at,
         notifications: {
           referralAlerts: connection.referral_alerts,
@@ -554,7 +554,7 @@ const getConnectionStatus = asyncHandler(async (req, res) => {
   }
 });
 
-// Disconnect Telegram
+// Disconnect Telegram - FIXED
 const disconnectTelegram = asyncHandler(async (req, res) => {
   try {
     const userId = req.user.id;
@@ -572,9 +572,9 @@ const disconnectTelegram = asyncHandler(async (req, res) => {
       // Remove connection
       await client.query('DELETE FROM telegram_user_map WHERE user_id = $1', [userId]);
 
-      // Update user's telegram status
+      // Update user's telegram status - FIXED: removed telegram_username
       await client.query(
-        'UPDATE users SET telegram_connected = false, telegram_username = NULL WHERE id = $1',
+        'UPDATE users SET telegram_connected = false WHERE id = $1',
         [userId]
       );
 
