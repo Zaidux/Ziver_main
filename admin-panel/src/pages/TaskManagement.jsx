@@ -143,36 +143,36 @@ const TaskManagement = () => {
   }
 
   const handleEdit = async (task) => {
-  setIsEditing(task.id);
-  setFormData({
-    title: task.title,
-    description: task.description,
-    zp_reward: task.zp_reward,
-    seb_reward: task.seb_reward,
-    link_url: task.link_url || "",
-    task_type: task.link_url ? "link" : "in_app",
-    verification_required: task.verification_required || false,
-    is_active: task.is_active,
-  });
+    setIsEditing(task.id)
+    setFormData({
+      title: task.title,
+      description: task.description,
+      zp_reward: task.zp_reward,
+      seb_reward: task.seb_reward,
+      link_url: task.link_url || "",
+      task_type: task.link_url ? "link" : "in_app",
+      verification_required: task.verification_required || false,
+      is_active: task.is_active,
+    })
 
-  // Load existing validation rules if available
-  if (task.validation_rules && task.validation_rules.length > 0) {
-    console.log(`Loading ${task.validation_rules.length} existing validation rules`);
-    const formattedRules = task.validation_rules.map(rule => ({
-      id: rule.id,
-      rule_type: rule.rule_type,
-      operator: rule.operator,
-      value: rule.value,
-      priority: rule.priority,
-      is_active: rule.is_active
-    }));
-    setValidationRules(formattedRules);
-  } else {
-    setValidationRules([]);
+    // Load existing validation rules if available
+    if (task.validation_rules && task.validation_rules.length > 0) {
+      console.log(`Loading ${task.validation_rules.length} existing validation rules`)
+      const formattedRules = task.validation_rules.map(rule => ({
+        id: rule.id,
+        rule_type: rule.rule_type,
+        operator: rule.operator,
+        value: rule.value,
+        priority: rule.priority,
+        is_active: rule.is_active
+      }))
+      setValidationRules(formattedRules)
+    } else {
+      setValidationRules([])
+    }
+    
+    setActiveTab("basic")
   }
-  
-  setActiveTab("basic");
-};
 
   const resetForm = () => {
     setIsEditing(null)
@@ -349,7 +349,16 @@ const TaskManagement = () => {
           {/* Validation Rules Tab */}
           {activeTab === "validation" && formData.task_type === "in_app" && (
             <div className="tab-content">
-              <h4 className="section-title">Add Validation Rules</h4>
+              <h4 className="section-title">Validation Rules</h4>
+              
+              {/* Show existing rules count */}
+              {isEditing && validationRules.length > 0 && (
+                <div className="existing-rules-notice">
+                  <p>📋 This task has {validationRules.length} existing validation rule{validationRules.length !== 1 ? 's' : ''}. 
+                  Editing will replace all existing rules.</p>
+                </div>
+              )}
+              
               <div className="rule-form">
                 <select name="rule_type" value={currentRule.rule_type} onChange={handleRuleChange}>
                   {ruleTypes.map((rule) => (
@@ -383,9 +392,10 @@ const TaskManagement = () => {
                 <div className="rules-list">
                   <h5>Current Rules:</h5>
                   {validationRules.map((rule, index) => (
-                    <div key={index} className="rule-item">
+                    <div key={rule.id || index} className="rule-item">
                       <span>
                         {getRuleLabel(rule.rule_type)} {rule.operator} {rule.value}
+                        {rule.priority && ` (Priority: ${rule.priority})`}
                       </span>
                       <button type="button" onClick={() => removeValidationRule(index)} className="btn-icon btn-danger">
                         <X size={16} />
@@ -425,41 +435,40 @@ const TaskManagement = () => {
           </div>
         ) : (
           <div className="tasks-grid">
-            // In the tasks list section, update the task card to show validation rules:
-{tasks.map((task) => (
-  <div key={task.id} className={`task-card ${task.is_active ? "" : "task-inactive"}`}>
-    <div className="task-card-header">
-      <h4>{task.title}</h4>
-      <div className="task-badges">
-        <span className={`badge ${task.link_url ? "badge-info" : "badge-primary"}`}>
-          {task.link_url ? "🔗 Link" : "📱 In-App"}
-        </span>
-        <span className={`badge ${task.is_active ? "badge-success" : "badge-secondary"}`}>
-          {task.is_active ? "Active" : "Inactive"}
-        </span>
-        {task.validation_rules && task.validation_rules.length > 0 && (
-          <span className="badge badge-warning">
-            📋 {task.validation_rules.length} Rule{task.validation_rules.length !== 1 ? 's' : ''}
-          </span>
-        )}
-      </div>
-    </div>
-    <p className="task-description">{task.description}</p>
-    <div className="task-details">
-      <span>
-        💰 {task.zp_reward} ZP + {task.seb_reward} SEB
-      </span>
-      <span>✅ {task.completion_count || 0} completions</span>
-      {task.validation_rules && task.validation_rules.length > 0 && (
-        <span>📋 {task.validation_rules.length} validation rule{task.validation_rules.length !== 1 ? 's' : ''}</span>
-      )}
-    </div>
-    <button onClick={() => handleEdit(task)} className="btn btn-sm btn-secondary">
-      <Edit2 size={14} />
-      Edit
-    </button>
-  </div>
-))}
+            {tasks.map((task) => (
+              <div key={task.id} className={`task-card ${task.is_active ? "" : "task-inactive"}`}>
+                <div className="task-card-header">
+                  <h4>{task.title}</h4>
+                  <div className="task-badges">
+                    <span className={`badge ${task.link_url ? "badge-info" : "badge-primary"}`}>
+                      {task.link_url ? "🔗 Link" : "📱 In-App"}
+                    </span>
+                    <span className={`badge ${task.is_active ? "badge-success" : "badge-secondary"}`}>
+                      {task.is_active ? "Active" : "Inactive"}
+                    </span>
+                    {task.validation_rules && task.validation_rules.length > 0 && (
+                      <span className="badge badge-warning">
+                        📋 {task.validation_rules.length} Rule{task.validation_rules.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <p className="task-description">{task.description}</p>
+                <div className="task-details">
+                  <span>
+                    💰 {task.zp_reward} ZP + {task.seb_reward} SEB
+                  </span>
+                  <span>✅ {task.completion_count || 0} completions</span>
+                  {task.validation_rules && task.validation_rules.length > 0 && (
+                    <span>📋 {task.validation_rules.length} validation rule{task.validation_rules.length !== 1 ? 's' : ''}</span>
+                  )}
+                </div>
+                <button onClick={() => handleEdit(task)} className="btn btn-sm btn-secondary">
+                  <Edit2 size={14} />
+                  Edit
+                </button>
+              </div>
+            ))}
           </div>
         )}
       </div>
