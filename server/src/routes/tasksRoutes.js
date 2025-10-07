@@ -9,6 +9,9 @@ const {
   getTaskProgress,
   verifyLinkTask,
   getTelegramStatus
+  getTaskValidationRules,
+  validateTask,
+  getValidationSystemStatus
 } = require('../controllers/tasksController');
 
 // @route   GET /api/tasks
@@ -45,5 +48,10 @@ router.get('/user-stats', protect, getUserStats);
 // @desc    Get detailed progress for a specific task
 // @access  Private
 router.get('/:id/progress', protect, getTaskProgress);
+
+// Debug routes for task validation
+router.get('/:id/validation-rules', protect, getTaskValidationRules);
+router.post('/:id/validate', protect, validateTask);
+router.get('/validation-status', protect, getValidationSystemStatus);
 
 module.exports = router;
