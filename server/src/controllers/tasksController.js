@@ -172,6 +172,93 @@ const completeTask = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Debug endpoint: Get task validation rules for a task
+// @route   GET /api/tasks/:id/validation-rules
+const getTaskValidationRules = asyncHandler(async (req, res) => {
+  const { id: taskId } = req.params;
+
+  try {
+    const rules = await TaskValidation.getTaskValidationRules(taskId);
+    
+    res.json({
+      taskId,
+      rulesCount: rules.length,
+      rules: rules
+    });
+  } catch (error) {
+    console.error('Error fetching validation rules:', error);
+    res.status(500).json({ 
+      message: 'Error fetching validation rules',
+      error: error.message 
+    });
+  }
+});
+
+// @desc    Debug endpoint: Validate a task for current user
+// @route   POST /api/tasks/:id/validate
+const validateTask = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const { id: taskId } = req.params;
+
+  try {
+    const validationResult = await TaskValidation.validateTaskCompletion(userId, taskId);
+    
+    res.json({
+      taskId,
+      userId,
+      isValid: validationResult.isValid,
+      message: validationResult.message,
+      failedRules: validationResult.failedRules || [],
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error validating task:', error);
+    res.status(500).json({ 
+      message: 'Error validating task',
+      error: error.message 
+    });
+  }
+});
+
+// @desc    Debug endpoint: Get system status of task validation
+// @route   GET /api/tasks/validation-status
+const getValidationSystemStatus = asyncHandler(async (req, res) => {
+  try {
+    // Check if table exists
+    const tableCheck = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'task_validation_rules'
+      );
+    `);
+
+    const tableExists = tableCheck.rows[0].exists;
+
+    // Count rules
+    const rulesCount = tableExists ? await db.query('SELECT COUNT(*) as count FROM task_validation_rules') : { rows: [{ count: 0 }] };
+
+    // Count tasks with rules
+    const tasksWithRules = tableExists ? await db.query(`
+      SELECT COUNT(DISTINCT task_id) as count FROM task_validation_rules WHERE is_active = true
+    `) : { rows: [{ count: 0 }] };
+
+    res.json({
+      tableExists,
+      totalValidationRules: parseInt(rulesCount.rows[0].count),
+      tasksWithValidationRules: parseInt(tasksWithRules.rows[0].count),
+      systemStatus: tableExists ? 'operational' : 'table_missing',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error checking validation system status:', error);
+    res.status(500).json({ 
+      message: 'Error checking validation system status',
+      error: error.message 
+    });
+  }
+});
+
 // @desc    Verify link task completion (for external verification)
 // @route   POST /api/tasks/:id/verify-link
 const verifyLinkTask = asyncHandler(async (req, res) => {
