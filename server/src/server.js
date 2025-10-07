@@ -43,9 +43,6 @@ const initializeTaskValidation = async () => {
   }
 };
 
-// Call this after database connection is established
-initializeTaskValidation();
-
 // Set Telegram Webhook on Startup
 const initializeApp = async () => {
   await checkDbConnection();
@@ -61,6 +58,9 @@ const initializeApp = async () => {
     console.log(`🎉 Server is running on port ${PORT}`);
   });
 };
+
+// Call this after database connection is established
+initializeTaskValidation();
 
 // Diagnostic Middleware
 app.use((req, res, next) => {
