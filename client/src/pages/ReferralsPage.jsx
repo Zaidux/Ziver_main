@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import referralService from '../services/referralService';
 import api from '../services/api';
+import LoadingScreen from '../components/LoadingScreen';
 import './ReferralsPage.css';
 
 const ReferralsPage = () => {
@@ -58,7 +59,7 @@ const ReferralsPage = () => {
       const response = await api.post('/telegram/verify-connection', {
         connectionCode: connectionCode.trim()
       });
-      
+
       setCopySuccess('✅ Telegram connected successfully!');
       setConnectionCode('');
       await checkTelegramStatus(); // Refresh connection status
@@ -90,7 +91,7 @@ const ReferralsPage = () => {
     const link = `https://t.me/Zivurlbot?start=${referralData.referralCode}`;
     navigator.clipboard.writeText(link)
       .then(() => {
-        setCopySuccess('✅ Copied to clipboard!');
+        setCopySuccess('✅ Referral link copied to clipboard!');
         setTimeout(() => setCopySuccess(''), 3000);
       })
       .catch(() => {
@@ -119,7 +120,7 @@ const ReferralsPage = () => {
         break;
       default:
         navigator.clipboard.writeText(link);
-        setCopySuccess('✅ Copied!');
+        setCopySuccess('✅ Referral link copied!');
         setTimeout(() => setCopySuccess(''), 2000);
     }
   };
@@ -137,15 +138,9 @@ const ReferralsPage = () => {
     return `${Math.floor(diffDays / 30)} months ago`;
   };
 
+  // Show loading screen during initial load
   if (loading) {
-    return (
-      <div className="referrals-container">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading referral data...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Loading your referrals..." />;
   }
 
   return (
@@ -168,10 +163,16 @@ const ReferralsPage = () => {
         </div>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
-      {copySuccess && <div className="success-message">{copySuccess}</div>}
+      {/* Enhanced Copy Success Notification */}
+      {copySuccess && (
+        <div className="copy-success-notification">
+          {copySuccess}
+        </div>
+      )}
 
-      {/* Telegram Connection Section - UPDATED */}
+      {error && <div className="error-message">{error}</div>}
+
+      {/* Telegram Connection Section */}
       <div className="referral-card telegram-card">
         <div className="card-header">
           <h3>🔗 Connect Telegram</h3>
@@ -179,10 +180,7 @@ const ReferralsPage = () => {
         </div>
 
         {telegramLoading ? (
-          <div className="telegram-loading">
-            <div className="spinner"></div>
-            <p>Checking Telegram connection...</p>
-          </div>
+          <LoadingScreen type="inline" message="Checking Telegram connection..." />
         ) : telegramConnected ? (
           <div className="telegram-connected">
             <div className="connection-status">
@@ -200,7 +198,7 @@ const ReferralsPage = () => {
           <div className="telegram-connection">
             <div className="connection-steps">
               <p>Connect your Telegram to get notifications and share referrals easily!</p>
-              
+
               <div className="connection-instructions">
                 <h4>How to connect:</h4>
                 <ol>
@@ -225,10 +223,17 @@ const ReferralsPage = () => {
                   disabled={verifyingCode || connectionCode.length !== 6}
                   className="btn btn-primary verify-btn"
                 >
-                  {verifyingCode ? 'Verifying...' : 'Verify Connection'}
+                  {verifyingCode ? (
+                    <div className="button-loading">
+                      <div className="button-spinner"></div>
+                      Verifying...
+                    </div>
+                  ) : (
+                    'Verify Connection'
+                  )}
                 </button>
               </div>
-              
+
               <p className="code-note">Code expires in 10 minutes</p>
             </div>
           </div>
@@ -250,7 +255,7 @@ const ReferralsPage = () => {
               className="copy-button modern"
               disabled={!referralData?.referralCode}
             >
-              📋 Copy
+              {copySuccess.includes('Referral link') ? '✅ Copied!' : '📋 Copy'}
             </button>
           </div>
         </div>
