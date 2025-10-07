@@ -165,6 +165,85 @@ class TaskValidation {
     }
   }
 
+   // Initialize the task_validation_rules table
+  static async initializeTable() {
+    try {
+      const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS task_validation_rules (
+          id SERIAL PRIMARY KEY,
+          task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+          rule_type VARCHAR(50) NOT NULL,
+          operator VARCHAR(10) NOT NULL,
+          value VARCHAR(255) NOT NULL,
+          priority INTEGER DEFAULT 10,
+          is_active BOOLEAN DEFAULT true,
+          additional_params JSONB,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_task_validation_rules_task_id ON task_validation_rules(task_id);
+        CREATE INDEX IF NOT EXISTS idx_task_validation_rules_active ON task_validation_rules(is_active);
+      `;
+
+      await db.query(createTableQuery);
+      console.log('Task validation rules table initialized');
+    } catch (error) {
+      console.error('Error initializing task validation rules table:', error);
+      throw error;
+    }
+  }
+
+  // Seed default validation rules for existing tasks
+  static async seedDefaultRules() {
+    try {
+      // Get all active tasks that don't have validation rules
+      const tasksWithoutRules = await db.query(`
+        SELECT t.id, t.task_type, t.title 
+        FROM tasks t 
+        LEFT JOIN task_validation_rules vr ON t.id = vr.task_id 
+        WHERE vr.id IS NULL AND t.is_active = true
+      `);
+
+      console.log(`Found ${tasksWithoutRules.rows.length} tasks without validation rules`);
+
+      for (const task of tasksWithoutRules.rows) {
+        // Add default rules based on task type
+        let defaultRules = [];
+
+        if (task.task_type === 'in_app') {
+          // Default rule: user must have at least 1 mining streak
+          defaultRules.push({
+            rule_type: 'mining_streak',
+            operator: '>=',
+            value: '1',
+            priority: 10,
+            is_active: true
+          });
+        } else if (task.task_type === 'link') {
+          // Default rule: user must have Telegram connected
+          defaultRules.push({
+            rule_type: 'referral_count',
+            operator: '>=',
+            value: '0', // No minimum requirement, just checking the capability
+            priority: 10,
+            is_active: true
+          });
+        }
+
+        // Create the default rules
+        for (const rule of defaultRules) {
+          await this.createValidationRule(task.id, rule);
+        }
+
+        console.log(`Added ${defaultRules.length} default rules for task: ${task.title}`);
+      }
+    } catch (error) {
+      console.error('Error seeding default validation rules:', error);
+    }
+  }
+}
+
   // Create validation rules for a task (standalone version)
   static async createValidationRule(taskId, ruleData) {
     const { rule_type, operator, value, priority = 10, is_active = true, additional_params = null } = ruleData;
