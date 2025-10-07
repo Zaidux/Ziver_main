@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import miningService from '../services/miningService';
 import MiningDisplay from '../components/MiningDisplay';
@@ -10,9 +10,23 @@ const MiningHub = () => {
   const [error, setError] = useState('');
   const [miningStatus, setMiningStatus] = useState(null);
   const [currentState, setCurrentState] = useState(1);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const dropdownRef = useRef(null);
 
   const isLockdown = systemStatus?.lockdownMode;
   const isAdmin = user?.role === 'ADMIN';
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Load mining status on component mount and user change
   useEffect(() => {
@@ -111,10 +125,38 @@ const MiningHub = () => {
     }
   };
 
+  const handleProfileClick = () => {
+    setShowProfileDropdown(!showProfileDropdown);
+  };
+
+  const handleMenuAction = (action) => {
+    setShowProfileDropdown(false);
+    
+    switch (action) {
+      case 'profile':
+        // Navigate to profile page (when implemented)
+        console.log('Navigate to profile');
+        break;
+      case 'settings':
+        // Navigate to settings page
+        console.log('Navigate to settings');
+        break;
+      case 'feedback':
+        // Open feedback modal
+        console.log('Open feedback');
+        break;
+      case 'logout':
+        logout();
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <div className="mining-hub-container">
       <div className="mining-content">
-        {/* Admin Lockdown Indicator - ONLY ADDED THIS SECTION */}
+        {/* Admin Lockdown Indicator */}
         {isLockdown && isAdmin && (
           <div className="mining-lockdown-indicator">
             <div className="lockdown-alert">
@@ -129,7 +171,49 @@ const MiningHub = () => {
 
         <header className="mining-hub-header">
           <h1 className="hub-title">Mining Hub</h1>
-          <button onClick={logout} className="logout-button">Logout</button>
+          <div className="header-actions" ref={dropdownRef}>
+            <button 
+              onClick={handleProfileClick}
+              className="profile-dropdown-button"
+            >
+              👤
+            </button>
+            
+            {/* Profile Dropdown Menu */}
+            {showProfileDropdown && (
+              <div className="profile-dropdown-menu">
+                <button 
+                  className="dropdown-item"
+                  onClick={() => handleMenuAction('profile')}
+                >
+                  <span className="dropdown-icon">👤</span>
+                  Profile
+                </button>
+                <button 
+                  className="dropdown-item"
+                  onClick={() => handleMenuAction('settings')}
+                >
+                  <span className="dropdown-icon">⚙️</span>
+                  Settings
+                </button>
+                <button 
+                  className="dropdown-item feedback"
+                  onClick={() => handleMenuAction('feedback')}
+                >
+                  <span className="dropdown-icon">💬</span>
+                  Feedback
+                </button>
+                <div className="dropdown-divider"></div>
+                <button 
+                  className="dropdown-item logout"
+                  onClick={() => handleMenuAction('logout')}
+                >
+                  <span className="dropdown-icon">🚪</span>
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </header>
 
         <div className="user-stats-grid">
