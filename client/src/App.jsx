@@ -3,9 +3,6 @@ import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-
 import { useAuth } from './context/AuthContext';
 import { usePlatformDetection } from './hooks/usePlatformDetection';
 import api from './services/api';
-// Add these imports
-import SettingsPage from './pages/profile/pages/SettingsPage';
-import ProfilePage from './pages/profile/pages/ProfilePage';
 
 // Layout and Component Imports
 import Layout from './components/Layout';
@@ -19,6 +16,10 @@ import ReferralsPage from './pages/ReferralsPage';
 import LockdownPage from './pages/LockdownPage';
 import ComingSoonPage from './pages/ComingSoonPage';
 import LoadingScreen from './components/LoadingScreen';
+
+// Profile-related imports
+import SettingsPage from './pages/profile/pages/SettingsPage';
+import ProfilePage from './pages/profile/pages/ProfilePage';
 
 // Component to handle platform-based routing
 const PlatformRouter = () => {
@@ -156,23 +157,20 @@ const AppRoutes = ({ user, isLockdown }) => (
             <Route path="/mining" element={<MiningHub />} />
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/referrals" element={<ReferralsPage />} />
+            
+            {/* REAL Profile and Settings Pages */}
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
-<Route path="/profile" element={<ProfilePage />} />
 
             {/* Updated Coming Soon routes with admin bypass */}
             <Route path="/job-marketplace" element={
-              <ComingSoonPage featureName="Job Marketplace">
-                <div>Real Job Marketplace Content Here</div>
+              <ComingSoonPage featureName="Marketplace">
+                <div>Real Marketplace Content Here</div>
               </ComingSoonPage>
             } />
             <Route path="/wallet" element={
               <ComingSoonPage featureName="Wallet">
                 <div>Real Wallet Content Here</div>
-              </ComingSoonPage>
-            } />
-            <Route path="/profile" element={
-              <ComingSoonPage featureName="Profile">
-                <div>Real Profile Content Here</div>
               </ComingSoonPage>
             } />
           </>
