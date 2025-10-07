@@ -405,5 +405,8 @@ module.exports = {
   getUserStats,
   getTaskProgress,
   verifyLinkTask,
-  getTelegramStatus
+  getTelegramStatus,
+  getTaskValidationRules,
+  validateTask,
+  getValidationSystemStatus
 };
