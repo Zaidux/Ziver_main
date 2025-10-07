@@ -58,12 +58,36 @@ const refreshTasks = async () => {
   }
 };
 
+// Debug method: Check validation system status
+const getValidationSystemStatus = async () => {
+  try {
+    const response = await api.get('/tasks/validation-status');
+    return response.data;
+  } catch (error) {
+    console.error('Error checking validation system status:', error);
+    throw error;
+  }
+};
+
+// Debug method: Validate a specific task
+const validateTask = async (taskId) => {
+  try {
+    const response = await api.post(`/tasks/${taskId}/validate`);
+    return response.data;
+  } catch (error) {
+    console.error('Error validating task:', error);
+    throw error;
+  }
+};
+
 const taskService = {
   getTasks,
   completeTask,
   getUserStats,
   getTaskProgress,
-  refreshTasks
+  refreshTasks,
+  getValidationSystemStatus,
+  validateTask
 };
 
 export default taskService;
