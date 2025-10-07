@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import api from '../services/api';
+import LoadingScreen from '../components/LoadingScreen';
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
@@ -10,6 +11,7 @@ export const AuthProvider = ({ children, navigate }) => {
   const [loading, setLoading] = useState(true);
   const [referralData, setReferralData] = useState(null);
   const [systemStatus, setSystemStatus] = useState(null);
+  const [authError, setAuthError] = useState(null);
 
   // Check system status
   const checkSystemStatus = async () => {
@@ -23,72 +25,109 @@ export const AuthProvider = ({ children, navigate }) => {
     }
   };
 
+  // Enhanced auth verification with better error handling
   useEffect(() => {
     const checkAuth = async () => {
       const storedData = localStorage.getItem('session');
-      if (storedData) {
-        try {
-          const { user: storedUser, appSettings: storedSettings } = JSON.parse(storedData);
-
-          // Verify token with backend
-          try {
-            api.defaults.headers.common['Authorization'] = `Bearer ${storedUser.token}`;
-            const response = await api.get('/user/verify-token');
-
-            if (response.data && response.data.valid === true) {
-              setUser(storedUser);
-              setAppSettings(storedSettings);
-
-              // Check system status after auth
-              await checkSystemStatus();
-
-              // Load referral data after auth
-              try {
-                const referralResponse = await api.get('/referrals');
-                setReferralData(referralResponse.data);
-              } catch (refError) {
-                console.log('Could not load referral data:', refError);
-              }
-            } else {
-              console.log('Token invalid or verification failed');
-              localStorage.removeItem('session');
-            }
-          } catch (error) {
-            console.error('Token verification failed:', error);
-            if (error.response?.status === 401 || error.response?.status === 403) {
-              localStorage.removeItem('session');
-            }
-          }
-        } catch (parseError) {
-          console.error('Error parsing stored session:', parseError);
-          localStorage.removeItem('session');
-        }
+      
+      if (!storedData) {
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      try {
+        const { user: storedUser, appSettings: storedSettings } = JSON.parse(storedData);
+
+        // Verify token with backend
+        try {
+          api.defaults.headers.common['Authorization'] = `Bearer ${storedUser.token}`;
+          const response = await api.get('/user/verify-token');
+
+          if (response.data && response.data.valid === true) {
+            setUser(storedUser);
+            setAppSettings(storedSettings);
+            setAuthError(null);
+
+            // Check system status after auth
+            await checkSystemStatus();
+
+            // Load referral data after auth
+            try {
+              const referralResponse = await api.get('/referrals');
+              setReferralData(referralResponse.data);
+            } catch (refError) {
+              console.log('Could not load referral data:', refError);
+            }
+          } else {
+            console.log('Token invalid or verification failed');
+            handleAuthFailure();
+          }
+        } catch (error) {
+          console.error('Token verification failed:', error);
+          if (error.response?.status === 401 || error.response?.status === 403) {
+            handleAuthFailure();
+          } else {
+            // Network error - proceed with stored data but show warning
+            console.warn('Network error during auth verification, using stored session');
+            setUser(storedUser);
+            setAppSettings(storedSettings);
+            setAuthError('network');
+          }
+        }
+      } catch (parseError) {
+        console.error('Error parsing stored session:', parseError);
+        handleAuthFailure();
+      } finally {
+        setLoading(false);
+      }
     };
 
-    checkAuth();
+    const handleAuthFailure = () => {
+      localStorage.removeItem('session');
+      setUser(null);
+      setAppSettings(null);
+      setReferralData(null);
+      setSystemStatus(null);
+      delete api.defaults.headers.common['Authorization'];
+      setAuthError('invalid');
+    };
+
+    // Add small delay for better UX
+    setTimeout(() => {
+      checkAuth();
+    }, 800);
   }, []);
 
-  const login = (sessionData) => {
-    const { user, token, appSettings } = sessionData;
-    const fullUser = { ...user, token };
+  const login = async (sessionData) => {
+    try {
+      setLoading(true);
+      const { user, token, appSettings } = sessionData;
+      const fullUser = { ...user, token };
 
-    // Store session data
-    localStorage.setItem('session', JSON.stringify({ user: fullUser, appSettings }));
+      // Store session data
+      localStorage.setItem('session', JSON.stringify({ user: fullUser, appSettings }));
 
-    // Update state
-    setUser(fullUser);
-    setAppSettings(appSettings);
+      // Update state
+      setUser(fullUser);
+      setAppSettings(appSettings);
+      setAuthError(null);
 
-    // Set default auth header
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      // Set default auth header
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-    // Check system status and load referral data
-    checkSystemStatus();
-    loadReferralData();
+      // Check system status and load referral data
+      await Promise.all([
+        checkSystemStatus(),
+        loadReferralData()
+      ]);
 
-    if (navigate) navigate('/');
+      if (navigate) navigate('/');
+    } catch (error) {
+      console.error('Login error:', error);
+      setAuthError('login');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => {
@@ -97,6 +136,7 @@ export const AuthProvider = ({ children, navigate }) => {
     setAppSettings(null);
     setReferralData(null);
     setSystemStatus(null);
+    setAuthError(null);
     delete api.defaults.headers.common['Authorization'];
     if (navigate) navigate('/login');
   };
@@ -135,24 +175,35 @@ export const AuthProvider = ({ children, navigate }) => {
     await loadReferralData();
   };
 
+  const clearAuthError = () => {
+    setAuthError(null);
+  };
+
   const value = { 
     user, 
     appSettings, 
     referralData,
     systemStatus,
     loading, 
+    authError,
     login, 
     logout, 
     updateUser, 
     updateAppSettings,
     refreshReferralData,
     loadReferralData,
-    checkSystemStatus
+    checkSystemStatus,
+    clearAuthError
   };
+
+  // Show loading screen during auth initialization
+  if (loading) {
+    return <LoadingScreen message="Securing your session..." />;
+  }
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
