@@ -19,37 +19,50 @@ import LoadingScreen from './components/LoadingScreen';
 
 // Component to handle platform-based routing
 const PlatformRouter = () => {
-  const { user, logout, systemStatus } = useAuth();
-  const { platform, isWeb, isTelegram, isLoading } = usePlatformDetection();
+  const { user, logout, systemStatus, loading: authLoading } = useAuth();
+  const { platform, isWeb, isTelegram, isLoading: platformLoading } = usePlatformDetection();
   const navigate = useNavigate();
   const location = useLocation();
   const [isLockdown, setIsLockdown] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
-  // Check lockdown status and heartbeat
+  // Combined loading state
+  const isLoading = authLoading || platformLoading || isInitializing;
+
+  // Initialize app and check system status
   useEffect(() => {
-    let intervalId;
-
-    const checkLockdown = async () => {
+    const initializeApp = async () => {
       try {
+        // Check lockdown status
         const response = await api.get('/system/status');
         const systemData = response.data;
         setIsLockdown(systemData.lockdownMode);
 
-        // Redirect to lockdown page if system is locked down and user is not admin
+        // Handle lockdown redirects
         if (systemData.lockdownMode && user && user.role !== 'ADMIN' && location.pathname !== '/lockdown') {
           console.log('🔒 Redirecting to lockdown page');
           navigate('/lockdown', { replace: true });
         }
 
-        // Redirect back to app if lockdown is lifted and user is on lockdown page
         if (!systemData.lockdownMode && location.pathname === '/lockdown') {
           console.log('🔓 Lockdown lifted, redirecting to app');
           navigate('/', { replace: true });
         }
       } catch (error) {
-        console.error('Error checking system status:', error);
+        console.error('Error initializing app:', error);
+      } finally {
+        // Small delay for better UX
+        setTimeout(() => setIsInitializing(false), 1000);
       }
     };
+
+    initializeApp();
+  }, [user, navigate, location]);
+
+  // Heartbeat and lockdown monitoring for authenticated users
+  useEffect(() => {
+    let intervalId;
+    let lockdownInterval;
 
     const doHeartbeat = async () => {
       try {
@@ -61,37 +74,46 @@ const PlatformRouter = () => {
       }
     };
 
+    const monitorLockdown = async () => {
+      try {
+        const response = await api.get('/system/status');
+        const systemData = response.data;
+        setIsLockdown(systemData.lockdownMode);
+      } catch (error) {
+        console.error('Error monitoring lockdown:', error);
+      }
+    };
+
     if (user) {
-      // Check lockdown status immediately
-      checkLockdown();
-      // Set up interval for subsequent checks
-      const lockdownInterval = setInterval(checkLockdown, 10000); // Check every 10 seconds
-
-      // Immediate heartbeat check
-      doHeartbeat();
-      // Set up interval for subsequent heartbeats
+      // Start heartbeat (every minute)
       intervalId = setInterval(doHeartbeat, 60000);
-
-      return () => {
-        clearInterval(lockdownInterval);
-        if (intervalId) {
-          clearInterval(intervalId);
-        }
-      };
+      
+      // Monitor lockdown status (every 30 seconds)
+      lockdownInterval = setInterval(monitorLockdown, 30000);
     }
-  }, [user, logout, navigate, location]);
 
-  // Show loading screen while detecting platform
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      if (lockdownInterval) clearInterval(lockdownInterval);
+    };
+  }, [user, logout]);
+
+  // Show loading screen during initial app loading
   if (isLoading) {
-    return <LoadingScreen message="I recognize you! Logging you in..." />;
+    const loadingMessage = authLoading 
+      ? "Verifying your session..." 
+      : platformLoading 
+      ? "Detecting your platform..." 
+      : "Initializing Ziver...";
+    
+    return <LoadingScreen message={loadingMessage} />;
   }
 
   console.log('Platform detection:', { platform, isWeb, isTelegram, user: !!user, path: location.pathname });
 
   // Show landing page only for web users who are NOT logged in AND NOT coming from Telegram
-  // Also exclude specific auth routes
   const isAuthRoute = ['/login', '/register', '/lockdown'].includes(location.pathname);
-  
+
   if (isWeb && !user && !isTelegram && !isAuthRoute) {
     return (
       <Routes>
