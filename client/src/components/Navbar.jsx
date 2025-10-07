@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Pickaxe, ClipboardList, Users, Briefcase, Wallet } from 'lucide-react';
+import { Pickaxe, ClipboardList, Users, Store, Wallet } from 'lucide-react';
 import './Navbar.css';
 
 const Navbar = () => {
