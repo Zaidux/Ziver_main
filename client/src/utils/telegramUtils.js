@@ -1,10 +1,65 @@
 // Enhanced Telegram utilities for client-side
 export const isTelegramWebApp = () => {
-  return window.Telegram?.WebApp || navigator.userAgent.includes('Telegram');
+  // Multiple detection methods for Telegram
+  if (window.Telegram?.WebApp) {
+    return true;
+  }
+  
+  // Check for Telegram-specific URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('tgWebAppStartParam') || urlParams.has('startapp')) {
+    return true;
+  }
+  
+  // Check user agent
+  const userAgent = navigator.userAgent.toLowerCase();
+  if (userAgent.includes('telegram')) {
+    return true;
+  }
+  
+  // Check referrer
+  if (document.referrer.includes('t.me') || document.referrer.includes('telegram.org')) {
+    return true;
+  }
+  
+  return false;
 };
 
-export const generateTelegramDeepLink = (referralCode) => {
-  return `https://t.me/Zivurlbot?start=${referralCode}`;
+// Initialize Telegram Web App if detected
+export const initializeTelegramWebApp = () => {
+  if (window.Telegram?.WebApp) {
+    const tg = window.Telegram.WebApp;
+    
+    // Expand the app to full height
+    tg.expand();
+    
+    // Enable closing confirmation
+    tg.enableClosingConfirmation();
+    
+    // Set theme params if available
+    if (tg.themeParams) {
+      document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#1a1a1a');
+      document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#ffffff');
+      document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#00e676');
+    }
+    
+    console.log('Telegram Web App initialized:', {
+      platform: tg.platform,
+      version: tg.version,
+      user: tg.initDataUnsafe?.user
+    });
+    
+    return tg;
+  }
+  return null;
+};
+
+// Get Telegram user info
+export const getTelegramUser = () => {
+  if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+    return window.Telegram.WebApp.initDataUnsafe.user;
+  }
+  return null;
 };
 
 // Enhanced link task handling
