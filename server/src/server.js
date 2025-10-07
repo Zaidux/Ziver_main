@@ -13,6 +13,7 @@ const tasksRoutes = require('./routes/tasksRoutes');
 const referralsRoutes = require('./routes/referralsRoutes');
 const telegramRoutes = require('./routes/telegramRoutes');
 const systemStatusRoutes = require('./routes/systemStatusRoutes'); // NEW IMPORT
+const TaskValidation = require('./models/TaskValidation');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -30,6 +31,20 @@ const checkDbConnection = async () => {
     console.error('❌ Error connecting to the database:', error);
   }
 };
+
+// Initialize task validation system
+const initializeTaskValidation = async () => {
+  try {
+    await TaskValidation.initializeTable();
+    await TaskValidation.seedDefaultRules();
+    console.log('Task validation system initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize task validation system:', error);
+  }
+};
+
+// Call this after database connection is established
+initializeTaskValidation();
 
 // Set Telegram Webhook on Startup
 const initializeApp = async () => {
