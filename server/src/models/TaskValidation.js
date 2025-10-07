@@ -165,7 +165,7 @@ class TaskValidation {
     }
   }
 
-   // Initialize the task_validation_rules table
+  // Initialize the task_validation_rules table
   static async initializeTable() {
     try {
       const createTableQuery = `
@@ -242,7 +242,6 @@ class TaskValidation {
       console.error('Error seeding default validation rules:', error);
     }
   }
-}
 
   // Create validation rules for a task (standalone version)
   static async createValidationRule(taskId, ruleData) {
