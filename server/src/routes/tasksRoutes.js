@@ -8,7 +8,7 @@ const {
   getUserStats,
   getTaskProgress,
   verifyLinkTask,
-  getTelegramStatus
+  getTelegramStatus,
   getTaskValidationRules,
   validateTask,
   getValidationSystemStatus
