@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import taskService from '../services/taskService';
+import LoadingScreen from '../components/LoadingScreen';
 import './TasksPage.css';
 
 const TasksPage = () => {
@@ -10,6 +11,7 @@ const TasksPage = () => {
   const [completingTask, setCompletingTask] = useState(null);
   const [userStats, setUserStats] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [copySuccess, setCopySuccess] = useState('');
   const { updateUser, user } = useAuth();
 
   useEffect(() => {
@@ -95,7 +97,7 @@ const TasksPage = () => {
       if (popup) {
         // Focus on the popup
         popup.focus();
-        
+
         // Check if popup is closed periodically
         const checkPopup = setInterval(() => {
           if (popup.closed) {
@@ -105,7 +107,7 @@ const TasksPage = () => {
               const verified = window.confirm(
                 `Have you completed the task?\n\nClick OK to verify and claim your ${task.zp_reward} ZP reward!`
               );
-              
+
               if (verified) {
                 await completeInAppTask(task);
               } else {
@@ -122,7 +124,7 @@ const TasksPage = () => {
             const useSameTab = window.confirm(
               `Popups are blocked. Open in this tab instead?\n\nDon't worry - you can return and verify later.`
             );
-            
+
             if (useSameTab) {
               window.location.href = task.link_url;
             }
@@ -133,7 +135,7 @@ const TasksPage = () => {
         const useSameTab = window.confirm(
           `🔗 Open Link\n\nWe'll open the link in this tab. After completing the task:\n\n1. Return to this app\n2. Go back to Tasks\n3. Tap the task again to verify\n\nContinue?`
         );
-        
+
         if (useSameTab) {
           window.location.href = task.link_url;
         }
@@ -160,7 +162,7 @@ const TasksPage = () => {
   };
 
   const showNotification = (message, type = 'info') => {
-    // Simple toast notification
+    // Enhanced toast notification with copy feedback styling
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.textContent = message;
@@ -168,19 +170,48 @@ const TasksPage = () => {
       position: fixed;
       top: 20px;
       right: 20px;
-      background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
-      color: white;
+      background: ${type === 'success' ? '#00ff00' : type === 'error' ? '#ff4444' : '#2196F3'};
+      color: ${type === 'success' ? '#000' : '#fff'};
       padding: 12px 20px;
       border-radius: 8px;
       z-index: 1000;
       animation: slideIn 0.3s ease;
+      border: ${type === 'success' ? '1px solid #00cc00' : 'none'};
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      font-weight: 500;
+      max-width: 300px;
+      word-wrap: break-word;
     `;
 
     document.body.appendChild(notification);
 
     setTimeout(() => {
-      notification.remove();
+      if (notification.parentNode) {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.remove();
+          }
+        }, 300);
+      }
     }, 3000);
+
+    // Add CSS animations if not already present
+    if (!document.querySelector('#notification-styles')) {
+      const style = document.createElement('style');
+      style.id = 'notification-styles';
+      style.textContent = `
+        @keyframes slideIn {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(100%); opacity: 0; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
   };
 
   const getTaskButtonText = (task) => {
@@ -276,8 +307,13 @@ const TasksPage = () => {
     return 'ready';
   };
 
-  // Enhanced loading state
+  // Show loading screen during initial load
   if (loading) {
+    return <LoadingScreen message="Loading your tasks..." />;
+  }
+
+  // Show inline loading during refresh
+  if (refreshing) {
     return (
       <div className="tasks-container">
         <div className="tasks-header">
@@ -286,20 +322,7 @@ const TasksPage = () => {
             <p>Complete tasks to earn rewards</p>
           </div>
         </div>
-
-        <div className="loading-skeleton">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="task-skeleton">
-              <div className="skeleton-icon"></div>
-              <div className="skeleton-content">
-                <div className="skeleton-title"></div>
-                <div className="skeleton-description"></div>
-                <div className="skeleton-progress"></div>
-              </div>
-              <div className="skeleton-action"></div>
-            </div>
-          ))}
-        </div>
+        <LoadingScreen type="inline-overlay" message="Refreshing tasks..." />
       </div>
     );
   }
@@ -338,6 +361,13 @@ const TasksPage = () => {
           </button>
         </div>
       </div>
+
+      {/* Copy Success Notification */}
+      {copySuccess && (
+        <div className="copy-success-notification">
+          ✅ {copySuccess}
+        </div>
+      )}
 
       {/* Quick Stats */}
       <div className="quick-stats">
@@ -404,6 +434,21 @@ const TasksPage = () => {
                         <span className="link-domain">
                           {new URL(task.link_url).hostname}
                         </span>
+                        <button 
+                          className="copy-link-btn"
+                          onClick={() => {
+                            navigator.clipboard.writeText(task.link_url)
+                              .then(() => {
+                                setCopySuccess('Link copied to clipboard!');
+                                setTimeout(() => setCopySuccess(''), 3000);
+                              })
+                              .catch(() => {
+                                showNotification('Failed to copy link', 'error');
+                              });
+                          }}
+                        >
+                          📋 Copy Link
+                        </button>
                       </div>
                     )}
                   </div>
@@ -424,7 +469,14 @@ const TasksPage = () => {
                       (task.progress && !task.progress.canComplete)
                     }
                   >
-                    {getTaskButtonText(task)}
+                    {completingTask === task.id ? (
+                      <div className="button-loading">
+                        <div className="button-spinner"></div>
+                        Completing...
+                      </div>
+                    ) : (
+                      getTaskButtonText(task)
+                    )}
                   </button>
                 </div>
               </div>
