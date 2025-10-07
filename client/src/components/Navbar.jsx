@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Pickaxe, ClipboardList, Users, Briefcase, Wallet, User } from 'lucide-react';
+import { Pickaxe, ClipboardList, Users, Briefcase, Wallet } from 'lucide-react';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -22,19 +22,15 @@ const Navbar = () => {
     },
     {
       href: "/job-marketplace",
-      icon: Briefcase,
-      label: "Jobs",
+      icon: Store,
+      label: "Marketplace", // Changed from "Jobs"
     },
     {
       href: "/wallet",
       icon: Wallet,
       label: "Wallet",
     },
-    {
-      href: "/profile",
-      icon: User,
-      label: "Profile",
-    },
+    // Profile removed - will be in dropdown
   ];
 
   return (
