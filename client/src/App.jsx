@@ -3,6 +3,9 @@ import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-
 import { useAuth } from './context/AuthContext';
 import { usePlatformDetection } from './hooks/usePlatformDetection';
 import api from './services/api';
+// Add these imports
+import SettingsPage from './pages/SettingsPage';
+import ProfilePage from './pages/ProfilePage';
 
 // Layout and Component Imports
 import Layout from './components/Layout';
@@ -153,6 +156,8 @@ const AppRoutes = ({ user, isLockdown }) => (
             <Route path="/mining" element={<MiningHub />} />
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/referrals" element={<ReferralsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+<Route path="/profile" element={<ProfilePage />} />
 
             {/* Updated Coming Soon routes with admin bypass */}
             <Route path="/job-marketplace" element={
