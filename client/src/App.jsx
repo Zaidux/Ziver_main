@@ -4,8 +4,8 @@ import { useAuth } from './context/AuthContext';
 import { usePlatformDetection } from './hooks/usePlatformDetection';
 import api from './services/api';
 // Add these imports
-import SettingsPage from './pages/SettingsPage';
-import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/profile/pages/SettingsPage';
+import ProfilePage from './pages/profile/pages/ProfilePage';
 
 // Layout and Component Imports
 import Layout from './components/Layout';
