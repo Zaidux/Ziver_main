@@ -27,8 +27,10 @@ const checkDbConnection = async () => {
   try {
     const client = await db.query('SELECT NOW()');
     console.log('✅ Database connected successfully at:', client.rows[0].now);
+    return true;
   } catch (error) {
     console.error('❌ Error connecting to the database:', error);
+    return false;
   }
 };
 
@@ -37,16 +39,28 @@ const initializeTaskValidation = async () => {
   try {
     await TaskValidation.initializeTable();
     await TaskValidation.seedDefaultRules();
-    console.log('Task validation system initialized successfully');
+    console.log('✅ Task validation system initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize task validation system:', error);
+    console.error('❌ Failed to initialize task validation system:', error);
   }
 };
 
 // Set Telegram Webhook on Startup
 const initializeApp = async () => {
-  await checkDbConnection();
+  console.log('🔧 Starting application initialization...');
+  
+  // First, check database connection
+  const dbConnected = await checkDbConnection();
+  
+  if (!dbConnected) {
+    console.error('❌ Cannot start server without database connection');
+    process.exit(1);
+  }
 
+  // Initialize task validation system AFTER database is confirmed connected
+  await initializeTaskValidation();
+
+  // Set up Telegram webhook if bot token exists
   if (process.env.TELEGRAM_BOT_TOKEN) {
     console.log('🤖 Setting up Telegram webhook...');
     await setWebhook();
@@ -54,13 +68,11 @@ const initializeApp = async () => {
     console.log('⚠️  TELEGRAM_BOT_TOKEN not set, skipping webhook setup');
   }
 
+  // Start the server
   app.listen(PORT, () => {
     console.log(`🎉 Server is running on port ${PORT}`);
   });
 };
-
-// Call this after database connection is established
-initializeTaskValidation();
 
 // Diagnostic Middleware
 app.use((req, res, next) => {
@@ -100,5 +112,17 @@ app.use((req, res, next) => {
   res.status(404).json({ message: `API endpoint not found for ${req.method} ${req.originalUrl}` });
 });
 
+// Global Error Handler
+app.use((error, req, res, next) => {
+  console.error('🚨 Global Error Handler:', error);
+  res.status(500).json({ 
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+  });
+});
+
 // Start the Server
-initializeApp();
+initializeApp().catch(error => {
+  console.error('💥 Failed to start server:', error);
+  process.exit(1);
+});
