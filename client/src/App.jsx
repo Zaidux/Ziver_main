@@ -20,7 +20,7 @@ import LoadingScreen from './components/LoadingScreen';
 // Component to handle platform-based routing
 const PlatformRouter = () => {
   const { user, logout, systemStatus } = useAuth();
-  const { platform, isWeb, isLoading } = usePlatformDetection();
+  const { platform, isWeb, isTelegram, isLoading } = usePlatformDetection();
   const navigate = useNavigate();
   const location = useLocation();
   const [isLockdown, setIsLockdown] = useState(false);
@@ -83,11 +83,16 @@ const PlatformRouter = () => {
 
   // Show loading screen while detecting platform
   if (isLoading) {
-  return <LoadingScreen message="I recognize you! Logging you in..." />;
-}
+    return <LoadingScreen message="I recognize you! Logging you in..." />;
+  }
 
-  // Show landing page only for web users (not Telegram or mobile app)
-  if (isWeb && !user) {
+  console.log('Platform detection:', { platform, isWeb, isTelegram, user: !!user, path: location.pathname });
+
+  // Show landing page only for web users who are NOT logged in AND NOT coming from Telegram
+  // Also exclude specific auth routes
+  const isAuthRoute = ['/login', '/register', '/lockdown'].includes(location.pathname);
+  
+  if (isWeb && !user && !isTelegram && !isAuthRoute) {
     return (
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -99,7 +104,7 @@ const PlatformRouter = () => {
     );
   }
 
-  // For Telegram, mobile app, or authenticated users, show the app
+  // For Telegram, mobile app, authenticated users, or specific auth routes, show the app
   return <AppRoutes user={user} isLockdown={isLockdown} />;
 };
 
@@ -111,6 +116,11 @@ const AppRoutes = ({ user, isLockdown }) => (
     <Route path="/login" element={<LoginPage />} />
     <Route path="/lockdown" element={<LockdownPage />} />
 
+    {/* Show landing page at root for non-authenticated web users */}
+    {!user && (
+      <Route path="/" element={<LandingPage />} />
+    )}
+
     {/* Protected Routes - Show Layout for all authenticated users */}
     <Route element={<ProtectedRoute />}>
       <Route element={<Layout />}>
@@ -121,23 +131,20 @@ const AppRoutes = ({ user, isLockdown }) => (
             <Route path="/mining" element={<MiningHub />} />
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/referrals" element={<ReferralsPage />} />
-            
+
             {/* Updated Coming Soon routes with admin bypass */}
             <Route path="/job-marketplace" element={
               <ComingSoonPage featureName="Job Marketplace">
-                {/* This would be your actual JobMarketplace component */}
                 <div>Real Job Marketplace Content Here</div>
               </ComingSoonPage>
             } />
             <Route path="/wallet" element={
               <ComingSoonPage featureName="Wallet">
-                {/* This would be your actual Wallet component */}
                 <div>Real Wallet Content Here</div>
               </ComingSoonPage>
             } />
             <Route path="/profile" element={
               <ComingSoonPage featureName="Profile">
-                {/* This would be your actual Profile component */}
                 <div>Real Profile Content Here</div>
               </ComingSoonPage>
             } />
