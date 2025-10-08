@@ -122,7 +122,7 @@ const MiningHub = () => {
             <p className="stat-value">{user?.zp_balance || 0}</p>
           </div>
           <div className="user-stat-card">
-            <h2>SEB Score</h2>
+            <h2>SCS Score</h2>
             <p className="stat-value">{user?.social_capital_score || 0}</p>
           </div>
           <div className="user-stat-card">
