@@ -1,257 +1,186 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
-import authService from '../services/authService';
-import referralService from '../services/referralService';
-import { useTelegramReferral } from '../hooks/useTelegramReferral';
-import { useAuth } from '../context/AuthContext';
-import './RegisterPage.css';
+"use client"
+
+import { useState, useEffect } from "react"
+import { useNavigate, Link, useLocation } from "react-router-dom"
+import authService from "../services/authService"
+import referralService from "../services/referralService"
+import { useTelegramReferral } from "../hooks/useTelegramReferral"
+import { useAuth } from "../context/AuthContext"
+import "./RegisterPage.css"
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  })
 
-  // Get referral data from the hook
-  const { referralCode, isTelegram, telegramUser } = useTelegramReferral();
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [urlReferralCode, setUrlReferralCode] = useState(null);
-  const [referrerInfo, setReferrerInfo] = useState(null);
-  const [checkingReferral, setCheckingReferral] = useState(false);
-  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const { referralCode, isTelegram, telegramUser } = useTelegramReferral()
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [urlReferralCode, setUrlReferralCode] = useState(null)
+  const [referrerInfo, setReferrerInfo] = useState(null)
+  const [checkingReferral, setCheckingReferral] = useState(false)
+  const [registrationSuccess, setRegistrationSuccess] = useState(false)
 
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { login } = useAuth();
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { login } = useAuth()
 
-  const { username, email, password, confirmPassword } = formData;
+  const { username, email, password, confirmPassword } = formData
 
-  // Check for URL referral parameter
+  // ... existing useEffect hooks ...
+
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const ref = searchParams.get('ref');
-
+    const searchParams = new URLSearchParams(location.search)
+    const ref = searchParams.get("ref")
     if (ref) {
-      setUrlReferralCode(ref);
-      sessionStorage.setItem('referralCode', ref);
-      validateReferralCode(ref);
+      setUrlReferralCode(ref)
+      sessionStorage.setItem("referralCode", ref)
+      validateReferralCode(ref)
     }
-  }, [location]);
+  }, [location])
 
-  // Check for Telegram referral code
   useEffect(() => {
     if (referralCode && !urlReferralCode) {
-      validateReferralCode(referralCode);
+      validateReferralCode(referralCode)
     }
-  }, [referralCode, urlReferralCode]);
+  }, [referralCode, urlReferralCode])
 
-  // Validate referral code and get referrer info
   const validateReferralCode = async (code) => {
-    if (!code) return;
-
-    console.log('Validating referral code:', code);
-    setCheckingReferral(true);
-
+    if (!code) return
+    setCheckingReferral(true)
     try {
-      const response = await referralService.getReferrerInfo(code);
-      console.log('Referrer info response:', response);
-
+      const response = await referralService.getReferrerInfo(code)
       if (response.success && response.referrer) {
-        setReferrerInfo(response.referrer);
-        console.log('Referrer found:', response.referrer.username);
-        
-        // Auto-suggest username based on referrer
-        if (!username) {
-          const suggestedUsername = `friend_of_${response.referrer.username}`
-            .toLowerCase()
-            .replace(/[^a-z0-9_]/g, '_')
-            .substring(0, 15);
-          
-          setFormData(prev => ({ ...prev, username: suggestedUsername }));
-        }
+        setReferrerInfo(response.referrer)
       } else {
-        setReferrerInfo(null);
-        console.log('Invalid referral code or no referrer found');
+        setReferrerInfo(null)
       }
     } catch (error) {
-      console.error('Error validating referral code:', error);
-      setReferrerInfo(null);
+      console.error("Error validating referral code:", error)
+      setReferrerInfo(null)
     } finally {
-      setCheckingReferral(false);
+      setCheckingReferral(false)
     }
-  };
+  }
 
-  // Use either Telegram referral or URL referral
-  const effectiveReferralCode = referralCode || urlReferralCode;
+  const effectiveReferralCode = referralCode || urlReferralCode
 
   const handleChange = (e) => {
     setFormData((prevState) => ({
       ...prevState,
       [e.target.name]: e.target.value,
-    }));
-  };
+    }))
+  }
+
+  const handleGoogleSignup = () => {
+    // TODO: Implement Google OAuth
+    setError("Google signup coming soon!")
+  }
+
+  const handleWalletConnect = () => {
+    // TODO: Implement Wallet Connect
+    setError("Wallet connect coming soon!")
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setRegistrationSuccess(false);
+    e.preventDefault()
+    setError("")
+    setRegistrationSuccess(false)
 
-    // Validation
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
+      setError("Passwords do not match")
+      return
     }
-
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
+      setError("Password must be at least 6 characters")
+      return
     }
-
     if (username.length < 3) {
-      setError('Username must be at least 3 characters');
-      return;
+      setError("Username must be at least 3 characters")
+      return
+    }
+    if (!email.includes("@")) {
+      setError("Please enter a valid email address")
+      return
     }
 
-    if (!email.includes('@')) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
-    setLoading(true);
-
+    setLoading(true)
     try {
-      console.log('Starting registration with:', {
-        username,
-        email,
-        hasReferral: !!effectiveReferralCode,
-        referralCode: effectiveReferralCode,
-        isTelegram,
-        telegramUser: telegramUser?.id
-      });
+      const response = await authService.register(username, email, password, effectiveReferralCode)
 
-      const response = await authService.register(
-        username, 
-        email, 
-        password, 
-        effectiveReferralCode
-      );
+      sessionStorage.removeItem("referralCode")
+      localStorage.removeItem("ziver_referral_code")
 
-      console.log('Registration successful:', response);
-
-      // Clear referral storage
-      sessionStorage.removeItem('referralCode');
-      localStorage.removeItem('ziver_referral_code');
-
-      // Clear pending referral if exists
       if (effectiveReferralCode) {
         try {
-          await referralService.clearPendingReferral(effectiveReferralCode);
+          await referralService.clearPendingReferral(effectiveReferralCode)
         } catch (clearError) {
-          console.log('Note: Could not clear pending referral:', clearError);
+          console.log("Note: Could not clear pending referral:", clearError)
         }
       }
 
-      setRegistrationSuccess(true);
+      setRegistrationSuccess(true)
 
-      // Prepare success message
-      let successMessage = 'Account created successfully!';
+      let successMessage = "Account created successfully!"
       if (response.referralApplied && response.referrer) {
-        successMessage += ` You received 100 ZP bonus from ${response.referrer.username}!`;
-        
-        if (response.referrerBonus) {
-          successMessage += ` They earned ${response.referrerBonus.zp} ZP and ${response.referrerBonus.sebPoints} SEB points.`;
-        }
-      } else if (!effectiveReferralCode) {
-        successMessage += ' A smart referrer was assigned to help you get started!';
+        successMessage += ` You received 100 ZP bonus from ${response.referrer.username}!`
       }
 
-      // Login user and redirect
       if (response.token && response.user) {
-        login(response.token, response.user);
-        
-        // Small delay to show success message
+        login(response.token, response.user)
         setTimeout(() => {
-          navigate('/mining', { 
-            state: { 
+          navigate("/mining", {
+            state: {
               message: successMessage,
-              showWelcome: true 
-            }
-          });
-        }, 1000);
+              showWelcome: true,
+            },
+          })
+        }, 1000)
       } else {
-        navigate('/login', { 
-          state: { message: successMessage }
-        });
+        navigate("/login", {
+          state: { message: successMessage },
+        })
       }
-
     } catch (err) {
-      console.error('Registration error details:', err);
-      
-      let errorMessage = 'Registration failed. Please try again.';
-      
+      console.error("Registration error details:", err)
+      let errorMessage = "Registration failed. Please try again."
       if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
+        errorMessage = err.response.data.message
       }
-
-      // Handle specific error cases
-      if (errorMessage.includes('already exists')) {
-        if (errorMessage.includes('email')) {
-          errorMessage = 'An account with this email already exists.';
-        } else if (errorMessage.includes('username')) {
-          errorMessage = 'This username is already taken. Please choose another.';
-        }
-      }
-
-      setError(errorMessage);
+      setError(errorMessage)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
-
-  // Auto-fill username when referral is detected
-  useEffect(() => {
-    if (referrerInfo && effectiveReferralCode && !username) {
-      const suggestedUsername = `friend_of_${referrerInfo.username}`
-        .toLowerCase()
-        .replace(/[^a-z0-9_]/g, '_')
-        .substring(0, 15);
-      
-      setFormData(prev => ({ ...prev, username: suggestedUsername }));
-    }
-  }, [referrerInfo, effectiveReferralCode, username]);
+  }
 
   return (
     <div className="register-container">
       <div className="register-card">
         <div className="register-header">
-          <div className="logo">⛏️ ZIVER</div>
-          <h1>Join the Mining Revolution</h1>
+          <div className="logo">⚡ ZIVER</div>
+          <h1>Join the Revolution</h1>
           <p>Start earning ZP tokens today</p>
         </div>
 
-        {/* Referral Banner */}
         {effectiveReferralCode && (
-          <div className={`referral-banner ${referrerInfo ? 'valid' : checkingReferral ? 'checking' : 'invalid'}`}>
+          <div className={`referral-banner ${referrerInfo ? "valid" : checkingReferral ? "checking" : "invalid"}`}>
             <span className="referral-icon">🎁</span>
             {checkingReferral ? (
-              <span>Checking referral code: {effectiveReferralCode}</span>
+              <span>Checking referral code...</span>
             ) : referrerInfo ? (
-              <>
-                <span>Referred by: <strong>{referrerInfo.username}</strong></span>
+              <div className="referral-info">
+                <span>
+                  Referred by: <strong>@{referrerInfo.username}</strong>
+                </span>
                 <span className="bonus-badge">+100 ZP Bonus</span>
-              </>
+              </div>
             ) : (
-              <>
-                <span>Referral code: {effectiveReferralCode}</span>
-                <span className="bonus-badge">Bonus Available</span>
-              </>
+              <span>Referral code: {effectiveReferralCode}</span>
             )}
           </div>
         )}
@@ -260,15 +189,46 @@ function RegisterPage() {
           <div className="telegram-badge">
             <span className="tg-icon">📱</span>
             Joining via Telegram
-            {telegramUser && ` (@${telegramUser.username})`}
           </div>
         )}
 
-        {registrationSuccess && (
-          <div className="success-message">
-            ✅ Account created successfully! Redirecting...
-          </div>
-        )}
+        {registrationSuccess && <div className="success-message">✅ Account created successfully! Redirecting...</div>}
+
+        <div className="social-signup">
+          <button className="social-btn google" onClick={handleGoogleSignup} type="button">
+            <svg className="social-icon" viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="currentColor"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="currentColor"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              />
+              <path
+                fill="currentColor"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              />
+            </svg>
+            Continue with Google
+          </button>
+
+          <button className="social-btn wallet" onClick={handleWalletConnect} type="button">
+            <svg className="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="2" y="5" width="20" height="14" rx="2" />
+              <path d="M2 10h20" />
+            </svg>
+            Connect Wallet
+          </button>
+        </div>
+
+        <div className="divider">
+          <span>or sign up with email</span>
+        </div>
 
         <form className="register-form" onSubmit={handleSubmit}>
           {error && <div className="error-message">{error}</div>}
@@ -285,13 +245,11 @@ function RegisterPage() {
               required
               minLength="3"
               maxLength="20"
-              className={`modern-input ${referrerInfo ? 'referral-username' : ''}`}
+              className={`modern-input ${referrerInfo ? "referral-username" : ""}`}
               disabled={loading}
             />
             {referrerInfo && (
-              <div className="referral-note">
-                ✨ Welcome! You were referred by {referrerInfo.username}
-              </div>
+              <div className="referral-note">✨ Welcome! You were referred by @{referrerInfo.username}</div>
             )}
           </div>
 
@@ -332,7 +290,7 @@ function RegisterPage() {
                 tabIndex="-1"
                 disabled={loading}
               >
-                {showPassword ? '🙈' : '👁️'}
+                {showPassword ? "🙈" : "👁️"}
               </button>
             </div>
           </div>
@@ -359,35 +317,36 @@ function RegisterPage() {
                 tabIndex="-1"
                 disabled={loading}
               >
-                {showConfirmPassword ? '🙈' : '👁️'}
+                {showConfirmPassword ? "🙈" : "👁️"}
               </button>
             </div>
           </div>
 
-          <button 
-            type="submit" 
-            className="register-button"
-            disabled={loading || checkingReferral}
-          >
+          <button type="submit" className="register-button" disabled={loading || checkingReferral}>
             {loading ? (
               <div className="button-loading">
                 <div className="spinner"></div>
                 Creating Account...
               </div>
             ) : checkingReferral ? (
-              'Checking Referral...'
+              "Checking Referral..."
             ) : referrerInfo ? (
-              `Join & Get 100 ZP from ${referrerInfo.username}`
+              `Join & Get 100 ZP from @${referrerInfo.username}`
             ) : effectiveReferralCode ? (
-              'Join with Referral Bonus'
+              "Join with Referral Bonus"
             ) : (
-              'Create Account'
+              "Create Account"
             )}
           </button>
         </form>
 
         <div className="register-footer">
-          <p>Already have an account? <Link to="/login" className="login-link">Sign In</Link></p>
+          <p>
+            Already have an account?{" "}
+            <Link to="/login" className="login-link">
+              Sign In
+            </Link>
+          </p>
           <div className="security-note">
             <span className="shield-icon">🛡️</span>
             Your data is securely encrypted
@@ -395,7 +354,7 @@ function RegisterPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-export default RegisterPage;
+export default RegisterPage
