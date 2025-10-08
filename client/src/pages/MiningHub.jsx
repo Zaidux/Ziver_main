@@ -113,8 +113,6 @@ const MiningHub = () => {
       <div className="mining-content">
         <header className="mining-hub-header">
           <h1 className="hub-title">Mining Hub</h1>
-          <button onClick={logout} className="logout-button">Logout</button>
-        </header>
 
         <div className="user-stats-grid">
           <div className="user-stat-card">
