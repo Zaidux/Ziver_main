@@ -1,36 +1,34 @@
-import React from 'react';
-import './LoadingScreen.css';
+import "./LoadingScreen.css"
 
-const LoadingScreen = ({ 
-  message = "Loading your resources...", 
-  type = "fullscreen", 
-  overlay = false 
-}) => {
-  const getContainerClass = () => {
-    if (type === "inline") {
-      return overlay ? "loading-inline-overlay" : "loading-inline";
-    }
-    return "loading-fullscreen";
-  };
+const LoadingScreen = ({ message = "Loading...", type = "fullscreen" }) => {
+  // type can be "fullscreen" (initial load) or "inline-overlay" (page refresh)
+
+  if (type === "inline-overlay") {
+    return (
+      <div className="loading-overlay">
+        <div className="loading-content">
+          <div className="ziver-logo-loader">
+            <span className="logo-z">Z</span>
+          </div>
+          <p className="loading-message">{message}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className={getContainerClass()}>
-      <div className="z-logo-container">
-        <div className="z-logo">
-          <div className="z-half z-half-1"></div>
-          <div className="z-half z-half-2"></div>
-          <div className="z-outline"></div>
-          <div className="z-pulse"></div>
+    <div className="loading-screen-fullscreen">
+      <div className="loading-content">
+        <div className="ziver-logo-loader large">
+          <span className="logo-z">Z</span>
         </div>
-        {message && <div className="loading-text">{message}</div>}
-        <div className="loading-dots">
-          <span></span>
-          <span></span>
-          <span></span>
+        <p className="loading-message">{message}</p>
+        <div className="loading-bar">
+          <div className="loading-bar-fill"></div>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default LoadingScreen;
+export default LoadingScreen
