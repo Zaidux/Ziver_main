@@ -5,7 +5,8 @@ import MiningDisplay from '../components/MiningDisplay';
 import './MiningHub.css';
 
 const MiningHub = () => {
-  const { user, appSettings, logout, updateUser } = useAuth();
+  // 1. Removed 'logout' from destructuring
+  const { user, appSettings, updateUser } = useAuth(); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [miningStatus, setMiningStatus] = useState(null);
@@ -89,7 +90,9 @@ const MiningHub = () => {
         }
       }, 5000); // Poll every 5 seconds
 
-      return () => clearInterval(pollInterval);
+      // The cleanup function for the effect/interval should be returned from the function that creates the interval, 
+      // but in this setup, it's better to just let the component handle the logic, as the cleanup is internal to the interval logic.
+      // We'll remove the unneeded return here, as setInterval is not in a useEffect.
     } catch (err) {
       // Improved error handling
       const errorMessage = err.message || 'Failed to start mining.';
@@ -99,6 +102,10 @@ const MiningHub = () => {
       setLoading(false);
     }
   };
+  
+  // A small note on `handleStartMining`: since you're calling `setInterval` inside `handleStartMining`, 
+  // you don't need the `return () => clearInterval(pollInterval);` line at the end of the function, 
+  // as that's only used inside `useEffect` for cleanup. I've removed it in the code above.
 
   const handleAction = () => {
     if (currentState === 1) {
@@ -113,14 +120,17 @@ const MiningHub = () => {
       <div className="mining-content">
         <header className="mining-hub-header">
           <h1 className="hub-title">Mining Hub</h1>
-
+          {/* Removed: <button onClick={logout} className="logout-button">Logout</button> */}
+        </header>
+        
+        {/* The missing </div> was here! Your header needs to close, and then the rest of the content begins. */}
         <div className="user-stats-grid">
           <div className="user-stat-card">
             <h2>ZP Balance</h2>
             <p className="stat-value">{user?.zp_balance || 0}</p>
           </div>
           <div className="user-stat-card">
-            <h2>SCS Score</h2>
+            <h2>SEB Score</h2>
             <p className="stat-value">{user?.social_capital_score || 0}</p>
           </div>
           <div className="user-stat-card">
