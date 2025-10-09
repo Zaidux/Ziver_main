@@ -45,7 +45,7 @@ const googleCallback = asyncHandler(async (req, res) => {
       code: code,
       redirect_uri: process.env.GOOGLE_REDIRECT_URI || `${process.env.BACKEND_URL}/api/auth/google/callback`
     });
-    
+
     googleClient.setCredentials(tokens);
 
     // 3. Get user profile info from Google
@@ -53,12 +53,12 @@ const googleCallback = asyncHandler(async (req, res) => {
       idToken: tokens.id_token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
-    
+
     const payload = ticket.getPayload();
     const { sub: googleId, email, name, picture } = payload;
 
     const client = await db.getClient();
-    
+
     try {
       await client.query('BEGIN');
 
@@ -207,7 +207,7 @@ const applyReferral = async (client, referralCode, userId) => {
   }
 };
 
-// NEW: Google OAuth Authentication (Direct token auth)
+// UPDATED: Google OAuth Authentication (Handles both access tokens and ID tokens)
 const googleAuth = asyncHandler(async (req, res) => {
   const { token: googleToken, referralCode } = req.body;
 
@@ -217,93 +217,125 @@ const googleAuth = asyncHandler(async (req, res) => {
 
   const client = await db.getClient();
   try {
-    // Verify Google token
-    const ticket = await googleClient.verifyIdToken({
-      idToken: googleToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+    // Check if it's an access token (starts with 'ya29.') or ID token
+    const isAccessToken = googleToken.startsWith('ya29.');
+    
+    let payload;
+    
+    if (isAccessToken) {
+      console.log('Processing Google access token');
+      // For access tokens, we need to get user info from Google API
+      const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: {
+          'Authorization': `Bearer ${googleToken}`
+        }
+      });
+      
+      if (!userInfoResponse.ok) {
+        throw new Error('Failed to fetch user info from Google');
+      }
+      
+      const userInfo = await userInfoResponse.json();
+      
+      // Create a payload similar to what verifyIdToken would return
+      payload = {
+        sub: userInfo.sub, // Google ID
+        email: userInfo.email,
+        name: userInfo.name,
+        picture: userInfo.picture,
+        email_verified: userInfo.email_verified
+      };
+      
+      console.log('User info from access token:', payload);
+      
+    } else {
+      console.log('Processing Google ID token');
+      // For ID tokens, verify normally
+      const ticket = await googleClient.verifyIdToken({
+        idToken: googleToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+    }
 
-    const payload = ticket.getPayload();
     const { sub: googleId, email, name, picture } = payload;
+
+    if (!email) {
+      throw new Error('No email found in Google token');
+    }
 
     await client.query('BEGIN');
 
-    // Check if user exists with this Google ID
+    // Check if user exists with this Google ID or email
     let userResult = await client.query(
-      'SELECT * FROM users WHERE google_id = $1',
-      [googleId]
+      'SELECT * FROM users WHERE google_id = $1 OR email = $2',
+      [googleId, email]
     );
 
     let user = userResult.rows[0];
 
     if (!user) {
-      // Check if user exists with this email but different auth provider
-      userResult = await client.query(
-        'SELECT * FROM users WHERE email = $1',
-        [email]
-      );
+      // Create new user with Google OAuth
+      const newReferralCode = generateReferralCode();
+      const username = name ? 
+        name.toLowerCase().replace(/\s+/g, '_') + '_' + Math.random().toString(36).substr(2, 5) :
+        email.split('@')[0] + '_' + Math.random().toString(36).substr(2, 5);
 
-      user = userResult.rows[0];
+      const newUserQuery = `
+        INSERT INTO users (username, email, google_id, auth_provider, avatar_url, referral_code, zp_balance) 
+        VALUES ($1, $2, $3, $4, $5, $6, 100) 
+        RETURNING id, username, email, created_at, role, zp_balance, social_capital_score, avatar_url, auth_provider
+      `;
 
-      if (user) {
-        // User exists with email but different auth method - link Google account
-        await client.query(
-          'UPDATE users SET google_id = $1, auth_provider = $2, avatar_url = $3 WHERE id = $4',
-          [googleId, 'google', picture, user.id]
-        );
-      } else {
-        // Create new user with Google OAuth
-        const newReferralCode = generateReferralCode();
-        const username = name.toLowerCase().replace(/\s+/g, '_') + '_' + Math.random().toString(36).substr(2, 5);
+      const newUserResult = await client.query(newUserQuery, [
+        username, email, googleId, 'google', picture, newReferralCode
+      ]);
 
-        const newUserQuery = `
-          INSERT INTO users (username, email, google_id, auth_provider, avatar_url, referral_code, zp_balance) 
-          VALUES ($1, $2, $3, $4, $5, $6, 100) 
-          RETURNING id, username, email, created_at, role, zp_balance, social_capital_score, avatar_url, auth_provider
-        `;
+      user = newUserResult.rows[0];
+      console.log('Created new user with Google OAuth:', email);
 
-        const newUserResult = await client.query(newUserQuery, [
-          username, email, googleId, 'google', picture, newReferralCode
-        ]);
+      // 🔥 ENHANCED REFERRAL LOGIC for Google OAuth
+      let referrerInfo = null;
+      let effectiveReferralCode = referralCode;
 
-        user = newUserResult.rows[0];
-
-        // 🔥 ENHANCED REFERRAL LOGIC for Google OAuth
-        let referrerInfo = null;
-        let effectiveReferralCode = referralCode;
-
-        // If still no referral code, assign a smart referrer
-        if (!effectiveReferralCode) {
-          const smartReferrer = await assignSmartReferrer(client);
-          if (smartReferrer) {
-            effectiveReferralCode = smartReferrer.referralCode;
-            console.log('Assigned smart referrer for Google user:', smartReferrer.username);
-          }
-        }
-
-        // Apply referral if we have a valid code
-        if (effectiveReferralCode) {
-          referrerInfo = await applyReferral(client, effectiveReferralCode, user.id);
-
-          if (referrerInfo) {
-            console.log(`Google OAuth referral applied: ${referrerInfo.username} -> ${username}`);
-
-            // Send Telegram notification to referrer
-            try {
-              await sendReferralNotification(referrerInfo.id, username);
-              console.log(`Telegram referral notification sent to: ${referrerInfo.username}`);
-            } catch (notificationError) {
-              console.error('Error sending Telegram referral notification:', notificationError);
-            }
-          }
-
-          // Clean up pending referrals
-          await client.query(
-            'DELETE FROM pending_referrals WHERE referral_code = $1',
-            [effectiveReferralCode]
-          );
+      // If still no referral code, assign a smart referrer
+      if (!effectiveReferralCode) {
+        const smartReferrer = await assignSmartReferrer(client);
+        if (smartReferrer) {
+          effectiveReferralCode = smartReferrer.referralCode;
+          console.log('Assigned smart referrer for Google user:', smartReferrer.username);
         }
       }
+
+      // Apply referral if we have a valid code
+      if (effectiveReferralCode) {
+        referrerInfo = await applyReferral(client, effectiveReferralCode, user.id);
+
+        if (referrerInfo) {
+          console.log(`Google OAuth referral applied: ${referrerInfo.username} -> ${username}`);
+
+          // Send Telegram notification to referrer
+          try {
+            await sendReferralNotification(referrerInfo.id, username);
+            console.log(`Telegram referral notification sent to: ${referrerInfo.username}`);
+          } catch (notificationError) {
+            console.error('Error sending Telegram referral notification:', notificationError);
+          }
+        }
+
+        // Clean up pending referrals
+        await client.query(
+          'DELETE FROM pending_referrals WHERE referral_code = $1',
+          [effectiveReferralCode]
+        );
+      }
+    } else if (user && !user.google_id) {
+      // User exists with email but different auth method - link Google account
+      await client.query(
+        'UPDATE users SET google_id = $1, auth_provider = $2, avatar_url = $3 WHERE id = $4',
+        [googleId, 'google', picture, user.id]
+      );
+      console.log('Linked existing user with Google account:', email);
     }
 
     // Get app settings
@@ -347,7 +379,10 @@ const googleAuth = asyncHandler(async (req, res) => {
       return res.status(401).json({ message: 'Google token has expired' });
     }
 
-    res.status(400).json({ message: 'Google authentication failed' });
+    res.status(400).json({ 
+      message: 'Google authentication failed',
+      details: error.message 
+    });
   } finally {
     client.release();
   }
