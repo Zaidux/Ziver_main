@@ -96,53 +96,76 @@ function RegisterPage() {
   }
 
   const handleGoogleSignup = async () => {
-    setGoogleLoading(true)
-    setError("")
+  setGoogleLoading(true);
+  setError("");
+  
+  try {
+    // Debug: Check if client ID is available
+    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
     
-    try {
-      // Load Google API script
-      await loadGoogleScript()
-      
-      // Initialize Google Auth2
-      const googleAuth = window.google.accounts.oauth2.initTokenClient({
-        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
-        scope: 'email profile openid',
-        callback: async (response) => {
-          if (response.access_token) {
-            try {
-              // Send the access token to your backend via POST
-              const result = await authService.googleAuth(response.access_token, effectiveReferralCode)
-              
-              if (result.token && result.user) {
-                login(result.token, result.user)
-                navigate("/mining", {
-                  state: {
-                    message: `Welcome to Ziver, ${result.user.username}!`,
-                    showWelcome: true,
-                  },
-                })
-              }
-            } catch (err) {
-              console.error("Google auth error:", err)
-              setError("Google authentication failed. Please try again.")
-            } finally {
-              setGoogleLoading(false)
-            }
-          } else {
-            setError("Google authentication was cancelled.")
-            setGoogleLoading(false)
-          }
-        },
-      })
-      
-      // Request access token
-      googleAuth.requestAccessToken()
-    } catch (error) {
-      console.error("Google signup error:", error)
-      setError("Failed to initialize Google sign-in. Please try again.")
-      setGoogleLoading(false)
+    if (!clientId) {
+      throw new Error('Google Client ID is not configured. Please check your environment variables.');
     }
+
+    console.log('Initializing Google Auth with Client ID:', clientId);
+
+    // Load Google API script
+    await loadGoogleScript();
+    
+    // Wait a bit for Google script to fully initialize
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    if (!window.google) {
+      throw new Error('Google script failed to load');
+    }
+
+    if (!window.google.accounts) {
+      throw new Error('Google accounts API not available');
+    }
+
+    // Initialize Google Auth2
+    const googleAuth = window.google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: 'email profile openid',
+      callback: async (response) => {
+        if (response.access_token) {
+          try {
+            console.log('Google auth successful, sending to backend...');
+            
+            // Send the access token to your backend via POST
+            const result = await authService.googleAuth(response.access_token, effectiveReferralCode);
+            
+            if (result.token && result.user) {
+              login(result.token, result.user);
+              navigate("/mining", {
+                state: {
+                  message: `Welcome to Ziver, ${result.user.username}!`,
+                  showWelcome: true,
+                },
+              });
+            }
+          } catch (err) {
+            console.error("Google auth backend error:", err);
+            setError("Google authentication failed. Please try again.");
+          } finally {
+            setGoogleLoading(false);
+          }
+        } else {
+          console.error("Google auth callback error:", response);
+          setError("Google authentication was cancelled or failed.");
+          setGoogleLoading(false);
+        }
+      },
+    });
+    
+    // Request access token
+    googleAuth.requestAccessToken();
+  } catch (error) {
+    console.error("Google signup initialization error:", error);
+    setError(`Google sign-in failed: ${error.message}`);
+    setGoogleLoading(false);
   }
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault()
