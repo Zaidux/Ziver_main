@@ -9,7 +9,7 @@ function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth(); // Added loginWithGoogle
   const navigate = useNavigate();
 
   const { email, password } = formData;
@@ -35,7 +35,7 @@ function LoginPage() {
       script.defer = true;
       script.onload = () => resolve();
       script.onerror = () => reject(new Error('Failed to load Google script'));
-      
+
       document.head.appendChild(script);
     });
   };
@@ -43,26 +43,24 @@ function LoginPage() {
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     setError('');
-    
+
     try {
       // Load Google API script
       await loadGoogleScript();
-      
+
       // Initialize Google Auth2
       const googleAuth = window.google.accounts.oauth2.initTokenClient({
-        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
         scope: 'email profile openid',
         callback: async (response) => {
           if (response.access_token) {
             try {
               // Send the access token to your backend via POST
               const result = await authService.googleAuth(response.access_token);
-              // Replace this in your Google callback:
-if (result.token && result.user) {
-  // Use the new Google-specific login function
-  loginWithGoogle(result);
-}
-                navigate("/mining");
+              
+              if (result.token && result.user) {
+                // Use the new Google-specific login function
+                await loginWithGoogle(result);
               }
             } catch (err) {
               console.error("Google auth error:", err);
@@ -76,7 +74,7 @@ if (result.token && result.user) {
           }
         },
       });
-      
+
       // Request access token
       googleAuth.requestAccessToken();
     } catch (error) {
