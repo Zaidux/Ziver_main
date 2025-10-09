@@ -30,6 +30,47 @@ const generateToken = (user) => {
   );
 };
 
+// In your authController.js file
+const googleCallback = asyncHandler(async (req, res) => {
+  try {
+    // 1. Get the temporary code from the query string
+    const { code } = req.query;
+
+    // 2. Exchange the code for access and ID tokens
+    const { tokens } = await googleClient.getToken(code);
+    googleClient.setCredentials(tokens);
+
+    // 3. Get user profile info from Google
+    const ticket = await googleClient.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    // 4. Find or create a user in your database using `payload`
+    // ... (Your user find/create logic here, similar to the `googleAuth` function we discussed earlier) ...
+
+    // 5. Generate a JWT for your application
+    const yourAppToken = generateToken(user);
+
+    // 6. Redirect the user back to your frontend with the token
+    // Option A: Redirect to frontend with token in URL (less secure)
+    res.redirect(`https://yourfrontend.com/auth/success?token=${yourAppToken}`);
+
+    // Option B: Better - Set a secure, httpOnly cookie and redirect
+    // res.cookie('token', yourAppToken, { httpOnly: true, secure: true, sameSite: 'lax' });
+    // res.redirect('https://yourfrontend.com/dashboard');
+
+  } catch (error) {
+    console.error('Google OAuth Callback Error:', error);
+    // Redirect to frontend with an error message
+    res.redirect('https://yourfrontend.com/auth/error?message=Authentication failed');
+  }
+});
+
+
+};
+
 // NEW: Smart referral assignment when no referrer is provided
 const assignSmartReferrer = async (client) => {
   try {
@@ -569,6 +610,7 @@ module.exports = {
   registerUser,
   loginUser,
   googleAuth,
+  googleCallback,
   getReferrerInfo,
   createPendingReferral
 };
