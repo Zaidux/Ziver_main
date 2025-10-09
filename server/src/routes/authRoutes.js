@@ -29,6 +29,9 @@ router.post('/google', googleAuth);
 // @access  Public
 router.get('/referrer-info/:referralCode', getReferrerInfo);
 
+// Google OAuth Callback Route
+router.get('/auth/google/callback', googleCallback);
+
 // @route   POST /api/auth/pending-referral
 // @desc    Create a pending referral
 // @access  Public
