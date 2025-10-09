@@ -29,7 +29,7 @@ function RegisterPage() {
 
   const navigate = useNavigate()
   const location = useLocation()
-  const { login } = useAuth()
+  const { login, loginWithGoogle } = useAuth() // Added loginWithGoogle
 
   const { username, email, password, confirmPassword } = formData
 
@@ -90,84 +90,77 @@ function RegisterPage() {
       script.defer = true
       script.onload = () => resolve()
       script.onerror = () => reject(new Error('Failed to load Google script'))
-      
+
       document.head.appendChild(script)
     })
   }
 
   const handleGoogleSignup = async () => {
-  setGoogleLoading(true);
-  setError("");
-  
-  try {
-    // Debug: Check if client ID is available
-    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
-    
-    if (!clientId) {
-      throw new Error('Google Client ID is not configured. Please check your environment variables.');
-    }
+    setGoogleLoading(true);
+    setError("");
 
-    console.log('Initializing Google Auth with Client ID:', clientId);
+    try {
+      // Debug: Check if client ID is available
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-    // Load Google API script
-    await loadGoogleScript();
-    
-    // Wait a bit for Google script to fully initialize
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    if (!window.google) {
-      throw new Error('Google script failed to load');
-    }
+      if (!clientId) {
+        throw new Error('Google Client ID is not configured. Please check your environment variables.');
+      }
 
-    if (!window.google.accounts) {
-      throw new Error('Google accounts API not available');
-    }
+      console.log('Initializing Google Auth with Client ID:', clientId);
 
-    // Initialize Google Auth2
-    const googleAuth = window.google.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: 'email profile openid',
-      callback: async (response) => {
-        if (response.access_token) {
-          try {
-            console.log('Google auth successful, sending to backend...');
-            
-            // Send the access token to your backend via POST
-            const result = await authService.googleAuth(response.access_token, effectiveReferralCode);
-            // Replace this in your Google callback:
-if (result.token && result.user) {
-  // Use the new Google-specific login function
-  loginWithGoogle(result);
-}
-              navigate("/mining", {
-                state: {
-                  message: `Welcome to Ziver, ${result.user.username}!`,
-                  showWelcome: true,
-                },
-              });
+      // Load Google API script
+      await loadGoogleScript();
+
+      // Wait a bit for Google script to fully initialize
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      if (!window.google) {
+        throw new Error('Google script failed to load');
+      }
+
+      if (!window.google.accounts) {
+        throw new Error('Google accounts API not available');
+      }
+
+      // Initialize Google Auth2
+      const googleAuth = window.google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'email profile openid',
+        callback: async (response) => {
+          if (response.access_token) {
+            try {
+              console.log('Google auth successful, sending to backend...');
+
+              // Send the access token to your backend via POST
+              const result = await authService.googleAuth(response.access_token, effectiveReferralCode);
+              
+              if (result.token && result.user) {
+                // Use the new Google-specific login function
+                await loginWithGoogle(result);
+              }
+            } catch (err) {
+              console.error("Google auth backend error:", err);
+              setError("Google authentication failed. Please try again.");
+            } finally {
+              setGoogleLoading(false);
             }
-          } catch (err) {
-            console.error("Google auth backend error:", err);
-            setError("Google authentication failed. Please try again.");
-          } finally {
+          } else {
+            console.error("Google auth callback error:", response);
+            setError("Google authentication was cancelled or failed.");
             setGoogleLoading(false);
           }
-        } else {
-          console.error("Google auth callback error:", response);
-          setError("Google authentication was cancelled or failed.");
-          setGoogleLoading(false);
-        }
-      },
-    });
-    
-    // Request access token
-    googleAuth.requestAccessToken();
-  } catch (error) {
-    console.error("Google signup initialization error:", error);
-    setError(`Google sign-in failed: ${error.message}`);
-    setGoogleLoading(false);
-  }
-};
+        },
+      });
+
+      // Request access token
+      googleAuth.requestAccessToken();
+    } catch (error) {
+      console.error("Google signup initialization error:", error);
+      setError(`Google sign-in failed: ${error.message}`);
+      setGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault()
