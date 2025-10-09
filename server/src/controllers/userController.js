@@ -1,9 +1,9 @@
 const asyncHandler = require('express-async-handler');
 const db = require('../config/db');
+const User = require('../models/User');
 
-// --- Controller to verify token --- NEW FUNCTION
+// --- Controller to verify token ---
 const verifyToken = asyncHandler(async (req, res) => {
-  // If protect middleware passed, the token is valid
   res.json({ valid: true, user: req.user });
 });
 
@@ -15,6 +15,81 @@ const getUserProfile = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('User not found');
   }
+});
+
+// NEW: Update user profile
+const updateProfile = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const {
+    avatar_url,
+    bio,
+    telegram_username,
+    twitter_username,
+    linkedin_url
+  } = req.body;
+
+  // Validate bio length (max 500 characters)
+  if (bio && bio.length > 500) {
+    res.status(400);
+    throw new Error('Bio must be less than 500 characters');
+  }
+
+  // Validate Twitter username format
+  if (twitter_username && !/^[A-Za-z0-9_]{1,15}$/.test(twitter_username)) {
+    res.status(400);
+    throw new Error('Twitter username must be 1-15 characters and contain only letters, numbers, and underscores');
+  }
+
+  // Validate LinkedIn URL format
+  if (linkedin_url && !linkedin_url.includes('linkedin.com/in/')) {
+    res.status(400);
+    throw new Error('Please provide a valid LinkedIn profile URL');
+  }
+
+  // Check if telegram username is already taken
+  if (telegram_username) {
+    const existingUser = await User.findByTelegramUsername(telegram_username);
+    if (existingUser && existingUser.id !== userId) {
+      res.status(400);
+      throw new Error('Telegram username is already taken');
+    }
+  }
+
+  const updatedUser = await User.updateProfile(userId, {
+    avatar_url,
+    bio,
+    telegram_username,
+    twitter_username,
+    linkedin_url
+  });
+
+  res.json({
+    success: true,
+    message: 'Profile updated successfully',
+    user: updatedUser
+  });
+});
+
+// NEW: Upload avatar
+const uploadAvatar = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  
+  // This would typically handle file upload via multer or similar
+  // For now, we'll accept a URL from the frontend
+  const { avatar_url } = req.body;
+
+  if (!avatar_url) {
+    res.status(400);
+    throw new Error('Avatar URL is required');
+  }
+
+  const updatedUser = await User.updateProfile(userId, { avatar_url });
+
+  res.json({
+    success: true,
+    message: 'Avatar updated successfully',
+    user: updatedUser
+  });
 });
 
 // A helper function to get a random number within a range
@@ -71,8 +146,10 @@ const recordHeartbeat = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-  verifyToken, // <-- ADD THIS EXPORT
+  verifyToken,
   getUserProfile,
+  updateProfile,
+  uploadAvatar,
   updateUserActivity,
   recordHeartbeat,
 };
