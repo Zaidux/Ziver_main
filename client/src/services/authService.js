@@ -24,7 +24,7 @@ const register = async (username, email, password, referralCode = null) => {
     });
 
     const response = await api.post('/auth/register', registrationData);
-    
+
     // Clear referral code from storage after successful registration
     if (referralCode) {
       localStorage.removeItem('ziver_referral_code');
@@ -34,13 +34,13 @@ const register = async (username, email, password, referralCode = null) => {
     return response.data;
   } catch (error) {
     console.error('Registration error:', error);
-    
+
     // Enhanced error handling
     let errorMessage = 'Registration failed. Please try again.';
-    
+
     if (error.response) {
       const { data, status } = error.response;
-      
+
       if (status === 400) {
         errorMessage = data.message || 'Invalid registration data.';
       } else if (status === 409) {
@@ -51,7 +51,7 @@ const register = async (username, email, password, referralCode = null) => {
         errorMessage = data.message || errorMessage;
       }
     }
-    
+
     throw new Error(errorMessage);
   }
 };
@@ -66,12 +66,32 @@ const login = async (email, password) => {
     return response.data;
   } catch (error) {
     console.error('Login error:', error);
-    
+
     let errorMessage = 'Login failed. Please check your credentials.';
     if (error.response?.data?.message) {
       errorMessage = error.response.data.message;
     }
-    
+
+    throw new Error(errorMessage);
+  }
+};
+
+// Google OAuth login/register
+const googleAuth = async (googleToken, referralCode = null) => {
+  try {
+    const response = await api.post('/auth/google', {
+      token: googleToken,
+      referralCode
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Google OAuth error:', error);
+
+    let errorMessage = 'Google authentication failed. Please try again.';
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    }
+
     throw new Error(errorMessage);
   }
 };
@@ -112,6 +132,7 @@ const validateReferralCode = async (referralCode) => {
 const authService = {
   register,
   login,
+  googleAuth,
   logout,
   getCurrentUser,
   validateReferralCode
