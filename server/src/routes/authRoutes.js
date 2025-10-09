@@ -5,6 +5,7 @@ const {
   loginUser,
   googleAuth,
   getReferrerInfo,
+  googleCallback,
   createPendingReferral
 } = require('../controllers/authController');
 
