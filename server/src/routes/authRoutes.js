@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   registerUser,
   loginUser,
+  googleAuth,
   getReferrerInfo,
   createPendingReferral
 } = require('../controllers/authController');
@@ -16,6 +17,11 @@ router.post('/register', registerUser);
 // @desc    Login user
 // @access  Public
 router.post('/login', loginUser);
+
+// @route   POST /api/auth/google
+// @desc    Authenticate with Google OAuth
+// @access  Public
+router.post('/google', googleAuth);
 
 // @route   GET /api/auth/referrer-info/:referralCode
 // @desc    Get referrer info by referral code (alternative endpoint)
