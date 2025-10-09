@@ -32,8 +32,6 @@ function RegisterPage() {
 
   const { username, email, password, confirmPassword } = formData
 
-  // ... existing useEffect hooks ...
-
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search)
     const ref = searchParams.get("ref")
@@ -78,13 +76,8 @@ function RegisterPage() {
   }
 
   const handleGoogleSignup = () => {
-    // TODO: Implement Google OAuth
-    setError("Google signup coming soon!")
-  }
-
-  const handleWalletConnect = () => {
-    // TODO: Implement Wallet Connect
-    setError("Wallet connect coming soon!")
+    // Redirect to backend Google OAuth endpoint
+    window.location.href = `${process.env.REACT_APP_API_URL || 'https://ziver-api.onrender.com'}/api/auth/google`
   }
 
   const handleSubmit = async (e) => {
@@ -195,7 +188,7 @@ function RegisterPage() {
         {registrationSuccess && <div className="success-message">✅ Account created successfully! Redirecting...</div>}
 
         <div className="social-signup">
-          <button className="social-btn google" onClick={handleGoogleSignup} type="button">
+          <button className="social-btn google" onClick={handleGoogleSignup} type="button" disabled={loading}>
             <svg className="social-icon" viewBox="0 0 24 24">
               <path
                 fill="currentColor"
@@ -215,14 +208,6 @@ function RegisterPage() {
               />
             </svg>
             Continue with Google
-          </button>
-
-          <button className="social-btn wallet" onClick={handleWalletConnect} type="button">
-            <svg className="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <rect x="2" y="5" width="20" height="14" rx="2" />
-              <path d="M2 10h20" />
-            </svg>
-            Connect Wallet
           </button>
         </div>
 
