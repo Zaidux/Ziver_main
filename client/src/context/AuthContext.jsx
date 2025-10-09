@@ -99,156 +99,159 @@ export const AuthProvider = ({ children, navigate }) => {
   }, []);
 
   // UPDATED: Enhanced login function that handles both regular and Google OAuth responses
-  const login = async (sessionData) => {
+  // In AuthContext.jsx - Update the regular login function too:
+
+// UPDATED: Enhanced login function that handles both regular and Google OAuth responses
+const login = async (sessionData) => {
+  try {
+    setLoading(true);
+    
+    // Handle different response formats
+    let user, token, appSettings;
+    
+    if (sessionData.user && sessionData.token) {
+      // Google OAuth format: { user: {...}, token: '...', appSettings: {...} }
+      user = sessionData.user;
+      token = sessionData.token;
+      appSettings = sessionData.appSettings;
+    } else if (sessionData.token && sessionData.user) {
+      // Regular login format: { token: '...', user: {...}, appSettings: {...} }
+      token = sessionData.token;
+      user = sessionData.user;
+      appSettings = sessionData.appSettings;
+    } else {
+      // Direct token and user (backward compatibility)
+      token = sessionData.token || sessionData;
+      user = sessionData.user || sessionData;
+      appSettings = sessionData.appSettings || {};
+    }
+
+    // Validate token
+    if (!token || typeof token !== 'string') {
+      throw new Error('Invalid token received');
+    }
+
+    console.log('Token received, length:', token.length);
+    console.log('Token preview:', token.substring(0, 20) + '...');
+
+    const fullUser = { ...user, token };
+
+    // Store session data
+    const sessionToStore = { user: fullUser, appSettings };
+    localStorage.setItem('session', JSON.stringify(sessionToStore));
+
+    // Update state
+    setUser(fullUser);
+    setAppSettings(appSettings);
+    setAuthError(null);
+
+    // Set default auth header
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+    // FIXED: Verify the token works by making a test request to /api/user/me
     try {
-      setLoading(true);
-      
-      // Handle different response formats
-      let user, token, appSettings;
-      
-      if (sessionData.user && sessionData.token) {
-        // Google OAuth format: { user: {...}, token: '...', appSettings: {...} }
-        user = sessionData.user;
-        token = sessionData.token;
-        appSettings = sessionData.appSettings;
-      } else if (sessionData.token && sessionData.user) {
-        // Regular login format: { token: '...', user: {...}, appSettings: {...} }
-        token = sessionData.token;
-        user = sessionData.user;
-        appSettings = sessionData.appSettings;
+      const testResponse = await api.get('/user/me');
+      console.log('Token verification successful');
+    } catch (testError) {
+      console.error('Token test failed:', testError);
+      throw new Error('Token validation failed');
+    }
+
+    // Check system status and load referral data
+    await Promise.all([
+      checkSystemStatus(),
+      loadReferralData()
+    ]);
+
+    if (navigate) navigate('/mining');
+  } catch (error) {
+    console.error('Login error:', error);
+    setAuthError('login');
+    
+    // Clear invalid session
+    localStorage.removeItem('session');
+    setUser(null);
+    setAppSettings(null);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// NEW: Simplified login function for Google OAuth
+const loginWithGoogle = async (googleResponse) => {
+  try {
+    setLoading(true);
+    console.log('Google OAuth login:', googleResponse);
+
+    const { user, token, appSettings, isNewUser } = googleResponse;
+
+    if (!token) {
+      throw new Error('No token received from Google OAuth');
+    }
+
+    // Validate token format
+    if (typeof token !== 'string' || token.length < 10) {
+      throw new Error('Invalid token format');
+    }
+
+    console.log('Google OAuth token length:', token.length);
+
+    const fullUser = { ...user, token };
+
+    // Store session data
+    const sessionData = { user: fullUser, appSettings: appSettings || {} };
+    localStorage.setItem('session', JSON.stringify(sessionData));
+
+    // Update state
+    setUser(fullUser);
+    setAppSettings(appSettings || {});
+    setAuthError(null);
+
+    // Set default auth header
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+    // FIXED: Test the token using the correct endpoint /api/user/me
+    try {
+      await api.get('/user/me');
+      console.log('Google OAuth token verified successfully');
+    } catch (error) {
+      console.error('Google OAuth token test failed:', error);
+      throw new Error('Token validation failed');
+    }
+
+    // Load additional data
+    await Promise.all([
+      checkSystemStatus(),
+      loadReferralData()
+    ]);
+
+    if (navigate) {
+      if (isNewUser) {
+        navigate('/profile/setup', { 
+          state: { 
+            message: 'Welcome! Please complete your profile to start mining.',
+            showWelcome: true 
+          } 
+        });
       } else {
-        // Direct token and user (backward compatibility)
-        token = sessionData.token || sessionData;
-        user = sessionData.user || sessionData;
-        appSettings = sessionData.appSettings || {};
+        navigate('/mining', { 
+          state: { 
+            message: `Welcome back, ${user.username}!` 
+          } 
+        });
       }
-
-      // Validate token
-      if (!token || typeof token !== 'string') {
-        throw new Error('Invalid token received');
-      }
-
-      console.log('Token received, length:', token.length);
-      console.log('Token preview:', token.substring(0, 20) + '...');
-
-      const fullUser = { ...user, token };
-
-      // Store session data
-      const sessionToStore = { user: fullUser, appSettings };
-      localStorage.setItem('session', JSON.stringify(sessionToStore));
-
-      // Update state
-      setUser(fullUser);
-      setAppSettings(appSettings);
-      setAuthError(null);
-
-      // Set default auth header
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-      // Verify the token works by making a test request
-      try {
-        const testResponse = await api.get('/user/profile');
-        console.log('Token verification successful');
-      } catch (testError) {
-        console.error('Token test failed:', testError);
-        throw new Error('Token validation failed');
-      }
-
-      // Check system status and load referral data
-      await Promise.all([
-        checkSystemStatus(),
-        loadReferralData()
-      ]);
-
-      if (navigate) navigate('/mining');
-    } catch (error) {
-      console.error('Login error:', error);
-      setAuthError('login');
-      
-      // Clear invalid session
-      localStorage.removeItem('session');
-      setUser(null);
-      setAppSettings(null);
-    } finally {
-      setLoading(false);
     }
-  };
 
-  // NEW: Simplified login function for Google OAuth
-  const loginWithGoogle = async (googleResponse) => {
-    try {
-      setLoading(true);
-      console.log('Google OAuth login:', googleResponse);
-
-      const { user, token, appSettings, isNewUser } = googleResponse;
-
-      if (!token) {
-        throw new Error('No token received from Google OAuth');
-      }
-
-      // Validate token format
-      if (typeof token !== 'string' || token.length < 10) {
-        throw new Error('Invalid token format');
-      }
-
-      console.log('Google OAuth token length:', token.length);
-
-      const fullUser = { ...user, token };
-
-      // Store session data
-      const sessionData = { user: fullUser, appSettings: appSettings || {} };
-      localStorage.setItem('session', JSON.stringify(sessionData));
-
-      // Update state
-      setUser(fullUser);
-      setAppSettings(appSettings || {});
-      setAuthError(null);
-
-      // Set default auth header
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-      // Test the token
-      try {
-        await api.get('/user/profile');
-        console.log('Google OAuth token verified successfully');
-      } catch (error) {
-        console.error('Google OAuth token test failed:', error);
-        throw new Error('Token validation failed');
-      }
-
-      // Load additional data
-      await Promise.all([
-        checkSystemStatus(),
-        loadReferralData()
-      ]);
-
-      if (navigate) {
-        if (isNewUser) {
-          navigate('/profile/setup', { 
-            state: { 
-              message: 'Welcome! Please complete your profile to start mining.',
-              showWelcome: true 
-            } 
-          });
-        } else {
-          navigate('/mining', { 
-            state: { 
-              message: `Welcome back, ${user.username}!` 
-            } 
-          });
-        }
-      }
-
-    } catch (error) {
-      console.error('Google OAuth login error:', error);
-      setAuthError('google_login');
-      localStorage.removeItem('session');
-      setUser(null);
-      setAppSettings(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (error) {
+    console.error('Google OAuth login error:', error);
+    setAuthError('google_login');
+    localStorage.removeItem('session');
+    setUser(null);
+    setAppSettings(null);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const logout = () => {
     localStorage.removeItem('session');
