@@ -5,7 +5,9 @@ const {
   getUserProfile, 
   updateUserActivity,
   recordHeartbeat,
-  verifyToken // NEW: Add this import
+  verifyToken,
+  updateProfile,
+  uploadAvatar
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -15,9 +17,23 @@ const { protect } = require('../middleware/authMiddleware');
 router.get('/verify-token', protect, verifyToken);
 
 // @route   GET /api/user/me
+// @desc    Get current user profile
+// @access  Private
 router.get('/me', protect, getUserProfile);
 
+// @route   PUT /api/user/profile
+// @desc    Update user profile
+// @access  Private
+router.put('/profile', protect, updateProfile);
+
+// @route   POST /api/user/avatar
+// @desc    Upload user avatar
+// @access  Private
+router.post('/avatar', protect, uploadAvatar);
+
 // @route   POST /api/user/activity
+// @desc    Update user activity and score
+// @access  Private
 router.post('/activity', protect, updateUserActivity);
 
 // @route   POST /api/user/heartbeat
