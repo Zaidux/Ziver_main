@@ -18,13 +18,50 @@ const User = {
   },
 
   findById: async (id) => {
-    // CRITICAL: Added mining_session_start_time and last_claim_time
     const query = `
       SELECT id, username, email, zp_balance, social_capital_score, 
-             daily_streak_count, mining_session_start_time, last_claim_time, role 
+             daily_streak_count, mining_session_start_time, last_claim_time, role,
+             avatar_url, bio, telegram_username, twitter_username, linkedin_url,
+             profile_updated_at
       FROM users WHERE id = $1
     `;
     const { rows } = await db.query(query, [id]);
+    return rows[0];
+  },
+
+  // NEW: Update user profile
+  updateProfile: async (userId, profileData) => {
+    const {
+      avatar_url,
+      bio,
+      telegram_username,
+      twitter_username,
+      linkedin_url
+    } = profileData;
+
+    const query = `
+      UPDATE users 
+      SET avatar_url = $1, 
+          bio = $2, 
+          telegram_username = $3, 
+          twitter_username = $4, 
+          linkedin_url = $5,
+          profile_updated_at = NOW()
+      WHERE id = $6
+      RETURNING id, username, email, avatar_url, bio, telegram_username, 
+                twitter_username, linkedin_url, profile_updated_at
+    `;
+    
+    const { rows } = await db.query(query, [
+      avatar_url, bio, telegram_username, twitter_username, linkedin_url, userId
+    ]);
+    return rows[0];
+  },
+
+  // NEW: Find by Telegram username
+  findByTelegramUsername: async (telegramUsername) => {
+    const query = 'SELECT * FROM users WHERE telegram_username = $1';
+    const { rows } = await db.query(query, [telegramUsername]);
     return rows[0];
   }
 };
