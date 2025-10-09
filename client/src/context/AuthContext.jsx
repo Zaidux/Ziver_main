@@ -99,159 +99,243 @@ export const AuthProvider = ({ children, navigate }) => {
   }, []);
 
   // UPDATED: Enhanced login function that handles both regular and Google OAuth responses
-  // In AuthContext.jsx - Update the regular login function too:
-
-// UPDATED: Enhanced login function that handles both regular and Google OAuth responses
-const login = async (sessionData) => {
-  try {
-    setLoading(true);
-    
-    // Handle different response formats
-    let user, token, appSettings;
-    
-    if (sessionData.user && sessionData.token) {
-      // Google OAuth format: { user: {...}, token: '...', appSettings: {...} }
-      user = sessionData.user;
-      token = sessionData.token;
-      appSettings = sessionData.appSettings;
-    } else if (sessionData.token && sessionData.user) {
-      // Regular login format: { token: '...', user: {...}, appSettings: {...} }
-      token = sessionData.token;
-      user = sessionData.user;
-      appSettings = sessionData.appSettings;
-    } else {
-      // Direct token and user (backward compatibility)
-      token = sessionData.token || sessionData;
-      user = sessionData.user || sessionData;
-      appSettings = sessionData.appSettings || {};
-    }
-
-    // Validate token
-    if (!token || typeof token !== 'string') {
-      throw new Error('Invalid token received');
-    }
-
-    console.log('Token received, length:', token.length);
-    console.log('Token preview:', token.substring(0, 20) + '...');
-
-    const fullUser = { ...user, token };
-
-    // Store session data
-    const sessionToStore = { user: fullUser, appSettings };
-    localStorage.setItem('session', JSON.stringify(sessionToStore));
-
-    // Update state
-    setUser(fullUser);
-    setAppSettings(appSettings);
-    setAuthError(null);
-
-    // Set default auth header
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-    // FIXED: Verify the token works by making a test request to /api/user/me
+  const login = async (sessionData) => {
     try {
-      const testResponse = await api.get('/user/me');
-      console.log('Token verification successful');
-    } catch (testError) {
-      console.error('Token test failed:', testError);
-      throw new Error('Token validation failed');
-    }
+      setLoading(true);
 
-    // Check system status and load referral data
-    await Promise.all([
-      checkSystemStatus(),
-      loadReferralData()
-    ]);
+      // Handle different response formats
+      let user, token, appSettings;
 
-    if (navigate) navigate('/mining');
-  } catch (error) {
-    console.error('Login error:', error);
-    setAuthError('login');
-    
-    // Clear invalid session
-    localStorage.removeItem('session');
-    setUser(null);
-    setAppSettings(null);
-  } finally {
-    setLoading(false);
-  }
-};
-
-// NEW: Simplified login function for Google OAuth
-const loginWithGoogle = async (googleResponse) => {
-  try {
-    setLoading(true);
-    console.log('Google OAuth login:', googleResponse);
-
-    const { user, token, appSettings, isNewUser } = googleResponse;
-
-    if (!token) {
-      throw new Error('No token received from Google OAuth');
-    }
-
-    // Validate token format
-    if (typeof token !== 'string' || token.length < 10) {
-      throw new Error('Invalid token format');
-    }
-
-    console.log('Google OAuth token length:', token.length);
-
-    const fullUser = { ...user, token };
-
-    // Store session data
-    const sessionData = { user: fullUser, appSettings: appSettings || {} };
-    localStorage.setItem('session', JSON.stringify(sessionData));
-
-    // Update state
-    setUser(fullUser);
-    setAppSettings(appSettings || {});
-    setAuthError(null);
-
-    // Set default auth header
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-    // FIXED: Test the token using the correct endpoint /api/user/me
-    try {
-      await api.get('/user/me');
-      console.log('Google OAuth token verified successfully');
-    } catch (error) {
-      console.error('Google OAuth token test failed:', error);
-      throw new Error('Token validation failed');
-    }
-
-    // Load additional data
-    await Promise.all([
-      checkSystemStatus(),
-      loadReferralData()
-    ]);
-
-    if (navigate) {
-      if (isNewUser) {
-        navigate('/profile/setup', { 
-          state: { 
-            message: 'Welcome! Please complete your profile to start mining.',
-            showWelcome: true 
-          } 
-        });
+      if (sessionData.user && sessionData.token) {
+        // Google OAuth format: { user: {...}, token: '...', appSettings: {...} }
+        user = sessionData.user;
+        token = sessionData.token;
+        appSettings = sessionData.appSettings;
+      } else if (sessionData.token && sessionData.user) {
+        // Regular login format: { token: '...', user: {...}, appSettings: {...} }
+        token = sessionData.token;
+        user = sessionData.user;
+        appSettings = sessionData.appSettings;
       } else {
-        navigate('/mining', { 
-          state: { 
-            message: `Welcome back, ${user.username}!` 
-          } 
-        });
+        // Direct token and user (backward compatibility)
+        token = sessionData.token || sessionData;
+        user = sessionData.user || sessionData;
+        appSettings = sessionData.appSettings || {};
       }
-    }
 
-  } catch (error) {
-    console.error('Google OAuth login error:', error);
-    setAuthError('google_login');
-    localStorage.removeItem('session');
-    setUser(null);
-    setAppSettings(null);
-  } finally {
-    setLoading(false);
-  }
-};
+      // Validate token
+      if (!token || typeof token !== 'string') {
+        throw new Error('Invalid token received');
+      }
+
+      console.log('Token received, length:', token.length);
+      console.log('Token preview:', token.substring(0, 20) + '...');
+
+      const fullUser = { ...user, token };
+
+      // Store session data
+      const sessionToStore = { user: fullUser, appSettings };
+      localStorage.setItem('session', JSON.stringify(sessionToStore));
+
+      // Update state
+      setUser(fullUser);
+      setAppSettings(appSettings);
+      setAuthError(null);
+
+      // Set default auth header
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      // FIXED: Verify the token works by making a test request to /api/user/me
+      try {
+        const testResponse = await api.get('/user/me');
+        console.log('Token verification successful');
+      } catch (testError) {
+        console.error('Token test failed:', testError);
+        throw new Error('Token validation failed');
+      }
+
+      // Check system status and load referral data
+      await Promise.all([
+        checkSystemStatus(),
+        loadReferralData()
+      ]);
+
+      if (navigate) navigate('/mining');
+    } catch (error) {
+      console.error('Login error:', error);
+      setAuthError('login');
+
+      // Clear invalid session
+      localStorage.removeItem('session');
+      setUser(null);
+      setAppSettings(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // NEW: Simplified login function for Google OAuth
+  const loginWithGoogle = async (googleResponse) => {
+    try {
+      setLoading(true);
+      console.log('Google OAuth login:', googleResponse);
+
+      const { user, token, appSettings, isNewUser } = googleResponse;
+
+      if (!token) {
+        throw new Error('No token received from Google OAuth');
+      }
+
+      // Validate token format
+      if (typeof token !== 'string' || token.length < 10) {
+        throw new Error('Invalid token format');
+      }
+
+      console.log('Google OAuth token length:', token.length);
+
+      const fullUser = { ...user, token };
+
+      // Store session data
+      const sessionData = { user: fullUser, appSettings: appSettings || {} };
+      localStorage.setItem('session', JSON.stringify(sessionData));
+
+      // Update state
+      setUser(fullUser);
+      setAppSettings(appSettings || {});
+      setAuthError(null);
+
+      // Set default auth header
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      // FIXED: Test the token using the correct endpoint /api/user/me
+      try {
+        await api.get('/user/me');
+        console.log('Google OAuth token verified successfully');
+      } catch (error) {
+        console.error('Google OAuth token test failed:', error);
+        throw new Error('Token validation failed');
+      }
+
+      // Load additional data
+      await Promise.all([
+        checkSystemStatus(),
+        loadReferralData()
+      ]);
+
+      if (navigate) {
+        if (isNewUser) {
+          navigate('/profile/setup', { 
+            state: { 
+              message: 'Welcome! Please complete your profile to start mining.',
+              showWelcome: true 
+            } 
+          });
+        } else {
+          navigate('/mining', { 
+            state: { 
+              message: `Welcome back, ${user.username}!` 
+            } 
+          });
+        }
+      }
+
+    } catch (error) {
+      console.error('Google OAuth login error:', error);
+      setAuthError('google_login');
+      localStorage.removeItem('session');
+      setUser(null);
+      setAppSettings(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // NEW: Update user profile function
+  const updateProfile = async (profileData) => {
+    try {
+      setLoading(true);
+      
+      const response = await api.put('/user/profile', profileData);
+      
+      if (response.data.success) {
+        // Update user in state and localStorage
+        const updatedUser = { ...user, ...response.data.user };
+        setUser(updatedUser);
+        
+        // Update localStorage
+        const storedData = localStorage.getItem('session');
+        if (storedData) {
+          const sessionData = JSON.parse(storedData);
+          const updatedSession = { ...sessionData, user: updatedUser };
+          localStorage.setItem('session', JSON.stringify(updatedSession));
+        }
+        
+        return response.data;
+      } else {
+        throw new Error(response.data.message || 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      
+      // Handle specific error cases
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else if (error.message) {
+        throw new Error(error.message);
+      } else {
+        throw new Error('Failed to update profile. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // NEW: Upload avatar function
+  const uploadAvatar = async (avatarFile) => {
+    try {
+      setLoading(true);
+      
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+      
+      const response = await api.post('/user/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      if (response.data.success) {
+        // Update user in state and localStorage
+        const updatedUser = { ...user, ...response.data.user };
+        setUser(updatedUser);
+        
+        // Update localStorage
+        const storedData = localStorage.getItem('session');
+        if (storedData) {
+          const sessionData = JSON.parse(storedData);
+          const updatedSession = { ...sessionData, user: updatedUser };
+          localStorage.setItem('session', JSON.stringify(updatedSession));
+        }
+        
+        return response.data;
+      } else {
+        throw new Error(response.data.message || 'Failed to upload avatar');
+      }
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else if (error.message) {
+        throw new Error(error.message);
+      } else {
+        throw new Error('Failed to upload avatar. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const logout = () => {
     localStorage.removeItem('session');
@@ -310,10 +394,12 @@ const loginWithGoogle = async (googleResponse) => {
     loading, 
     authError,
     login, 
-    loginWithGoogle, // NEW: Added Google OAuth specific login
+    loginWithGoogle,
     logout, 
     updateUser, 
     updateAppSettings,
+    updateProfile, // NEW: Added profile update function
+    uploadAvatar,  // NEW: Added avatar upload function
     refreshReferralData,
     loadReferralData,
     checkSystemStatus,
