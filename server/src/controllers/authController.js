@@ -207,13 +207,15 @@ const applyReferral = async (client, referralCode, userId) => {
   }
 };
 
-// UPDATED: Google OAuth Authentication (Fixed user lookup)
+// COMPLETELY REWRITTEN: Google OAuth Authentication with proper user lookup
 const googleAuth = asyncHandler(async (req, res) => {
   const { token: googleToken, referralCode } = req.body;
 
   if (!googleToken) {
     return res.status(400).json({ message: 'Google token is required' });
   }
+
+  console.log('Received Google token for authentication');
 
   const client = await db.getClient();
   try {
@@ -246,7 +248,7 @@ const googleAuth = asyncHandler(async (req, res) => {
         email_verified: userInfo.email_verified
       };
       
-      console.log('User info from access token:', payload);
+      console.log('User info from access token:', payload.email);
       
     } else {
       console.log('Processing Google ID token');
@@ -256,6 +258,7 @@ const googleAuth = asyncHandler(async (req, res) => {
         audience: process.env.GOOGLE_CLIENT_ID,
       });
       payload = ticket.getPayload();
+      console.log('User info from ID token:', payload.email);
     }
 
     const { sub: googleId, email, name, picture } = payload;
@@ -266,76 +269,87 @@ const googleAuth = asyncHandler(async (req, res) => {
 
     await client.query('BEGIN');
 
-    // FIXED: Check if user exists with this Google ID OR email (in this order)
+    // STEP 1: First check if user exists with this Google ID
+    console.log('Checking for user with Google ID:', googleId);
     let userResult = await client.query(
-      'SELECT * FROM users WHERE google_id = $1 OR email = $2 ORDER BY google_id DESC LIMIT 1',
-      [googleId, email]
+      'SELECT * FROM users WHERE google_id = $1',
+      [googleId]
     );
 
     let user = userResult.rows[0];
     let isNewUser = false;
 
-    if (!user) {
-      // No user found - create new user
-      isNewUser = true;
-      const newReferralCode = generateReferralCode();
-      const username = name ? 
-        name.toLowerCase().replace(/\s+/g, '_') + '_' + Math.random().toString(36).substr(2, 5) :
-        email.split('@')[0] + '_' + Math.random().toString(36).substr(2, 5);
+    if (user) {
+      console.log('Found existing user by Google ID:', user.email);
+      // User exists with this Google ID - normal login
+    } else {
+      // STEP 2: Check if user exists with this email (but different auth method)
+      console.log('No user found with Google ID, checking by email:', email);
+      userResult = await client.query(
+        'SELECT * FROM users WHERE email = $1',
+        [email]
+      );
 
-      const newUserQuery = `
-        INSERT INTO users (username, email, google_id, auth_provider, avatar_url, referral_code, zp_balance) 
-        VALUES ($1, $2, $3, $4, $5, $6, 100) 
-        RETURNING id, username, email, created_at, role, zp_balance, social_capital_score, avatar_url, auth_provider
-      `;
+      user = userResult.rows[0];
 
-      const newUserResult = await client.query(newUserQuery, [
-        username, email, googleId, 'google', picture, newReferralCode
-      ]);
-
-      user = newUserResult.rows[0];
-      console.log('Created new user with Google OAuth:', email);
-
-      // Apply referral logic only for new users
-      let referrerInfo = null;
-      let effectiveReferralCode = referralCode;
-
-      if (!effectiveReferralCode) {
-        const smartReferrer = await assignSmartReferrer(client);
-        if (smartReferrer) {
-          effectiveReferralCode = smartReferrer.referralCode;
-          console.log('Assigned smart referrer for Google user:', smartReferrer.username);
+      if (user) {
+        console.log('Found existing user by email:', user.email);
+        // User exists with this email but different auth method - link Google account
+        console.log('Linking Google account to existing user');
+        await client.query(
+          'UPDATE users SET google_id = $1, auth_provider = $2, avatar_url = $3 WHERE id = $4',
+          [googleId, 'google', picture, user.id]
+        );
+        // Refresh user data
+        userResult = await client.query('SELECT * FROM users WHERE id = $1', [user.id]);
+        user = userResult.rows[0];
+      } else {
+        // STEP 3: No user found - create new user
+        console.log('No existing user found, creating new user with email:', email);
+        isNewUser = true;
+        const newReferralCode = generateReferralCode();
+        
+        // Generate username from name or email
+        let username;
+        if (name) {
+          username = name.toLowerCase().replace(/\s+/g, '_') + '_' + Math.random().toString(36).substr(2, 5);
+        } else {
+          username = email.split('@')[0] + '_' + Math.random().toString(36).substr(2, 5);
         }
-      }
 
-      if (effectiveReferralCode) {
-        referrerInfo = await applyReferral(client, effectiveReferralCode, user.id);
-        if (referrerInfo) {
-          console.log(`Google OAuth referral applied: ${referrerInfo.username} -> ${username}`);
-          try {
-            await sendReferralNotification(referrerInfo.id, username);
-          } catch (notificationError) {
-            console.error('Error sending Telegram referral notification:', notificationError);
+        const newUserQuery = `
+          INSERT INTO users (username, email, google_id, auth_provider, avatar_url, referral_code, zp_balance) 
+          VALUES ($1, $2, $3, $4, $5, $6, 100) 
+          RETURNING id, username, email, created_at, role, zp_balance, social_capital_score, avatar_url, auth_provider
+        `;
+
+        const newUserResult = await client.query(newUserQuery, [
+          username, email, googleId, 'google', picture, newReferralCode
+        ]);
+
+        user = newUserResult.rows[0];
+        console.log('Created new user with ID:', user.id);
+
+        // Apply referral logic only for new users
+        if (referralCode) {
+          console.log('Applying referral code for new user:', referralCode);
+          const referrerInfo = await applyReferral(client, referralCode, user.id);
+          if (referrerInfo) {
+            console.log(`Referral applied: ${referrerInfo.username} -> ${username}`);
+            try {
+              await sendReferralNotification(referrerInfo.id, username);
+            } catch (notificationError) {
+              console.error('Error sending Telegram referral notification:', notificationError);
+            }
           }
         }
+
+        // Clean up pending referrals
         await client.query(
           'DELETE FROM pending_referrals WHERE referral_code = $1',
-          [effectiveReferralCode]
+          [referralCode]
         );
       }
-    } else if (user.google_id !== googleId) {
-      // User exists with email but different Google ID - link the Google account
-      console.log('Linking existing user with Google account:', email);
-      await client.query(
-        'UPDATE users SET google_id = $1, auth_provider = $2, avatar_url = $3 WHERE id = $4',
-        [googleId, 'google', picture, user.id]
-      );
-      // Refresh user data after update
-      userResult = await client.query('SELECT * FROM users WHERE id = $1', [user.id]);
-      user = userResult.rows[0];
-    } else {
-      // User exists and Google ID matches - normal login
-      console.log('Existing user logged in with Google:', email);
     }
 
     // Get app settings
@@ -363,6 +377,8 @@ const googleAuth = asyncHandler(async (req, res) => {
     };
 
     await client.query('COMMIT');
+
+    console.log(`Google OAuth successful: ${isNewUser ? 'NEW USER' : 'EXISTING USER'} - ${user.email}`);
 
     res.json({
       user: userResponseData,
