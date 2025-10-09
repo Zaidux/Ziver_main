@@ -3,6 +3,10 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('../config/db');
 const { sendReferralNotification } = require('./telegramController');
+const { OAuth2Client } = require('google-auth-library');
+
+// Initialize Google OAuth client
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Helper function to generate a unique referral code
 const generateReferralCode = (length = 6) => {
@@ -115,6 +119,152 @@ const applyReferral = async (client, referralCode, userId) => {
     return null;
   }
 };
+
+// NEW: Google OAuth Authentication
+const googleAuth = asyncHandler(async (req, res) => {
+  const { token: googleToken, referralCode } = req.body;
+
+  if (!googleToken) {
+    return res.status(400).json({ message: 'Google token is required' });
+  }
+
+  const client = await db.getClient();
+  try {
+    // Verify Google token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: googleToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture } = payload;
+
+    await client.query('BEGIN');
+
+    // Check if user exists with this Google ID
+    let userResult = await client.query(
+      'SELECT * FROM users WHERE google_id = $1',
+      [googleId]
+    );
+
+    let user = userResult.rows[0];
+
+    if (!user) {
+      // Check if user exists with this email but different auth provider
+      userResult = await client.query(
+        'SELECT * FROM users WHERE email = $1',
+        [email]
+      );
+
+      user = userResult.rows[0];
+
+      if (user) {
+        // User exists with email but different auth method - link Google account
+        await client.query(
+          'UPDATE users SET google_id = $1, auth_provider = $2, avatar_url = $3 WHERE id = $4',
+          [googleId, 'google', picture, user.id]
+        );
+      } else {
+        // Create new user with Google OAuth
+        const newReferralCode = generateReferralCode();
+        const username = name.toLowerCase().replace(/\s+/g, '_') + '_' + Math.random().toString(36).substr(2, 5);
+
+        const newUserQuery = `
+          INSERT INTO users (username, email, google_id, auth_provider, avatar_url, referral_code, zp_balance) 
+          VALUES ($1, $2, $3, $4, $5, $6, 100) 
+          RETURNING id, username, email, created_at, role, zp_balance, social_capital_score, avatar_url, auth_provider
+        `;
+        
+        const newUserResult = await client.query(newUserQuery, [
+          username, email, googleId, 'google', picture, newReferralCode
+        ]);
+        
+        user = newUserResult.rows[0];
+
+        // 🔥 ENHANCED REFERRAL LOGIC for Google OAuth
+        let referrerInfo = null;
+        let effectiveReferralCode = referralCode;
+
+        // If still no referral code, assign a smart referrer
+        if (!effectiveReferralCode) {
+          const smartReferrer = await assignSmartReferrer(client);
+          if (smartReferrer) {
+            effectiveReferralCode = smartReferrer.referralCode;
+            console.log('Assigned smart referrer for Google user:', smartReferrer.username);
+          }
+        }
+
+        // Apply referral if we have a valid code
+        if (effectiveReferralCode) {
+          referrerInfo = await applyReferral(client, effectiveReferralCode, user.id);
+
+          if (referrerInfo) {
+            console.log(`Google OAuth referral applied: ${referrerInfo.username} -> ${username}`);
+
+            // Send Telegram notification to referrer
+            try {
+              await sendReferralNotification(referrerInfo.id, username);
+              console.log(`Telegram referral notification sent to: ${referrerInfo.username}`);
+            } catch (notificationError) {
+              console.error('Error sending Telegram referral notification:', notificationError);
+            }
+          }
+
+          // Clean up pending referrals
+          await client.query(
+            'DELETE FROM pending_referrals WHERE referral_code = $1',
+            [effectiveReferralCode]
+          );
+        }
+      }
+    }
+
+    // Get app settings
+    const settingsResult = await client.query('SELECT * FROM app_settings');
+    const appSettings = settingsResult.rows.reduce((acc, setting) => {
+      acc[setting.setting_key] = setting.setting_value;
+      return acc;
+    }, {});
+
+    // Prepare user response data
+    const userResponseData = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      zp_balance: user.zp_balance,
+      social_capital_score: user.social_capital_score,
+      mining_session_start_time: user.mining_session_start_time,
+      last_claim_time: user.last_claim_time,
+      daily_streak_count: user.daily_streak_count,
+      referral_code: user.referral_code,
+      referred_by: user.referred_by,
+      avatar_url: user.avatar_url,
+      auth_provider: user.auth_provider
+    };
+
+    await client.query('COMMIT');
+
+    res.json({
+      user: userResponseData,
+      token: generateToken(user),
+      appSettings,
+      isNewUser: !userResult.rows[0] // Indicate if this is a new registration
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Google OAuth error:', error);
+    
+    if (error.message.includes('Token used too late')) {
+      return res.status(401).json({ message: 'Google token has expired' });
+    }
+    
+    res.status(400).json({ message: 'Google authentication failed' });
+  } finally {
+    client.release();
+  }
+});
 
 // Get referrer info by referral code - ENHANCED
 const getReferrerInfo = asyncHandler(async (req, res) => {
@@ -265,8 +415,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // Create new user with initial 100 ZP
     const newUserQuery = `
-      INSERT INTO users (username, email, password_hash, referral_code, zp_balance) 
-      VALUES ($1, $2, $3, $4, 100) 
+      INSERT INTO users (username, email, password_hash, referral_code, zp_balance, auth_provider) 
+      VALUES ($1, $2, $3, $4, 100, 'email') 
       RETURNING id, username, email, created_at, role, zp_balance, social_capital_score
     `;
     const newUserResult = await client.query(newUserQuery, [username, email, hashedPassword, newReferralCode]);
@@ -304,7 +454,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
       if (referrerInfo) {
         console.log(`Referral applied: ${referrerInfo.username} -> ${username}`);
-        
+
         // 🔥 NEW: Send Telegram notification to referrer
         try {
           await sendReferralNotification(referrerInfo.id, username);
@@ -345,7 +495,8 @@ const registerUser = asyncHandler(async (req, res) => {
       token: generateToken(user),
       referralApplied: !!referrerInfo,
       referrer: referrerInfo,
-      bonusReceived: referrerInfo ? 100 : 0
+      bonusReceived: referrerInfo ? 100 : 0,
+      auth_provider: 'email'
     };
 
     if (referrerInfo) {
@@ -393,7 +544,9 @@ const loginUser = asyncHandler(async (req, res) => {
         last_claim_time: user.last_claim_time,
         daily_streak_count: user.daily_streak_count,
         referral_code: user.referral_code,
-        referred_by: user.referred_by
+        referred_by: user.referred_by,
+        avatar_url: user.avatar_url,
+        auth_provider: user.auth_provider
       };
 
       res.json({
@@ -415,6 +568,7 @@ const loginUser = asyncHandler(async (req, res) => {
 module.exports = {
   registerUser,
   loginUser,
+  googleAuth,
   getReferrerInfo,
   createPendingReferral
 };
