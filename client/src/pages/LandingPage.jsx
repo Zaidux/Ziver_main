@@ -233,7 +233,7 @@ const LandingPage = () => {
               𝕏
             </a>
             <a href="#" className="social-link" aria-label="Telegram">
-              ✈
+              T
             </a>
             <a href="#" className="social-link" aria-label="Medium">
               M
@@ -246,8 +246,8 @@ const LandingPage = () => {
             <a href="#">Disclaimer</a>
           </div>
 
-          <p className="footer-powered">Powered by TON Blockchain</p>
-          <p className="footer-support">Support: support@ziver.app</p>
+          <p className="footer-powered">Powred by the Ziver-Chain</p>
+          <p className="footer-support">Support: ziverofficial567@gmail.com</p>
           <p className="footer-copyright">© 2025 Ziver. All rights reserved.</p>
         </div>
 
