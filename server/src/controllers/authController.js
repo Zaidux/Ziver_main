@@ -30,14 +30,22 @@ const generateToken = (user) => {
   );
 };
 
-// In your authController.js file
+// Google OAuth Callback Handler
 const googleCallback = asyncHandler(async (req, res) => {
   try {
     // 1. Get the temporary code from the query string
     const { code } = req.query;
 
+    if (!code) {
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/error?message=No authorization code provided`);
+    }
+
     // 2. Exchange the code for access and ID tokens
-    const { tokens } = await googleClient.getToken(code);
+    const { tokens } = await googleClient.getToken({
+      code: code,
+      redirect_uri: process.env.GOOGLE_REDIRECT_URI || `${process.env.BACKEND_URL}/api/auth/google/callback`
+    });
+    
     googleClient.setCredentials(tokens);
 
     // 3. Get user profile info from Google
@@ -45,31 +53,69 @@ const googleCallback = asyncHandler(async (req, res) => {
       idToken: tokens.id_token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
+    
     const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture } = payload;
 
-    // 4. Find or create a user in your database using `payload`
-    // ... (Your user find/create logic here, similar to the `googleAuth` function we discussed earlier) ...
+    const client = await db.getClient();
+    
+    try {
+      await client.query('BEGIN');
 
-    // 5. Generate a JWT for your application
-    const yourAppToken = generateToken(user);
+      // Check if user exists with this Google ID
+      let userResult = await client.query(
+        'SELECT * FROM users WHERE google_id = $1 OR email = $2',
+        [googleId, email]
+      );
 
-    // 6. Redirect the user back to your frontend with the token
-    // Option A: Redirect to frontend with token in URL (less secure)
-    res.redirect(`https://yourfrontend.com/auth/success?token=${yourAppToken}`);
+      let user = userResult.rows[0];
 
-    // Option B: Better - Set a secure, httpOnly cookie and redirect
-    // res.cookie('token', yourAppToken, { httpOnly: true, secure: true, sameSite: 'lax' });
-    // res.redirect('https://yourfrontend.com/dashboard');
+      if (!user) {
+        // Create new user with Google OAuth
+        const newReferralCode = generateReferralCode();
+        const username = name.toLowerCase().replace(/\s+/g, '_') + '_' + Math.random().toString(36).substr(2, 5);
+
+        const newUserQuery = `
+          INSERT INTO users (username, email, google_id, auth_provider, avatar_url, referral_code, zp_balance) 
+          VALUES ($1, $2, $3, $4, $5, $6, 100) 
+          RETURNING id, username, email, created_at, role, zp_balance, social_capital_score, avatar_url, auth_provider
+        `;
+
+        const newUserResult = await client.query(newUserQuery, [
+          username, email, googleId, 'google', picture, newReferralCode
+        ]);
+
+        user = newUserResult.rows[0];
+      } else if (user && !user.google_id) {
+        // Link existing user with Google account
+        await client.query(
+          'UPDATE users SET google_id = $1, auth_provider = $2, avatar_url = $3 WHERE id = $4',
+          [googleId, 'google', picture, user.id]
+        );
+      }
+
+      // Generate JWT token
+      const token = generateToken(user);
+
+      await client.query('COMMIT');
+
+      // Redirect to frontend with token
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      res.redirect(`${frontendUrl}/auth/success?token=${token}&isNewUser=${!userResult.rows[0]}`);
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
 
   } catch (error) {
     console.error('Google OAuth Callback Error:', error);
-    // Redirect to frontend with an error message
-    res.redirect('https://yourfrontend.com/auth/error?message=Authentication failed');
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    res.redirect(`${frontendUrl}/auth/error?message=Authentication failed`);
   }
 });
-
-
-};
 
 // NEW: Smart referral assignment when no referrer is provided
 const assignSmartReferrer = async (client) => {
@@ -161,7 +207,7 @@ const applyReferral = async (client, referralCode, userId) => {
   }
 };
 
-// NEW: Google OAuth Authentication
+// NEW: Google OAuth Authentication (Direct token auth)
 const googleAuth = asyncHandler(async (req, res) => {
   const { token: googleToken, referralCode } = req.body;
 
@@ -215,11 +261,11 @@ const googleAuth = asyncHandler(async (req, res) => {
           VALUES ($1, $2, $3, $4, $5, $6, 100) 
           RETURNING id, username, email, created_at, role, zp_balance, social_capital_score, avatar_url, auth_provider
         `;
-        
+
         const newUserResult = await client.query(newUserQuery, [
           username, email, googleId, 'google', picture, newReferralCode
         ]);
-        
+
         user = newUserResult.rows[0];
 
         // 🔥 ENHANCED REFERRAL LOGIC for Google OAuth
@@ -296,11 +342,11 @@ const googleAuth = asyncHandler(async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Google OAuth error:', error);
-    
+
     if (error.message.includes('Token used too late')) {
       return res.status(401).json({ message: 'Google token has expired' });
     }
-    
+
     res.status(400).json({ message: 'Google authentication failed' });
   } finally {
     client.release();
