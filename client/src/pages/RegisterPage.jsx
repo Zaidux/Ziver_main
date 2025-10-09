@@ -134,9 +134,11 @@ function RegisterPage() {
             
             // Send the access token to your backend via POST
             const result = await authService.googleAuth(response.access_token, effectiveReferralCode);
-            
-            if (result.token && result.user) {
-              login(result.token, result.user);
+            // Replace this in your Google callback:
+if (result.token && result.user) {
+  // Use the new Google-specific login function
+  loginWithGoogle(result);
+}
               navigate("/mining", {
                 state: {
                   message: `Welcome to Ziver, ${result.user.username}!`,
