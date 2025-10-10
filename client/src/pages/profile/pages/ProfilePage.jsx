@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../../context/AuthContext'; // FIXED: Correct import path
+import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../../context/AuthContext';
+import { usePlatformDetection } from '../../../hooks/usePlatformDetection';
 import { 
   User, 
   Award, 
-  Briefcase, 
   DollarSign, 
   Star, 
   TrendingUp, 
   CheckCircle, 
-  Clock, 
-  RefreshCw, 
-  Crown,
+  Clock,
   Camera,
   Edit3,
   Save,
@@ -19,7 +17,8 @@ import {
 import './ProfilePage.css';
 
 const ProfilePage = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, uploadAvatar } = useAuth();
+  const { isTelegram, platform } = usePlatformDetection();
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -31,7 +30,9 @@ const ProfilePage = () => {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const fileInputRef = useRef(null);
 
+  // Enhanced useEffect to properly sync form data with user data
   useEffect(() => {
     if (user) {
       setFormData({
@@ -42,7 +43,22 @@ const ProfilePage = () => {
         avatar_url: user.avatar_url || ''
       });
     }
-  }, [user]);
+  }, [user, isEditing]); // Added isEditing to dependency
+
+  // Auto-detect Telegram username when in Telegram
+  useEffect(() => {
+    if (isTelegram && window.Telegram?.WebApp?.initDataUnsafe?.user) {
+      const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+      const telegramUsername = tgUser.username;
+      
+      if (telegramUsername && !formData.telegram_username) {
+        setFormData(prev => ({
+          ...prev,
+          telegram_username: telegramUsername
+        }));
+      }
+    }
+  }, [isTelegram, formData.telegram_username]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -50,6 +66,40 @@ const ProfilePage = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file size (1MB limit)
+      if (file.size > 1024 * 1024) {
+        setMessage('File size must be less than 1MB');
+        return;
+      }
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setMessage('Please select an image file');
+        return;
+      }
+      
+      setLoading(true);
+      setMessage('');
+      try {
+        await uploadAvatar(file);
+        setMessage('Avatar updated successfully!');
+      } catch (error) {
+        setMessage('Error uploading avatar: ' + error.message);
+      } finally {
+        setLoading(false);
+        // Reset file input
+        e.target.value = '';
+      }
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -89,26 +139,29 @@ const ProfilePage = () => {
     );
   }
 
-  // Mock tier system based on social capital score
+  // Updated tier system based on your specifications
   const getTierInfo = (score) => {
-    if (score >= 1000) return { name: 'ELITE', color: '#FFD700' };
-    if (score >= 500) return { name: 'PRO', color: '#9370DB' };
-    if (score >= 200) return { name: 'ADVANCED', color: '#00FF00' };
-    if (score >= 100) return { name: 'INTERMEDIATE', color: '#4169E1' };
+    const sebScore = score || 0;
+    if (sebScore >= 5800000) return { name: 'SUPREME', color: '#FF6B35' };
+    if (sebScore >= 15000) return { name: 'ELITE', color: '#FF0000' };
+    if (sebScore >= 1000) return { name: 'ADVANCED', color: '#FFA500' };
     return { name: 'BEGINNER', color: '#808080' };
   };
 
   const tierInfo = getTierInfo(user.social_capital_score || 0);
 
+  // Platform-specific layout classes
+  const layoutClass = platform === 'telegram' ? 'telegram-mini-app' : 
+                     platform === 'mobile-web' ? 'mobile-web' : 'web-app';
+
   return (
-    <div className="page-container">
+    <div className={`page-container ${layoutClass}`}>
       {/* Profile Header */}
       <div
         className="profile-header-card"
         style={{
           background: `linear-gradient(135deg, ${tierInfo.color}10 0%, var(--card-bg) 100%)`,
           border: `1px solid ${tierInfo.color}30`,
-          marginBottom: "2rem",
         }}
       >
         <div className="profile-header-content">
@@ -120,15 +173,23 @@ const ProfilePage = () => {
                 background: `linear-gradient(135deg, ${tierInfo.color}40, ${tierInfo.color}20)`,
                 border: `3px solid ${tierInfo.color}`,
               }}
+              onClick={isEditing ? handleAvatarClick : undefined}
             >
               {user.avatar_url ? (
                 <img src={user.avatar_url} alt="Profile" className="avatar-image" />
               ) : (
-                <User size={48} style={{ color: tierInfo.color }} />
+                <User size={32} style={{ color: tierInfo.color }} />
               )}
             </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              style={{ display: 'none' }}
+            />
             {isEditing && (
-              <button className="avatar-upload-btn">
+              <button className="avatar-upload-btn" onClick={handleAvatarClick}>
                 <Camera size={16} />
                 Change Photo
               </button>
@@ -140,7 +201,7 @@ const ProfilePage = () => {
             <div className="profile-name-section">
               <h1>{user.username}</h1>
               {user.verified && (
-                <CheckCircle size={24} className="verified-badge" title="Verified User" />
+                <CheckCircle size={20} className="verified-badge" title="Verified User" />
               )}
             </div>
 
@@ -154,7 +215,7 @@ const ProfilePage = () => {
                 border: `2px solid ${tierInfo.color}`,
               }}
             >
-              <Award size={20} style={{ color: tierInfo.color }} />
+              <Award size={18} style={{ color: tierInfo.color }} />
               <span className="scs-score">{user.social_capital_score || 0}</span>
               <span className="scs-tier" style={{ color: tierInfo.color }}>
                 {tierInfo.name} TIER
@@ -235,7 +296,7 @@ const ProfilePage = () => {
 
       {/* Tab Content */}
       <div className="tab-content">
-        {activeTab === "overview" && <OverviewTab user={user} />}
+        {activeTab === "overview" && <OverviewTab user={user} tierInfo={tierInfo} />}
         {activeTab === "profile" && (
           <ProfileDetailsTab 
             formData={formData} 
@@ -250,6 +311,7 @@ const ProfilePage = () => {
             handleInputChange={handleInputChange} 
             isEditing={isEditing}
             user={user}
+            isTelegram={isTelegram}
           />
         )}
       </div>
@@ -258,13 +320,13 @@ const ProfilePage = () => {
 };
 
 // Overview Tab Component
-const OverviewTab = ({ user }) => {
+const OverviewTab = ({ user, tierInfo }) => {
   return (
     <div className="overview-content">
       <div className="stats-grid">
         <div className="stat-card stat-card-green">
           <div className="stat-icon">
-            <DollarSign size={24} />
+            <DollarSign size={20} />
           </div>
           <div className="stat-content">
             <div className="stat-label">ZP Balance</div>
@@ -274,7 +336,7 @@ const OverviewTab = ({ user }) => {
 
         <div className="stat-card stat-card-blue">
           <div className="stat-icon">
-            <TrendingUp size={24} />
+            <TrendingUp size={20} />
           </div>
           <div className="stat-content">
             <div className="stat-label">Social Capital Score</div>
@@ -284,7 +346,7 @@ const OverviewTab = ({ user }) => {
 
         <div className="stat-card stat-card-purple">
           <div className="stat-icon">
-            <Star size={24} />
+            <Star size={20} />
           </div>
           <div className="stat-content">
             <div className="stat-label">Daily Streak</div>
@@ -294,23 +356,47 @@ const OverviewTab = ({ user }) => {
 
         <div className="stat-card stat-card-orange">
           <div className="stat-icon">
-            <Clock size={24} />
+            <Clock size={20} />
           </div>
           <div className="stat-content">
             <div className="stat-label">Member Since</div>
             <div className="stat-value">
-              {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Recent'}
+              {user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+              }) : 'Recent'}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="coming-soon-section">
-        <h3>🚧 Enhanced Features Coming Soon</h3>
-        <p>
-          We're working on detailed statistics, achievement badges, task history, 
-          and advanced profile analytics. Stay tuned for updates!
-        </p>
+      {/* Tier Progress */}
+      <div className="card">
+        <h3>Your Tier Progress</h3>
+        <div className="tier-progress">
+          <div className="tier-labels">
+            <span>BEGINNER</span>
+            <span>ADVANCED</span>
+            <span>ELITE</span>
+            <span>SUPREME</span>
+          </div>
+          <div className="progress-bar">
+            <div 
+              className="progress-fill"
+              style={{ 
+                width: `${Math.min((user.social_capital_score || 0) / 5800000 * 100, 100)}%`,
+                backgroundColor: tierInfo.color
+              }}
+            />
+          </div>
+          <div className="tier-ranges">
+            <span>0-999</span>
+            <span>1K-14K</span>
+            <span>15K-5.7M</span>
+            <span>5.8M+</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -332,7 +418,7 @@ const ProfileDetailsTab = ({ formData, handleInputChange, isEditing, user }) => 
                 value={formData.bio}
                 onChange={handleInputChange}
                 className="form-input"
-                rows="4"
+                rows="3"
                 placeholder="Tell us about yourself..."
                 maxLength="500"
               />
@@ -364,7 +450,11 @@ const ProfileDetailsTab = ({ formData, handleInputChange, isEditing, user }) => 
         <div className="form-group">
           <label className="form-label">Member Since</label>
           <div className="display-field">
-            {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Recent'}
+            {user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            }) : 'Recent'}
           </div>
         </div>
       </div>
@@ -373,7 +463,10 @@ const ProfileDetailsTab = ({ formData, handleInputChange, isEditing, user }) => 
 };
 
 // Social Accounts Tab Component
-const SocialAccountsTab = ({ formData, handleInputChange, isEditing, user }) => {
+const SocialAccountsTab = ({ formData, handleInputChange, isEditing, user, isTelegram }) => {
+  const telegramUser = isTelegram && window.Telegram?.WebApp?.initDataUnsafe?.user;
+  const detectedUsername = telegramUser?.username;
+
   return (
     <div className="social-accounts-content">
       <div className="card">
@@ -385,20 +478,39 @@ const SocialAccountsTab = ({ formData, handleInputChange, isEditing, user }) => 
         <div className="form-group">
           <label className="form-label">
             Telegram Username
-            <span className="label-hint">(Auto-detected for Telegram users)</span>
+            {isTelegram && detectedUsername && (
+              <span className="auto-detected-badge">Auto-detected from Telegram</span>
+            )}
           </label>
           {isEditing ? (
-            <input
-              type="text"
-              name="telegram_username"
-              value={formData.telegram_username}
-              onChange={handleInputChange}
-              className="form-input"
-              placeholder="@username"
-            />
+            <div className="input-with-hint">
+              <input
+                type="text"
+                name="telegram_username"
+                value={formData.telegram_username}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="@username"
+              />
+              {isTelegram && detectedUsername && !formData.telegram_username && (
+                <div className="input-hint">
+                  <span>Detected: @{detectedUsername}</span>
+                  <button 
+                    type="button" 
+                    className="hint-btn"
+                    onClick={() => setFormData(prev => ({ ...prev, telegram_username: detectedUsername }))}
+                  >
+                    Use detected
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="display-field">
               {user.telegram_username ? `@${user.telegram_username}` : 'Not connected'}
+              {isTelegram && detectedUsername && !user.telegram_username && (
+                <span className="detection-note">(Available: @{detectedUsername})</span>
+              )}
             </div>
           )}
         </div>
@@ -406,14 +518,17 @@ const SocialAccountsTab = ({ formData, handleInputChange, isEditing, user }) => 
         <div className="form-group">
           <label className="form-label">Twitter Username</label>
           {isEditing ? (
-            <input
-              type="text"
-              name="twitter_username"
-              value={formData.twitter_username}
-              onChange={handleInputChange}
-              className="form-input"
-              placeholder="username (without @)"
-            />
+            <div className="input-with-prefix">
+              <span className="input-prefix">@</span>
+              <input
+                type="text"
+                name="twitter_username"
+                value={formData.twitter_username}
+                onChange={handleInputChange}
+                className="form-input with-prefix"
+                placeholder="username"
+              />
+            </div>
           ) : (
             <div className="display-field">
               {user.twitter_username ? `@${user.twitter_username}` : 'Not connected'}
