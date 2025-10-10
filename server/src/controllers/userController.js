@@ -1,6 +1,29 @@
 const asyncHandler = require('express-async-handler');
 const db = require('../config/db');
 const User = require('../models/User');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Configure multer for file uploads (memory storage for Render.com compatibility)
+const storage = multer.memoryStorage();
+
+const fileFilter = (req, file, cb) => {
+  // Check if file is an image
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed'), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 1024 * 1024 // 1MB limit
+  }
+});
 
 // --- Controller to verify token ---
 const verifyToken = asyncHandler(async (req, res) => {
@@ -70,24 +93,55 @@ const updateProfile = asyncHandler(async (req, res) => {
   });
 });
 
-// NEW: Upload avatar
+// NEW: Upload avatar with file handling
 const uploadAvatar = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   
-  // This would typically handle file upload via multer or similar
-  // For now, we'll accept a URL from the frontend
-  const { avatar_url } = req.body;
-
-  if (!avatar_url) {
+  if (!req.file) {
     res.status(400);
-    throw new Error('Avatar URL is required');
+    throw new Error('Please upload an image file');
   }
 
-  const updatedUser = await User.updateProfile(userId, { avatar_url });
+  try {
+    // Convert buffer to base64 for storage in database
+    const base64Image = req.file.buffer.toString('base64');
+    const dataUrl = `data:${req.file.mimetype};base64,${base64Image}`;
+    
+    const updatedUser = await User.updateProfile(userId, { avatar_url: dataUrl });
+
+    res.json({
+      success: true,
+      message: 'Avatar uploaded successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('Avatar upload error:', error);
+    throw new Error('Failed to upload avatar');
+  }
+});
+
+// NEW: Auto-save Telegram username
+const autoSaveTelegramUsername = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const { telegram_username } = req.body;
+
+  if (!telegram_username) {
+    res.status(400);
+    throw new Error('Telegram username is required');
+  }
+
+  // Check if telegram username is already taken
+  const existingUser = await User.findByTelegramUsername(telegram_username);
+  if (existingUser && existingUser.id !== userId) {
+    res.status(400);
+    throw new Error('Telegram username is already taken');
+  }
+
+  const updatedUser = await User.updateProfile(userId, { telegram_username });
 
   res.json({
     success: true,
-    message: 'Avatar updated successfully',
+    message: 'Telegram username saved successfully',
     user: updatedUser
   });
 });
@@ -149,7 +203,8 @@ module.exports = {
   verifyToken,
   getUserProfile,
   updateProfile,
-  uploadAvatar,
+  uploadAvatar: [upload.single('avatar'), uploadAvatar], // Add multer middleware
+  autoSaveTelegramUsername,
   updateUserActivity,
   recordHeartbeat,
 };
