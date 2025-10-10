@@ -28,7 +28,7 @@ const Layout = () => {
 
   const handleMenuAction = (action) => {
     setShowProfileDropdown(false);
-    
+
     switch (action) {
       case 'profile':
         navigate('/profile');
@@ -48,6 +48,20 @@ const Layout = () => {
     }
   };
 
+  // Get user avatar or fallback to initial
+  const getUserAvatar = () => {
+    if (user?.avatar_url) {
+      return (
+        <img 
+          src={user.avatar_url} 
+          alt="Profile" 
+          className="avatar-image"
+        />
+      );
+    }
+    return user?.username?.charAt(0).toUpperCase() || 'U';
+  };
+
   return (
     <div className="app-container">
       {/* Global Profile Dropdown in Header */}
@@ -57,7 +71,7 @@ const Layout = () => {
             <span className="logo-icon">⚡</span>
             <span className="logo-text">ZIVER</span>
           </div>
-          
+
           <div className="header-actions" ref={dropdownRef}>
             {user && (
               <>
@@ -66,26 +80,26 @@ const Layout = () => {
                   className="profile-dropdown-button global"
                 >
                   <span className="profile-avatar">
-                    {user.username?.charAt(0).toUpperCase() || 'U'}
+                    {getUserAvatar()}
                   </span>
                   <span className="profile-arrow">▼</span>
                 </button>
-                
+
                 {/* Profile Dropdown Menu */}
                 {showProfileDropdown && (
                   <div className="profile-dropdown-menu global">
                     <div className="dropdown-user-info">
                       <div className="user-avatar">
-                        {user.username?.charAt(0).toUpperCase() || 'U'}
+                        {getUserAvatar()}
                       </div>
                       <div className="user-details">
                         <div className="user-name">{user.username}</div>
                         <div className="user-email">{user.email}</div>
                       </div>
                     </div>
-                    
+
                     <div className="dropdown-divider"></div>
-                    
+
                     <button 
                       className="dropdown-item"
                       onClick={() => handleMenuAction('profile')}
