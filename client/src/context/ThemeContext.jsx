@@ -40,3 +40,6 @@ export const ThemeProvider = ({ children }) => {
     </ThemeContext.Provider>
   );
 };
+
+// Export the context itself for direct useContext usage
+export { ThemeContext };
