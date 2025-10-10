@@ -7,7 +7,8 @@ const {
   recordHeartbeat,
   verifyToken,
   updateProfile,
-  uploadAvatar
+  uploadAvatar,
+  autoSaveTelegramUsername
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -27,9 +28,14 @@ router.get('/me', protect, getUserProfile);
 router.put('/profile', protect, updateProfile);
 
 // @route   POST /api/user/avatar
-// @desc    Upload user avatar
+// @desc    Upload user avatar (with file)
 // @access  Private
 router.post('/avatar', protect, uploadAvatar);
+
+// @route   POST /api/user/telegram-auto-save
+// @desc    Auto-save Telegram username
+// @access  Private
+router.post('/telegram-auto-save', protect, autoSaveTelegramUsername);
 
 // @route   POST /api/user/activity
 // @desc    Update user activity and score
