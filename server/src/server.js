@@ -13,6 +13,7 @@ const tasksRoutes = require('./routes/tasksRoutes');
 const referralsRoutes = require('./routes/referralsRoutes');
 const telegramRoutes = require('./routes/telegramRoutes');
 const systemStatusRoutes = require('./routes/systemStatusRoutes');
+const settingsRoutes = require('./routes/settingsRoutes'); // NEW: Settings routes
 const TaskValidation = require('./models/TaskValidation');
 
 const app = express();
@@ -54,6 +55,7 @@ app.use('/api/tasks', tasksRoutes);
 app.use('/api/referrals', referralsRoutes);
 app.use('/api/telegram', telegramRoutes);
 app.use('/api/system', systemStatusRoutes);
+app.use('/api/settings', settingsRoutes); // NEW: Settings routes
 
 // Test Database Connection
 const checkDbConnection = async () => {
@@ -78,6 +80,53 @@ const initializeTaskValidation = async () => {
   }
 };
 
+// Initialize settings system (create tables if needed)
+const initializeSettingsSystem = async () => {
+  try {
+    // Check if user_preferences table exists, create if not
+    const tableCheck = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'user_preferences'
+      );
+    `);
+
+    if (!tableCheck.rows[0].exists) {
+      console.log('📊 Creating user_preferences table...');
+      await db.query(`
+        CREATE TABLE user_preferences (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          preference_key VARCHAR(100) NOT NULL,
+          preference_value TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW(),
+          UNIQUE(user_id, preference_key)
+        );
+        
+        CREATE INDEX idx_user_preferences_user_id ON user_preferences(user_id);
+        
+        -- Add two_factor fields to users table if not exists
+        DO $$ 
+        BEGIN 
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='users' AND column_name='two_factor_enabled') THEN
+            ALTER TABLE users 
+            ADD COLUMN two_factor_enabled BOOLEAN DEFAULT FALSE,
+            ADD COLUMN two_factor_secret VARCHAR(100),
+            ADD COLUMN last_password_change TIMESTAMP DEFAULT NOW();
+          END IF;
+        END $$;
+      `);
+      console.log('✅ Settings system tables created successfully');
+    } else {
+      console.log('✅ Settings system tables already exist');
+    }
+  } catch (error) {
+    console.error('❌ Failed to initialize settings system:', error);
+  }
+};
+
 // Set Telegram Webhook on Startup
 const initializeApp = async () => {
   console.log('🔧 Starting application initialization...');
@@ -92,6 +141,9 @@ const initializeApp = async () => {
 
   // Initialize task validation system AFTER database is confirmed connected
   await initializeTaskValidation();
+
+  // Initialize settings system
+  await initializeSettingsSystem();
 
   // Set up Telegram webhook if bot token exists
   if (process.env.TELEGRAM_BOT_TOKEN) {
@@ -109,6 +161,10 @@ const initializeApp = async () => {
     console.log(`   POST /api/auth/google - Google OAuth direct`);
     console.log(`   POST /api/auth/register - User registration`);
     console.log(`   POST /api/auth/login - User login`);
+    console.log(`   PUT  /api/settings/security/password - Change password`); // NEW
+    console.log(`   POST /api/settings/security/two-factor - Toggle 2FA`); // NEW
+    console.log(`   PUT  /api/settings/appearance/theme - Update theme`); // NEW
+    console.log(`   PUT  /api/settings/notifications - Update notifications`); // NEW
   });
 };
 
