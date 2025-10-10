@@ -552,3 +552,55 @@ input:checked + .toggle-slider:before {
     align-self: flex-end;
   }
 }
+
+/* Language Selector */
+.language-selector {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.language-label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.language-dropdown {
+  padding: 0.5rem 1rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+/* QR Code */
+.qr-code {
+  width: 200px;
+  height: 200px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+/* Spinner */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Password strength indicator */
+.password-strength {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.strength-weak { color: var(--error); }
+.strength-medium { color: var(--warning); }
+.strength-strong { color: var(--success); }
