@@ -1,9 +1,23 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../../context/AuthContext'; // Fixed import path
+import React, { useState, useContext } from 'react';
+import { useAuth } from '../../../context/AuthContext';
+import { ThemeContext } from '../../../context/ThemeContext';
+import { 
+  Sun, 
+  Moon, 
+  Shield, 
+  Lock, 
+  Bell, 
+  Globe,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  XCircle
+} from 'lucide-react';
 import './SettingsPage.css';
 
 const SettingsPage = () => {
   const { user, updateUser } = useAuth();
+  const { theme, toggleTheme } = useContext(ThemeContext);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -13,6 +27,22 @@ const SettingsPage = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // 2FA states
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(user?.two_factor_enabled || false);
+  const [show2FASetup, setShow2FASetup] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+
+  // Notification states
+  const [notifications, setNotifications] = useState({
+    email: true,
+    push: true,
+    marketing: false,
+    security: true
+  });
 
   const handleUpdateEmail = async (e) => {
     e.preventDefault();
@@ -21,17 +51,22 @@ const SettingsPage = () => {
       return;
     }
 
+    if (email === user?.email) {
+      setError('New email must be different from current email');
+      return;
+    }
+
     setLoading(true);
     setError('');
-    
+
     try {
       // Simulate API call - replace with actual API
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Update user context
       updateUser({ ...user, email });
-      setMessage('Email updated successfully!');
-      
+      setMessage('Email updated successfully! Please verify your new email address.');
+
       // Clear form
       setEmail('');
     } catch (err) {
@@ -43,7 +78,7 @@ const SettingsPage = () => {
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    
+
     if (!currentPassword || !newPassword || !confirmPassword) {
       setError('All password fields are required');
       return;
@@ -54,20 +89,27 @@ const SettingsPage = () => {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters long');
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
+    // Basic password strength check
+    const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
+    if (!strongPassword.test(newPassword)) {
+      setError('Password must include uppercase, lowercase, number, and special character');
       return;
     }
 
     setLoading(true);
     setError('');
-    
+
     try {
       // Simulate API call - replace with actual API
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       setMessage('Password changed successfully!');
-      
+
       // Clear form
       setCurrentPassword('');
       setNewPassword('');
@@ -79,6 +121,59 @@ const SettingsPage = () => {
     }
   };
 
+  const handleToggle2FA = async () => {
+    if (!twoFactorEnabled) {
+      setShow2FASetup(true);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Simulate API call to disable 2FA
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setTwoFactorEnabled(false);
+      setMessage('Two-factor authentication disabled');
+    } catch (err) {
+      setError('Failed to disable 2FA');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetup2FA = async (e) => {
+    e.preventDefault();
+    if (!twoFactorCode || twoFactorCode.length !== 6) {
+      setError('Please enter a valid 6-digit code');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Simulate API call to verify and enable 2FA
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setTwoFactorEnabled(true);
+      setShow2FASetup(false);
+      setTwoFactorCode('');
+      setMessage('Two-factor authentication enabled successfully!');
+    } catch (err) {
+      setError('Invalid verification code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNotificationToggle = (key) => {
+    setNotifications(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const handleLanguageChange = (language) => {
+    // Simulate language change
+    setMessage(`Language changed to ${language}`);
+  };
+
   return (
     <div className="settings-container">
       <div className="settings-header">
@@ -88,93 +183,212 @@ const SettingsPage = () => {
 
       {message && (
         <div className="success-message">
-          ✅ {message}
+          <CheckCircle size={16} />
+          {message}
         </div>
       )}
 
       {error && (
         <div className="error-message">
-          ⚠️ {error}
+          <XCircle size={16} />
+          {error}
         </div>
       )}
 
       <div className="settings-sections">
-        {/* Email Settings */}
+        {/* Appearance Settings */}
         <div className="settings-section">
-          <h2>Email Address</h2>
+          <h2>
+            <Sun size={20} />
+            Appearance
+          </h2>
           <p className="section-description">
-            Update your email address for account notifications and recovery.
+            Customize how Ziver looks on your device.
           </p>
-          
-          <form onSubmit={handleUpdateEmail} className="settings-form">
-            <div className="form-group">
-              <label htmlFor="email">New Email Address</label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your new email"
-                required
-              />
+
+          <div className="theme-toggle">
+            <span className="theme-label">Theme</span>
+            <div className="theme-options">
+              <button
+                className={`theme-option ${theme === 'light' ? 'active' : ''}`}
+                onClick={() => toggleTheme('light')}
+              >
+                <Sun size={18} />
+                Light
+              </button>
+              <button
+                className={`theme-option ${theme === 'dark' ? 'active' : ''}`}
+                onClick={() => toggleTheme('dark')}
+              >
+                <Moon size={18} />
+                Dark
+              </button>
+              <button
+                className={`theme-option ${theme === 'auto' ? 'active' : ''}`}
+                onClick={() => toggleTheme('auto')}
+              >
+                <Globe size={18} />
+                Auto
+              </button>
             </div>
-            
-            <button 
-              type="submit" 
-              className="btn btn-primary"
-              disabled={loading || !email.trim()}
-            >
-              {loading ? 'Updating...' : 'Update Email'}
-            </button>
-          </form>
+          </div>
         </div>
 
-        {/* Password Settings */}
+        {/* Security Settings */}
         <div className="settings-section">
-          <h2>Change Password</h2>
+          <h2>
+            <Shield size={20} />
+            Security
+          </h2>
           <p className="section-description">
-            Secure your account with a new password.
+            Enhance your account security with these features.
           </p>
-          
+
+          {/* Two-Factor Authentication */}
+          <div className="security-item">
+            <div className="security-info">
+              <h4>Two-Factor Authentication</h4>
+              <p>Add an extra layer of security to your account</p>
+              <span className={`security-status ${twoFactorEnabled ? 'enabled' : 'disabled'}`}>
+                {twoFactorEnabled ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+            <button
+              className={`btn ${twoFactorEnabled ? 'btn-secondary' : 'btn-primary'}`}
+              onClick={handleToggle2FA}
+              disabled={loading}
+            >
+              {twoFactorEnabled ? 'Disable' : 'Enable'} 2FA
+            </button>
+          </div>
+
+          {/* 2FA Setup Modal */}
+          {show2FASetup && (
+            <div className="modal-overlay">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h3>Setup Two-Factor Authentication</h3>
+                  <button 
+                    className="close-button"
+                    onClick={() => setShow2FASetup(false)}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="modal-body">
+                  <p>Scan this QR code with your authenticator app:</p>
+                  <div className="qr-placeholder">
+                    {/* In real app, show actual QR code */}
+                    <div className="qr-simulation">
+                      QR Code Placeholder
+                    </div>
+                  </div>
+                  <p>Then enter the 6-digit code from your app:</p>
+                  <form onSubmit={handleSetup2FA}>
+                    <input
+                      type="text"
+                      value={twoFactorCode}
+                      onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="000000"
+                      maxLength={6}
+                      className="code-input"
+                    />
+                    <div className="modal-actions">
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => setShow2FASetup(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={loading || twoFactorCode.length !== 6}
+                      >
+                        {loading ? 'Verifying...' : 'Verify & Enable'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Password Change */}
+          <div className="security-item">
+            <div className="security-info">
+              <h4>Change Password</h4>
+              <p>Update your password regularly for better security</p>
+            </div>
+          </div>
+
           <form onSubmit={handleChangePassword} className="settings-form">
-            <div className="form-group">
+            <div className="form-group password-group">
               <label htmlFor="currentPassword">Current Password</label>
-              <input
-                type="password"
-                id="currentPassword"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Enter current password"
-                required
-              />
+              <div className="password-input-wrapper">
+                <input
+                  type={showCurrentPassword ? "text" : "password"}
+                  id="currentPassword"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                >
+                  {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
-            
-            <div className="form-group">
+
+            <div className="form-group password-group">
               <label htmlFor="newPassword">New Password</label>
-              <input
-                type="password"
-                id="newPassword"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
-                required
-                minLength={6}
-              />
+              <div className="password-input-wrapper">
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  id="newPassword"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  required
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
-            
-            <div className="form-group">
+
+            <div className="form-group password-group">
               <label htmlFor="confirmPassword">Confirm New Password</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
-                required
-                minLength={6}
-              />
+              <div className="password-input-wrapper">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  required
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
-            
+
             <button 
               type="submit" 
               className="btn btn-primary"
@@ -185,27 +399,88 @@ const SettingsPage = () => {
           </form>
         </div>
 
-        {/* Account Info */}
+        {/* Notifications Settings */}
         <div className="settings-section">
-          <h2>Account Information</h2>
+          <h2>
+            <Bell size={20} />
+            Notifications
+          </h2>
+          <p className="section-description">
+            Choose what notifications you want to receive.
+          </p>
+
+          <div className="notification-settings">
+            {Object.entries(notifications).map(([key, value]) => (
+              <div key={key} className="notification-item">
+                <div className="notification-info">
+                  <h4>{key.charAt(0).toUpperCase() + key.slice(1)} Notifications</h4>
+                  <p>Receive {key} notifications</p>
+                </div>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={value}
+                    onChange={() => handleNotificationToggle(key)}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Account Settings */}
+        <div className="settings-section">
+          <h2>
+            <Lock size={20} />
+            Account
+          </h2>
+
+          {/* Email Change */}
+          <form onSubmit={handleUpdateEmail} className="settings-form">
+            <div className="form-group">
+              <label htmlFor="email">Email Address</label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your new email"
+                required
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              className="btn btn-primary"
+              disabled={loading || !email.trim() || email === user?.email}
+            >
+              {loading ? 'Updating...' : 'Update Email'}
+            </button>
+          </form>
+
+          {/* Account Info */}
           <div className="account-info">
-            <div className="info-item">
-              <span className="info-label">Username:</span>
-              <span className="info-value">{user?.username}</span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Current Email:</span>
-              <span className="info-value">{user?.email}</span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Account Created:</span>
-              <span className="info-value">
-                {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
-              </span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Role:</span>
-              <span className="info-value capitalize">{user?.role?.toLowerCase()}</span>
+            <h4>Account Information</h4>
+            <div className="info-grid">
+              <div className="info-item">
+                <span className="info-label">Username:</span>
+                <span className="info-value">{user?.username}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Current Email:</span>
+                <span className="info-value">{user?.email}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Account Created:</span>
+                <span className="info-value">
+                  {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                </span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Role:</span>
+                <span className="info-value capitalize">{user?.role?.toLowerCase()}</span>
+              </div>
             </div>
           </div>
         </div>
