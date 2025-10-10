@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { usePlatformDetection } from './hooks/usePlatformDetection';
 import api from './services/api';
 
@@ -91,7 +92,7 @@ const PlatformRouter = () => {
     if (user) {
       // Start heartbeat (every minute)
       intervalId = setInterval(doHeartbeat, 60000);
-      
+
       // Monitor lockdown status (every 30 seconds)
       lockdownInterval = setInterval(monitorLockdown, 30000);
     }
@@ -109,7 +110,7 @@ const PlatformRouter = () => {
       : platformLoading 
       ? "Detecting your platform..." 
       : "Initializing Ziver...";
-    
+
     return <LoadingScreen message={loadingMessage} />;
   }
 
@@ -157,7 +158,7 @@ const AppRoutes = ({ user, isLockdown }) => (
             <Route path="/mining" element={<MiningHub />} />
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/referrals" element={<ReferralsPage />} />
-            
+
             {/* REAL Profile and Settings Pages */}
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
@@ -188,9 +189,11 @@ const AppRoutes = ({ user, isLockdown }) => (
 
 function App() {
   return (
-    <div className="app-container">
-      <PlatformRouter />
-    </div>
+    <ThemeProvider>
+      <div className="app-container">
+        <PlatformRouter />
+      </div>
+    </ThemeProvider>
   );
 }
 
