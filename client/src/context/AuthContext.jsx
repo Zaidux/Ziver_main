@@ -13,6 +13,47 @@ export const AuthProvider = ({ children, navigate }) => {
   const [systemStatus, setSystemStatus] = useState(null);
   const [authError, setAuthError] = useState(null);
 
+  // NEW: Auto-save Telegram username function
+  const autoSaveTelegramUsername = async (user, token) => {
+    try {
+      // Check if we're in Telegram and have a username
+      if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+        const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+        const telegramUsername = tgUser.username;
+        
+        if (telegramUsername && !user.telegram_username) {
+          console.log('Auto-saving Telegram username:', telegramUsername);
+          
+          // Auto-save Telegram username to profile
+          await api.post('/user/telegram-auto-save', {
+            telegram_username: telegramUsername
+          }, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          console.log('Telegram username auto-saved:', telegramUsername);
+          
+          // Update local user state
+          const updatedUser = { ...user, telegram_username: telegramUsername };
+          setUser(updatedUser);
+          
+          // Update localStorage
+          const storedData = localStorage.getItem('session');
+          if (storedData) {
+            const sessionData = JSON.parse(storedData);
+            const updatedSession = { ...sessionData, user: updatedUser };
+            localStorage.setItem('session', JSON.stringify(updatedSession));
+          }
+          
+          return true;
+        }
+      }
+    } catch (error) {
+      console.log('Telegram auto-save skipped:', error.message);
+    }
+    return false;
+  };
+
   // Check system status
   const checkSystemStatus = async () => {
     try {
@@ -58,6 +99,9 @@ export const AuthProvider = ({ children, navigate }) => {
             } catch (refError) {
               console.log('Could not load referral data:', refError);
             }
+
+            // Auto-save Telegram username if needed
+            await autoSaveTelegramUsername(storedUser, storedUser.token);
           } else {
             console.log('Token invalid or verification failed');
             handleAuthFailure();
@@ -98,7 +142,7 @@ export const AuthProvider = ({ children, navigate }) => {
     }, 800);
   }, []);
 
-  // UPDATED: Enhanced login function that handles both regular and Google OAuth responses
+  // UPDATED: Enhanced login function with Telegram auto-save
   const login = async (sessionData) => {
     try {
       setLoading(true);
@@ -160,6 +204,9 @@ export const AuthProvider = ({ children, navigate }) => {
         loadReferralData()
       ]);
 
+      // Auto-save Telegram username after successful login
+      await autoSaveTelegramUsername(fullUser, token);
+
       if (navigate) navigate('/mining');
     } catch (error) {
       console.error('Login error:', error);
@@ -174,7 +221,7 @@ export const AuthProvider = ({ children, navigate }) => {
     }
   };
 
-  // NEW: Simplified login function for Google OAuth
+  // UPDATED: Google OAuth login with Telegram auto-save
   const loginWithGoogle = async (googleResponse) => {
     try {
       setLoading(true);
@@ -222,6 +269,9 @@ export const AuthProvider = ({ children, navigate }) => {
         loadReferralData()
       ]);
 
+      // Auto-save Telegram username after successful login
+      await autoSaveTelegramUsername(fullUser, token);
+
       if (navigate) {
         if (isNewUser) {
           navigate('/profile/setup', { 
@@ -254,14 +304,14 @@ export const AuthProvider = ({ children, navigate }) => {
   const updateProfile = async (profileData) => {
     try {
       setLoading(true);
-      
+
       const response = await api.put('/user/profile', profileData);
-      
+
       if (response.data.success) {
         // Update user in state and localStorage
         const updatedUser = { ...user, ...response.data.user };
         setUser(updatedUser);
-        
+
         // Update localStorage
         const storedData = localStorage.getItem('session');
         if (storedData) {
@@ -269,14 +319,14 @@ export const AuthProvider = ({ children, navigate }) => {
           const updatedSession = { ...sessionData, user: updatedUser };
           localStorage.setItem('session', JSON.stringify(updatedSession));
         }
-        
+
         return response.data;
       } else {
         throw new Error(response.data.message || 'Failed to update profile');
       }
     } catch (error) {
       console.error('Profile update error:', error);
-      
+
       // Handle specific error cases
       if (error.response?.data?.message) {
         throw new Error(error.response.data.message);
@@ -294,22 +344,22 @@ export const AuthProvider = ({ children, navigate }) => {
   const uploadAvatar = async (avatarFile) => {
     try {
       setLoading(true);
-      
+
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('avatar', avatarFile);
-      
+
       const response = await api.post('/user/avatar', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      
+
       if (response.data.success) {
         // Update user in state and localStorage
         const updatedUser = { ...user, ...response.data.user };
         setUser(updatedUser);
-        
+
         // Update localStorage
         const storedData = localStorage.getItem('session');
         if (storedData) {
@@ -317,14 +367,14 @@ export const AuthProvider = ({ children, navigate }) => {
           const updatedSession = { ...sessionData, user: updatedUser };
           localStorage.setItem('session', JSON.stringify(updatedSession));
         }
-        
+
         return response.data;
       } else {
         throw new Error(response.data.message || 'Failed to upload avatar');
       }
     } catch (error) {
       console.error('Avatar upload error:', error);
-      
+
       if (error.response?.data?.message) {
         throw new Error(error.response.data.message);
       } else if (error.message) {
@@ -400,6 +450,7 @@ export const AuthProvider = ({ children, navigate }) => {
     updateAppSettings,
     updateProfile, // NEW: Added profile update function
     uploadAvatar,  // NEW: Added avatar upload function
+    autoSaveTelegramUsername, // NEW: Added Telegram auto-save function
     refreshReferralData,
     loadReferralData,
     checkSystemStatus,
