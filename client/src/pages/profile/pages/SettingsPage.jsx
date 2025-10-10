@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
 import { 
@@ -11,9 +11,11 @@ import {
   Eye,
   EyeOff,
   CheckCircle,
-  XCircle
+  XCircle,
+  Loader
 } from 'lucide-react';
 import './SettingsPage.css';
+import api from '../../../services/api';
 
 const SettingsPage = () => {
   const { user, updateUser } = useAuth();
@@ -30,11 +32,12 @@ const SettingsPage = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   // 2FA states
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(user?.two_factor_enabled || false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [show2FASetup, setShow2FASetup] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [qrCodeData, setQrCodeData] = useState(null);
 
   // Notification states
   const [notifications, setNotifications] = useState({
@@ -44,6 +47,39 @@ const SettingsPage = () => {
     security: true
   });
 
+  // Load settings on component mount
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      // Load security settings
+      const securityResponse = await api.get('/settings/security');
+      if (securityResponse.data.success) {
+        setTwoFactorEnabled(securityResponse.data.settings.two_factor_enabled || false);
+      }
+
+      // Load notification settings
+      const notificationsResponse = await api.get('/settings/notifications');
+      if (notificationsResponse.data.success) {
+        setNotifications(notificationsResponse.data.settings);
+      }
+
+      // Load appearance settings
+      const appearanceResponse = await api.get('/settings/appearance');
+      if (appearanceResponse.data.success && appearanceResponse.data.settings.theme) {
+        // Update theme context if different from current
+        if (appearanceResponse.data.settings.theme !== theme) {
+          toggleTheme(appearanceResponse.data.settings.theme);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
+  };
+
+  // Real API call for updating email
   const handleUpdateEmail = async (e) => {
     e.preventDefault();
     if (!email.trim()) {
@@ -60,22 +96,26 @@ const SettingsPage = () => {
     setError('');
 
     try {
-      // Simulate API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await api.put('/settings/account/email', {
+        newEmail: email,
+        currentPassword: currentPassword // Require password for email change
+      });
 
-      // Update user context
-      updateUser({ ...user, email });
-      setMessage('Email updated successfully! Please verify your new email address.');
-
-      // Clear form
-      setEmail('');
+      if (response.data.success) {
+        // Update user context
+        updateUser({ ...user, email });
+        setMessage(response.data.message);
+        setEmail('');
+        setCurrentPassword('');
+      }
     } catch (err) {
-      setError('Failed to update email. Please try again.');
+      setError(err.response?.data?.message || 'Failed to update email. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  // Real API call for changing password
   const handleChangePassword = async (e) => {
     e.preventDefault();
 
@@ -105,41 +145,63 @@ const SettingsPage = () => {
     setError('');
 
     try {
-      // Simulate API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await api.put('/settings/security/password', {
+        currentPassword,
+        newPassword
+      });
 
-      setMessage('Password changed successfully!');
-
-      // Clear form
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      if (response.data.success) {
+        setMessage(response.data.message);
+        // Clear form
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      }
     } catch (err) {
-      setError('Failed to change password. Please try again.');
+      setError(err.response?.data?.message || 'Failed to change password. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  // Real API call for 2FA setup
+  const handleGenerate2FASetup = async () => {
+    try {
+      const response = await api.get('/settings/security/two-factor/setup');
+      if (response.data.success) {
+        setQrCodeData(response.data);
+        setShow2FASetup(true);
+      }
+    } catch (err) {
+      setError('Failed to generate 2FA setup. Please try again.');
+    }
+  };
+
+  // Real API call for toggling 2FA
   const handleToggle2FA = async () => {
     if (!twoFactorEnabled) {
-      setShow2FASetup(true);
+      await handleGenerate2FASetup();
       return;
     }
 
     setLoading(true);
     try {
-      // Simulate API call to disable 2FA
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setTwoFactorEnabled(false);
-      setMessage('Two-factor authentication disabled');
+      const response = await api.post('/settings/security/two-factor', {
+        enable: false
+      });
+
+      if (response.data.success) {
+        setTwoFactorEnabled(false);
+        setMessage(response.data.message);
+      }
     } catch (err) {
-      setError('Failed to disable 2FA');
+      setError(err.response?.data?.message || 'Failed to disable 2FA');
     } finally {
       setLoading(false);
     }
   };
 
+  // Real API call for enabling 2FA with verification
   const handleSetup2FA = async (e) => {
     e.preventDefault();
     if (!twoFactorCode || twoFactorCode.length !== 6) {
@@ -149,29 +211,67 @@ const SettingsPage = () => {
 
     setLoading(true);
     try {
-      // Simulate API call to verify and enable 2FA
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setTwoFactorEnabled(true);
-      setShow2FASetup(false);
-      setTwoFactorCode('');
-      setMessage('Two-factor authentication enabled successfully!');
+      const response = await api.post('/settings/security/two-factor', {
+        enable: true,
+        verificationCode: twoFactorCode
+      });
+
+      if (response.data.success) {
+        setTwoFactorEnabled(true);
+        setShow2FASetup(false);
+        setTwoFactorCode('');
+        setMessage(response.data.message);
+      }
     } catch (err) {
-      setError('Invalid verification code. Please try again.');
+      setError(err.response?.data?.message || 'Invalid verification code. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleNotificationToggle = (key) => {
-    setNotifications(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
+  // Real API call for updating notifications
+  const handleNotificationToggle = async (key) => {
+    const newNotifications = {
+      ...notifications,
+      [key]: !notifications[key]
+    };
+    
+    setNotifications(newNotifications);
+
+    try {
+      await api.put('/settings/notifications', newNotifications);
+      // No message needed for instant toggle feedback
+    } catch (err) {
+      // Revert on error
+      setNotifications(prev => ({
+        ...prev,
+        [key]: !prev[key]
+      }));
+      console.error('Failed to update notification settings');
+    }
   };
 
-  const handleLanguageChange = (language) => {
-    // Simulate language change
-    setMessage(`Language changed to ${language}`);
+  // Real API call for updating theme
+  const handleThemeChange = async (newTheme) => {
+    toggleTheme(newTheme);
+    
+    try {
+      await api.put('/settings/appearance/theme', { theme: newTheme });
+    } catch (err) {
+      console.error('Failed to save theme preference');
+    }
+  };
+
+  // Real API call for updating language
+  const handleLanguageChange = async (language) => {
+    try {
+      const response = await api.put('/settings/appearance/language', { language });
+      if (response.data.success) {
+        setMessage(`Language changed to ${language}`);
+      }
+    } catch (err) {
+      setError('Failed to update language preference');
+    }
   };
 
   return (
@@ -211,26 +311,42 @@ const SettingsPage = () => {
             <div className="theme-options">
               <button
                 className={`theme-option ${theme === 'light' ? 'active' : ''}`}
-                onClick={() => toggleTheme('light')}
+                onClick={() => handleThemeChange('light')}
               >
                 <Sun size={18} />
                 Light
               </button>
               <button
                 className={`theme-option ${theme === 'dark' ? 'active' : ''}`}
-                onClick={() => toggleTheme('dark')}
+                onClick={() => handleThemeChange('dark')}
               >
                 <Moon size={18} />
                 Dark
               </button>
               <button
                 className={`theme-option ${theme === 'auto' ? 'active' : ''}`}
-                onClick={() => toggleTheme('auto')}
+                onClick={() => handleThemeChange('auto')}
               >
                 <Globe size={18} />
                 Auto
               </button>
             </div>
+          </div>
+
+          {/* Language Selector */}
+          <div className="language-selector">
+            <span className="language-label">Language</span>
+            <select 
+              className="language-dropdown"
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              defaultValue="en"
+            >
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
+              <option value="zh">中文</option>
+            </select>
           </div>
         </div>
 
@@ -258,7 +374,7 @@ const SettingsPage = () => {
               onClick={handleToggle2FA}
               disabled={loading}
             >
-              {twoFactorEnabled ? 'Disable' : 'Enable'} 2FA
+              {loading ? <Loader size={16} className="spinner" /> : twoFactorEnabled ? 'Disable' : 'Enable'} 2FA
             </button>
           </div>
 
@@ -271,6 +387,7 @@ const SettingsPage = () => {
                   <button 
                     className="close-button"
                     onClick={() => setShow2FASetup(false)}
+                    disabled={loading}
                   >
                     ×
                   </button>
@@ -278,11 +395,20 @@ const SettingsPage = () => {
                 <div className="modal-body">
                   <p>Scan this QR code with your authenticator app:</p>
                   <div className="qr-placeholder">
-                    {/* In real app, show actual QR code */}
-                    <div className="qr-simulation">
-                      QR Code Placeholder
-                    </div>
+                    {qrCodeData ? (
+                      <img 
+                        src={qrCodeData.qrCodeUrl} 
+                        alt="QR Code for 2FA" 
+                        className="qr-code"
+                      />
+                    ) : (
+                      <div className="qr-simulation">
+                        <Loader size={24} className="spinner" />
+                        Generating QR Code...
+                      </div>
+                    )}
                   </div>
+                  <p>Or enter this code manually: <strong>{qrCodeData?.manualEntryCode}</strong></p>
                   <p>Then enter the 6-digit code from your app:</p>
                   <form onSubmit={handleSetup2FA}>
                     <input
@@ -298,6 +424,7 @@ const SettingsPage = () => {
                         type="button"
                         className="btn btn-secondary"
                         onClick={() => setShow2FASetup(false)}
+                        disabled={loading}
                       >
                         Cancel
                       </button>
@@ -306,7 +433,7 @@ const SettingsPage = () => {
                         className="btn btn-primary"
                         disabled={loading || twoFactorCode.length !== 6}
                       >
-                        {loading ? 'Verifying...' : 'Verify & Enable'}
+                        {loading ? <Loader size={16} className="spinner" /> : 'Verify & Enable'}
                       </button>
                     </div>
                   </form>
@@ -394,7 +521,7 @@ const SettingsPage = () => {
               className="btn btn-primary"
               disabled={loading || !currentPassword || !newPassword || !confirmPassword}
             >
-              {loading ? 'Changing Password...' : 'Change Password'}
+              {loading ? <Loader size={16} className="spinner" /> : 'Change Password'}
             </button>
           </form>
         </div>
@@ -450,12 +577,26 @@ const SettingsPage = () => {
               />
             </div>
 
+            <div className="form-group password-group">
+              <label htmlFor="emailCurrentPassword">Current Password (required for email change)</label>
+              <div className="password-input-wrapper">
+                <input
+                  type="password"
+                  id="emailCurrentPassword"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password to confirm email change"
+                  required
+                />
+              </div>
+            </div>
+
             <button 
               type="submit" 
               className="btn btn-primary"
-              disabled={loading || !email.trim() || email === user?.email}
+              disabled={loading || !email.trim() || email === user?.email || !currentPassword}
             >
-              {loading ? 'Updating...' : 'Update Email'}
+              {loading ? <Loader size={16} className="spinner" /> : 'Update Email'}
             </button>
           </form>
 
