@@ -19,8 +19,14 @@ import ComingSoonPage from './pages/ComingSoonPage';
 import LoadingScreen from './components/LoadingScreen';
 
 // Profile-related imports
-import SettingsPage from './pages/profile/pages/SettingsPage';
 import ProfilePage from './pages/profile/pages/ProfilePage';
+
+// Settings Pages (thin wrappers)
+import SettingsPage from './pages/profile/pages/settings/SettingsPage';
+import AppearanceSettingsPage from './pages/profile/pages/settings/AppearanceSettingsPage';
+import SecuritySettingsPage from './pages/profile/pages/settings/SecuritySettingsPage';
+import NotificationSettingsPage from './pages/profile/pages/settings/NotificationSettingsPage';
+import AccountSettingsPage from './pages/profile/pages/settings/AccountSettingsPage';
 
 // Component to handle platform-based routing
 const PlatformRouter = () => {
@@ -159,9 +165,15 @@ const AppRoutes = ({ user, isLockdown }) => (
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/referrals" element={<ReferralsPage />} />
 
-            {/* REAL Profile and Settings Pages */}
+            {/* Profile Page */}
             <Route path="/profile" element={<ProfilePage />} />
+
+            {/* New Settings Pages */}
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/appearance" element={<AppearanceSettingsPage />} />
+            <Route path="/settings/security" element={<SecuritySettingsPage />} />
+            <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
+            <Route path="/settings/account" element={<AccountSettingsPage />} />
 
             {/* Updated Coming Soon routes with admin bypass */}
             <Route path="/job-marketplace" element={
