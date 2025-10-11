@@ -12,7 +12,7 @@ const appearanceController = {
       throw new Error('Invalid theme selection');
     }
 
-    // Store in user_preferences table or extend users table
+    // Store in user_preferences table
     const query = `
       INSERT INTO user_preferences (user_id, preference_key, preference_value) 
       VALUES ($1, 'theme', $2)
@@ -35,7 +35,7 @@ const appearanceController = {
     const userId = req.user.id;
     const { language } = req.body;
 
-    const supportedLanguages = ['en', 'es', 'fr', 'de', 'zh']; // Add more as needed
+    const supportedLanguages = ['en', 'es', 'fr', 'de', 'zh'];
     if (!supportedLanguages.includes(language)) {
       res.status(400);
       throw new Error('Unsupported language');
@@ -70,11 +70,14 @@ const appearanceController = {
     
     const { rows } = await db.query(query, [userId]);
 
-    // Convert to object
+    // Convert to object with defaults
     const settings = rows.reduce((acc, row) => {
       acc[row.preference_key] = row.preference_value;
       return acc;
-    }, { theme: 'dark', language: 'en' }); // Defaults
+    }, { 
+      theme: 'dark', // Default theme
+      language: 'en' // Default language
+    });
 
     res.json({
       success: true,
