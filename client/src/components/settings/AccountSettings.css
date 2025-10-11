@@ -1,1 +1,372 @@
+.account-settings {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  color: var(--text-primary);
+}
 
+.settings-header {
+  margin-bottom: 2rem;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.5rem 0;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+
+.back-button:hover {
+  color: var(--primary);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-icon {
+  color: var(--primary);
+}
+
+.header-content h1 {
+  font-size: 2rem;
+  margin-bottom: 0.25rem;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-content p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.account-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.account-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 2rem;
+}
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+  color: var(--text-primary);
+}
+
+.section-header p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* Forms */
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.field-description {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 0;
+  font-style: italic;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-alpha);
+}
+
+.field-error {
+  color: var(--error);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Account Info */
+.account-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.info-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-value {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.role-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.role-badge.admin {
+  background: var(--primary-alpha);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.role-badge.user {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+/* Account Actions */
+.account-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.action-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.action-item.dangerous {
+  border-color: var(--error);
+  background: var(--error-bg);
+}
+
+.action-info h4 {
+  margin: 0 0 0.25rem 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.action-info p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Buttons */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #000;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-secondary);
+  border-color: var(--primary);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  background: var(--error);
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--error-dark);
+  transform: translateY(-1px);
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Messages */
+.success-message {
+  background: var(--success-bg);
+  color: var(--success);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--success);
+}
+
+.error-message {
+  background: var(--error-bg);
+  color: var(--error);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--error);
+}
+
+/* Spinner */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .account-settings {
+    padding: 1rem 0.5rem;
+  }
+
+  .account-section {
+    padding: 1.5rem;
+  }
+
+  .header-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .header-content h1 {
+    font-size: 1.75rem;
+  }
+
+  .account-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    text-align: left;
+  }
+
+  .action-item .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .account-section {
+    padding: 1.25rem;
+  }
+
+  .section-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+}
