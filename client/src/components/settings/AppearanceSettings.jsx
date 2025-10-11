@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSettings } from '../../../../hooks/useSettings';
-import { SUPPORTED_LANGUAGES, THEME_OPTIONS } from '../../../../constants/settings';
+import { useSettings } from '../../hooks/useSettings';
+import { SUPPORTED_LANGUAGES, THEME_OPTIONS } from '../../constants/settings';
 import { 
   Sun, 
   Moon, 
@@ -73,7 +73,7 @@ const AppearanceSettings = () => {
       <div className="settings-header">
         <button 
           className="back-button"
-          onClick={() => navigate('/profile/settings')}
+          onClick={() => navigate('/settings')}
         >
           <ArrowLeft size={20} />
           Back to Settings
