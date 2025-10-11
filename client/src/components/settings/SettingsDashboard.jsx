@@ -21,7 +21,7 @@ const SettingsDashboard = () => {
       title: 'Appearance',
       description: 'Customize themes, language, and display preferences',
       icon: Sun,
-      path: '/profile/settings/appearance',
+      path: '/settings/appearance', // Fixed path
       color: '#8B5CF6'
     },
     {
@@ -29,7 +29,7 @@ const SettingsDashboard = () => {
       title: 'Security',
       description: 'Manage password, 2FA, and security settings',
       icon: Shield,
-      path: '/profile/settings/security',
+      path: '/settings/security', // Fixed path
       color: '#10B981'
     },
     {
@@ -37,7 +37,7 @@ const SettingsDashboard = () => {
       title: 'Notifications',
       description: 'Configure email, push, and in-app notifications',
       icon: Bell,
-      path: '/profile/settings/notifications',
+      path: '/settings/notifications', // Fixed path
       color: '#3B82F6'
     },
     {
@@ -45,7 +45,7 @@ const SettingsDashboard = () => {
       title: 'Account',
       description: 'Update email, profile info, and account preferences',
       icon: User,
-      path: '/profile/settings/account',
+      path: '/settings/account', // Fixed path
       color: '#F59E0B'
     }
   ];
@@ -84,7 +84,7 @@ const SettingsDashboard = () => {
                 </div>
                 <ChevronRight size={20} className="chevron" />
               </div>
-              
+
               <div className="card-content">
                 <h3>{section.title}</h3>
                 <p>{section.description}</p>
