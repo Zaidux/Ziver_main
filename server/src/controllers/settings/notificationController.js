@@ -8,14 +8,14 @@ const notificationController = {
     const { email, push, marketing, security } = req.body;
 
     const updates = [
-      { key: 'notifications_email', value: email },
-      { key: 'notifications_push', value: push },
-      { key: 'notifications_marketing', value: marketing },
-      { key: 'notifications_security', value: security }
+      { key: 'notifications_email', value: email.toString() },
+      { key: 'notifications_push', value: push.toString() },
+      { key: 'notifications_marketing', value: marketing.toString() },
+      { key: 'notifications_security', value: security.toString() }
     ];
 
     // Use transaction for multiple updates
-    const client = await db.connect();
+    const client = await db.getClient(); // FIXED: Use getClient() instead of connect()
     
     try {
       await client.query('BEGIN');
