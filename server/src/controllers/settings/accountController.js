@@ -1,4 +1,5 @@
 const asyncHandler = require('express-async-handler');
+const bcrypt = require('bcryptjs');
 const db = require('../../config/db');
 const User = require('../../models/User');
 
@@ -42,13 +43,13 @@ const accountController = {
       throw new Error('Email is already taken');
     }
 
-    // Update email (in production, you might want to send verification first)
+    // Update email
     const updateQuery = 'UPDATE users SET email = $1 WHERE id = $2 RETURNING email';
     const updateResult = await db.query(updateQuery, [newEmail, userId]);
 
     res.json({
       success: true,
-      message: 'Email updated successfully. Please verify your new email address.',
+      message: 'Email updated successfully',
       email: updateResult.rows[0].email
     });
   }),
@@ -106,9 +107,12 @@ const accountController = {
       throw new Error('Password is incorrect');
     }
 
-    // In production, you might want to soft delete or schedule deletion
-    const deleteQuery = 'DELETE FROM users WHERE id = $1';
-    await db.query(deleteQuery, [userId]);
+    // Soft delete by updating user status
+    const deleteQuery = 'UPDATE users SET email = $1, username = $2, status = $3 WHERE id = $4';
+    const deletedEmail = `deleted_${Date.now()}@deleted.com`;
+    const deletedUsername = `deleted_user_${Date.now()}`;
+    
+    await db.query(deleteQuery, [deletedEmail, deletedUsername, 'deleted', userId]);
 
     res.json({
       success: true,
