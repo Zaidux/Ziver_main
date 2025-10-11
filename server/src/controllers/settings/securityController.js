@@ -42,7 +42,7 @@ const securityController = {
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
     // Update password
-    const updateQuery = 'UPDATE users SET password_hash = $1 WHERE id = $2';
+    const updateQuery = 'UPDATE users SET password_hash = $1, last_password_change = NOW() WHERE id = $2';
     await db.query(updateQuery, [hashedPassword, userId]);
 
     res.json({
@@ -57,21 +57,24 @@ const securityController = {
     const { enable, verificationCode } = req.body;
 
     if (enable) {
-      // Enable 2FA - In production, you'd verify the TOTP code
-      // For now, we'll simulate it
+      // Enable 2FA
       if (!verificationCode) {
         res.status(400);
         throw new Error('Verification code is required to enable 2FA');
       }
 
-      // Simulate verification (in real app, use speakeasy or similar)
-      if (verificationCode.length !== 6) {
+      // In a real implementation, you would verify the TOTP code here
+      // For now, we'll accept any 6-digit code for testing
+      if (!verificationCode || verificationCode.length !== 6 || !/^\d+$/.test(verificationCode)) {
         res.status(400);
-        throw new Error('Invalid verification code');
+        throw new Error('Please enter a valid 6-digit verification code');
       }
 
+      // Generate a simulated secret (in production, use speakeasy.generateSecret())
+      const simulatedSecret = 'JBSWY3DPEHPK3PXP' + userId; // Make it unique per user
+
       const updateQuery = 'UPDATE users SET two_factor_enabled = true, two_factor_secret = $1 WHERE id = $2';
-      await db.query(updateQuery, ['simulated_secret', userId]);
+      await db.query(updateQuery, [simulatedSecret, userId]);
 
       res.json({
         success: true,
@@ -92,18 +95,22 @@ const securityController = {
   // Generate 2FA setup (QR code, secret)
   generateTwoFactorSetup: asyncHandler(async (req, res) => {
     const userId = req.user.id;
+    const userEmail = req.user.email;
     
-    // In production, use: const secret = speakeasy.generateSecret({ name: `Ziver (${req.user.email})` });
-    const simulatedSecret = {
-      base32: 'JBSWY3DPEHPK3PXP', // Simulated secret
-      otpauth_url: 'otpauth://totp/Ziver:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Ziver'
-    };
+    // Generate a unique secret for this user
+    const secret = 'JBSWY3DPEHPK3PXP' + userId; // Simulated secret
+    
+    // Create OTPAuth URL for QR code
+    const otpauthUrl = `otpauth://totp/Ziver:${userEmail}?secret=${secret}&issuer=Ziver&algorithm=SHA1&digits=6&period=30`;
+    
+    // Generate QR code URL
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauthUrl)}`;
 
     res.json({
       success: true,
-      secret: simulatedSecret.base32,
-      qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(simulatedSecret.otpauth_url)}`,
-      manualEntryCode: simulatedSecret.base32
+      secret: secret,
+      qrCodeUrl: qrCodeUrl,
+      manualEntryCode: secret
     });
   }),
 
