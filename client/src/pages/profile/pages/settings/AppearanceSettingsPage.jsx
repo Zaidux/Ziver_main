@@ -1,40 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSettings } from '../../../../hooks/useSettings';
-import { SUPPORTED_LANGUAGES, THEME_OPTIONS } from '../../../../constants/settings';
-import { 
-  Sun, 
-  Moon, 
-  Globe,
-  ArrowLeft,
-  Check,
-  Monitor
-} from 'lucide-react';
-import './AppearanceSettings.css';
+import React from 'react';
+import AppearanceSettings from '../../../../components/settings/AppearanceSettings';
 
-const AppearanceSettings = () => {
-  const navigate = useNavigate();
-  const { loading, error, updateSetting, getSetting, clearError } = useSettings();
-  
-  const [theme, setTheme] = useState('dark');
-  const [language, setLanguage] = useState('en');
-  const [message, setMessage] = useState('');
+const AppearanceSettingsPage = () => {
+  return <AppearanceSettings />;
+};
 
-  useEffect(() => {
-    loadAppearanceSettings();
-  }, []);
-
-  const loadAppearanceSettings = async () => {
-    const result = await getSetting('/settings/appearance');
-    if (result.success) {
-      setTheme(result.data.settings.theme || 'dark');
-      setLanguage(result.data.settings.language || 'en');
-    }
-  };
-
-  const showMessage = (msg) => {
-    setMessage(msg);
-    setTimeout(() => setMessage(''), 3000);
+export default AppearanceSettingsPage;    setTimeout(() => setMessage(''), 3000);
   };
 
   const handleThemeChange = async (newTheme) => {
