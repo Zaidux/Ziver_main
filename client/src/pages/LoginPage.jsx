@@ -6,19 +6,31 @@ import './LoginPage.css';
 
 function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [twoFactorData, setTwoFactorData] = useState({ code: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { login, loginWithGoogle } = useAuth(); // Added loginWithGoogle
+  const [twoFactorLoading, setTwoFactorLoading] = useState(false);
+  const [show2FA, setShow2FA] = useState(false);
+  const [tempAuthData, setTempAuthData] = useState(null);
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const { email, password } = formData;
+  const { code } = twoFactorData;
 
   const handleChange = (e) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      [e.target.name]: e.target.value,
-    }));
+    if (show2FA) {
+      setTwoFactorData((prevState) => ({
+        ...prevState,
+        [e.target.name]: e.target.value,
+      }));
+    } else {
+      setFormData((prevState) => ({
+        ...prevState,
+        [e.target.name]: e.target.value,
+      }));
+    }
   };
 
   // Helper function to load Google script
@@ -57,15 +69,24 @@ function LoginPage() {
             try {
               // Send the access token to your backend via POST
               const result = await authService.googleAuth(response.access_token);
-              
-              if (result.token && result.user) {
+
+              if (result.twoFactorRequired) {
+                // Show 2FA form
+                setTempAuthData({
+                  token: result.token,
+                  user: result.user,
+                  appSettings: result.appSettings,
+                  isNewUser: result.isNewUser
+                });
+                setShow2FA(true);
+                setGoogleLoading(false);
+              } else if (result.token && result.user) {
                 // Use the new Google-specific login function
                 await loginWithGoogle(result);
               }
             } catch (err) {
               console.error("Google auth error:", err);
               setError("Google authentication failed. Please try again.");
-            } finally {
               setGoogleLoading(false);
             }
           } else {
@@ -90,8 +111,20 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      const userData = await authService.login(email, password);
-      login(userData);
+      const result = await authService.login(email, password);
+
+      if (result.twoFactorRequired) {
+        // Show 2FA form
+        setTempAuthData({
+          token: result.token,
+          user: result.user,
+          appSettings: result.appSettings
+        });
+        setShow2FA(true);
+      } else {
+        // Regular login without 2FA
+        login(result);
+      }
     } catch (err) {
       const message = err.response?.data?.message || 'Login failed.';
       setError(message);
@@ -100,6 +133,119 @@ function LoginPage() {
     }
   };
 
+  const handle2FASubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setTwoFactorLoading(true);
+
+    try {
+      const result = await authService.verify2FA(tempAuthData.token, code);
+
+      if (result.success) {
+        // Complete the login with the full token
+        const loginData = {
+          user: result.user,
+          token: result.token,
+          appSettings: result.appSettings
+        };
+
+        if (tempAuthData.isNewUser) {
+          // Handle new user registration from Google OAuth
+          await loginWithGoogle({
+            ...loginData,
+            isNewUser: tempAuthData.isNewUser
+          });
+        } else {
+          // Regular login
+          login(loginData);
+        }
+      }
+    } catch (err) {
+      const message = err.response?.data?.message || 'Two-factor authentication failed.';
+      setError(message);
+    } finally {
+      setTwoFactorLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setShow2FA(false);
+    setTwoFactorData({ code: '' });
+    setTempAuthData(null);
+    setError('');
+  };
+
+  // Render 2FA form
+  if (show2FA) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="logo">⚡ ZIVER</div>
+            <h1>Two-Factor Authentication</h1>
+            <p>Enter the 6-digit code from your authenticator app</p>
+          </div>
+
+          <form className="auth-form" onSubmit={handle2FASubmit}>
+            {error && <div className="error-message">{error}</div>}
+
+            <div className="input-group">
+              <label htmlFor="code">Verification Code</label>
+              <input
+                type="text"
+                id="code"
+                name="code"
+                value={code}
+                onChange={handleChange}
+                placeholder="000000"
+                maxLength={6}
+                required
+                className="modern-input"
+                disabled={twoFactorLoading}
+              />
+              <div className="input-hint">
+                Enter the 6-digit code from your authenticator app
+              </div>
+            </div>
+
+            <div className="two-factor-actions">
+              <button 
+                type="button" 
+                className="btn btn-secondary"
+                onClick={handleBackToLogin}
+                disabled={twoFactorLoading}
+              >
+                Back to Login
+              </button>
+              <button 
+                type="submit" 
+                className="btn btn-primary"
+                disabled={twoFactorLoading || code.length !== 6}
+              >
+                {twoFactorLoading ? (
+                  <div className="button-loading">
+                    <div className="spinner"></div>
+                    Verifying...
+                  </div>
+                ) : (
+                  'Verify & Continue'
+                )}
+              </button>
+            </div>
+          </form>
+
+          <div className="auth-footer">
+            <div className="security-note">
+              <span className="shield-icon">🔐</span>
+              Two-factor authentication adds an extra layer of security
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Render regular login form
   return (
     <div className="auth-container">
       <div className="auth-card">
