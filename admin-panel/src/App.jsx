@@ -5,6 +5,7 @@ import TaskManagement from "./pages/TaskManagement"
 import Settings from "./pages/Settings"
 import UserManagement from "./pages/UserManagement"
 import SystemStatus from "./pages/SystemStatus"
+import FeedbackManagement from "./pages/FeedbackManagement" // NEW: Import Feedback Management
 import Layout from "./components/Layout"
 import ProtectedRoute from "./components/ProtectedRoute"
 import { ThemeProvider } from "./context/ThemeContext"
@@ -22,6 +23,8 @@ function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/users" element={<UserManagement />} />
               <Route path="/system-status" element={<SystemStatus />} />
+              {/* NEW: Feedback Management Route */}
+              <Route path="/feedback" element={<FeedbackManagement />} />
             </Route>
           </Route>
           <Route path="*" element={<AdminLoginPage />} />
