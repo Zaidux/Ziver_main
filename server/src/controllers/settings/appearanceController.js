@@ -3,59 +3,39 @@ const db = require('../../config/db');
 const LanguageUtils = require('../../utils/language');
 
 const appearanceController = {
-  // Update theme preference with enhanced validation
+  // Update theme preference - FIXED: Remove users table update
   updateTheme: asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { theme } = req.body;
 
     const validThemes = ['light', 'dark', 'auto', 'system'];
-    
+
     if (!theme || !validThemes.includes(theme)) {
       res.status(400);
       throw new Error(`Invalid theme selection. Must be one of: ${validThemes.join(', ')}`);
     }
 
-    // Store in user_preferences table with transaction
-    const client = await db.getClient();
-    
-    try {
-      await client.query('BEGIN');
+    // Store in user_preferences table - SIMPLIFIED: No transaction needed for single operation
+    const query = `
+      INSERT INTO user_preferences (user_id, preference_key, preference_value) 
+      VALUES ($1, 'theme', $2)
+      ON CONFLICT (user_id, preference_key) 
+      DO UPDATE SET preference_value = $2, updated_at = NOW()
+      RETURNING preference_value, updated_at
+    `;
 
-      const query = `
-        INSERT INTO user_preferences (user_id, preference_key, preference_value) 
-        VALUES ($1, 'theme', $2)
-        ON CONFLICT (user_id, preference_key) 
-        DO UPDATE SET preference_value = $2, updated_at = NOW()
-        RETURNING preference_value, updated_at
-      `;
+    const { rows } = await db.query(query, [userId, theme]);
 
-      const { rows } = await client.query(query, [userId, theme]);
-
-      // Also update user's updated_at timestamp
-      await client.query(
-        'UPDATE users SET updated_at = NOW() WHERE id = $1',
-        [userId]
-      );
-
-      await client.query('COMMIT');
-
-      res.json({
-        success: true,
-        message: 'Theme preference updated successfully',
-        theme: rows[0].preference_value,
-        updated_at: rows[0].updated_at,
-        available_themes: validThemes
-      });
-
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+    res.json({
+      success: true,
+      message: 'Theme preference updated successfully',
+      theme: rows[0].preference_value,
+      updated_at: rows[0].updated_at,
+      available_themes: validThemes
+    });
   }),
 
-  // Update language preference with enhanced validation
+  // Update language preference - FIXED: Remove users table update
   updateLanguage: asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { language } = req.body;
@@ -68,54 +48,33 @@ const appearanceController = {
 
     const languageInfo = LanguageUtils.getLanguageInfo(language);
 
-    // Store in user_preferences table with transaction
-    const client = await db.getClient();
-    
-    try {
-      await client.query('BEGIN');
+    const query = `
+      INSERT INTO user_preferences (user_id, preference_key, preference_value) 
+      VALUES ($1, 'language', $2)
+      ON CONFLICT (user_id, preference_key) 
+      DO UPDATE SET preference_value = $2, updated_at = NOW()
+      RETURNING preference_value, updated_at
+    `;
 
-      const query = `
-        INSERT INTO user_preferences (user_id, preference_key, preference_value) 
-        VALUES ($1, 'language', $2)
-        ON CONFLICT (user_id, preference_key) 
-        DO UPDATE SET preference_value = $2, updated_at = NOW()
-        RETURNING preference_value, updated_at
-      `;
+    const { rows } = await db.query(query, [userId, language]);
 
-      const { rows } = await client.query(query, [userId, language]);
-
-      // Also update user's updated_at timestamp
-      await client.query(
-        'UPDATE users SET updated_at = NOW() WHERE id = $1',
-        [userId]
-      );
-
-      await client.query('COMMIT');
-
-      res.json({
-        success: true,
-        message: `Language preference updated to ${languageInfo.name}`,
-        language: rows[0].preference_value,
-        language_info: languageInfo,
-        updated_at: rows[0].updated_at,
-        is_rtl: languageInfo.rtl
-      });
-
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+    res.json({
+      success: true,
+      message: `Language preference updated to ${languageInfo.name}`,
+      language: rows[0].preference_value,
+      language_info: languageInfo,
+      updated_at: rows[0].updated_at,
+      is_rtl: languageInfo.rtl
+    });
   }),
 
-  // Update multiple appearance settings at once
+  // Update multiple appearance settings at once - FIXED: Simplified
   updateAppearanceSettings: asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { theme, language, fontSize, reducedMotion, highContrast } = req.body;
 
     const updates = [];
-    
+
     if (theme) {
       const validThemes = ['light', 'dark', 'auto', 'system'];
       if (!validThemes.includes(theme)) {
@@ -171,12 +130,6 @@ const appearanceController = {
         `;
         await client.query(query, [userId, update.key, update.value]);
       }
-
-      // Update user's updated_at timestamp
-      await client.query(
-        'UPDATE users SET updated_at = NOW() WHERE id = $1',
-        [userId]
-      );
 
       await client.query('COMMIT');
 
@@ -249,50 +202,29 @@ const appearanceController = {
     });
   }),
 
-  // Reset appearance settings to defaults
+  // Reset appearance settings to defaults - FIXED: Simplified
   resetAppearanceSettings: asyncHandler(async (req, res) => {
     const userId = req.user.id;
 
-    const client = await db.getClient();
+    await db.query(`
+      DELETE FROM user_preferences 
+      WHERE user_id = $1 AND preference_key IN (
+        'theme', 'language', 'font_size', 'reduced_motion', 'high_contrast'
+      )
+    `, [userId]);
 
-    try {
-      await client.query('BEGIN');
-
-      // Delete all appearance-related preferences
-      await client.query(`
-        DELETE FROM user_preferences 
-        WHERE user_id = $1 AND preference_key IN (
-          'theme', 'language', 'font_size', 'reduced_motion', 'high_contrast'
-        )
-      `, [userId]);
-
-      // Update user's updated_at timestamp
-      await client.query(
-        'UPDATE users SET updated_at = NOW() WHERE id = $1',
-        [userId]
-      );
-
-      await client.query('COMMIT');
-
-      res.json({
-        success: true,
-        message: 'Appearance settings reset to defaults',
-        reset_settings: ['theme', 'language', 'font_size', 'reduced_motion', 'high_contrast'],
-        default_values: {
-          theme: 'dark',
-          language: 'en',
-          font_size: 'normal',
-          reduced_motion: false,
-          high_contrast: false
-        }
-      });
-
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+    res.json({
+      success: true,
+      message: 'Appearance settings reset to defaults',
+      reset_settings: ['theme', 'language', 'font_size', 'reduced_motion', 'high_contrast'],
+      default_values: {
+        theme: 'dark',
+        language: 'en',
+        font_size: 'normal',
+        reduced_motion: false,
+        high_contrast: false
+      }
+    });
   })
 };
 
