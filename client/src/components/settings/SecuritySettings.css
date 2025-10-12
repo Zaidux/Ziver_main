@@ -629,3 +629,31 @@
     gap: 0.5rem;
   }
 }
+
+/* Fix for 2FA modal actions */
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.modal-actions .btn {
+  flex: 1;
+  min-height: 44px; /* Better touch target */
+}
+
+/* Ensure backup codes don't push buttons out of view */
+.backup-codes {
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 1rem 0;
+}
+
+.codes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
