@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../../hooks/useSettings';
+import { useTheme } from '../../context/ThemeContext';
 import { SUPPORTED_LANGUAGES, THEME_OPTIONS } from '../../constants/settings';
 import { 
   Sun, 
@@ -8,17 +9,23 @@ import {
   Globe,
   ArrowLeft,
   Check,
-  Monitor
+  Monitor,
+  Smartphone
 } from 'lucide-react';
 import './AppearanceSettings.css';
 
 const AppearanceSettings = () => {
   const navigate = useNavigate();
   const { loading, error, updateSetting, getSetting, clearError } = useSettings();
+  const { theme: currentTheme, toggleTheme } = useTheme();
   
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState(currentTheme);
   const [language, setLanguage] = useState('en');
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    setTheme(currentTheme);
+  }, [currentTheme]);
 
   useEffect(() => {
     loadAppearanceSettings();
@@ -27,8 +34,8 @@ const AppearanceSettings = () => {
   const loadAppearanceSettings = async () => {
     const result = await getSetting('/settings/appearance');
     if (result.success) {
-      setTheme(result.data.settings.theme || 'dark');
-      setLanguage(result.data.settings.language || 'en');
+      setTheme(result.data.settings.theme?.value || currentTheme);
+      setLanguage(result.data.settings.language?.value || 'en');
     }
   };
 
@@ -41,20 +48,31 @@ const AppearanceSettings = () => {
     clearError();
     setTheme(newTheme);
     
+    // Update local state immediately for better UX
+    toggleTheme(newTheme);
+
+    // Save to server
     const result = await updateSetting('/settings/appearance/theme', { theme: newTheme });
     if (result.success) {
       showMessage('Theme updated successfully');
+    } else {
+      // Revert if server save failed
+      toggleTheme(currentTheme);
+      setTheme(currentTheme);
     }
   };
 
   const handleLanguageChange = async (newLanguage) => {
     clearError();
     setLanguage(newLanguage);
-    
+
     const result = await updateSetting('/settings/appearance/language', { language: newLanguage });
     if (result.success) {
       const languageName = SUPPORTED_LANGUAGES.find(lang => lang.code === newLanguage)?.name;
       showMessage(`Language changed to ${languageName}`);
+    } else {
+      // Revert if server save failed
+      setLanguage(language);
     }
   };
 
@@ -63,8 +81,31 @@ const AppearanceSettings = () => {
       case 'light': return Sun;
       case 'dark': return Moon;
       case 'auto': return Monitor;
+      case 'system': return Smartphone;
       default: return Globe;
     }
+  };
+
+  const getThemePreviewStyles = (themeValue) => {
+    const isLight = themeValue === 'light';
+    return {
+      previewHeader: {
+        background: isLight ? '#F1F5F9' : '#3A3A3A',
+        borderBottom: `1px solid ${isLight ? '#E2E8F0' : '#404040'}`
+      },
+      previewSidebar: {
+        background: isLight ? '#F8FAFC' : '#2A2A2A'
+      },
+      previewMain: {
+        background: isLight ? '#FFFFFF' : '#1A1A1A'
+      },
+      previewLine: {
+        background: isLight ? '#F1F5F9' : '#3A3A3A'
+      },
+      windowDots: {
+        background: isLight ? '#CBD5E1' : '#666666'
+      }
+    };
   };
 
   return (
@@ -111,6 +152,8 @@ const AppearanceSettings = () => {
           <div className="theme-grid">
             {THEME_OPTIONS.map(option => {
               const IconComponent = getThemeIcon(option.value);
+              const previewStyles = getThemePreviewStyles(option.value);
+              
               return (
                 <div
                   key={option.value}
@@ -118,23 +161,41 @@ const AppearanceSettings = () => {
                   onClick={() => handleThemeChange(option.value)}
                 >
                   <div className="theme-preview">
-                    <div className="preview-header">
+                    <div 
+                      className="preview-header"
+                      style={previewStyles.previewHeader}
+                    >
                       <div className="window-dots">
-                        <span></span>
-                        <span></span>
-                        <span></span>
+                        <span style={{ background: previewStyles.windowDots.background }}></span>
+                        <span style={{ background: previewStyles.windowDots.background }}></span>
+                        <span style={{ background: previewStyles.windowDots.background }}></span>
                       </div>
                     </div>
                     <div className="preview-content">
-                      <div className="preview-sidebar"></div>
-                      <div className="preview-main">
-                        <div className="preview-line short"></div>
-                        <div className="preview-line medium"></div>
-                        <div className="preview-line long"></div>
+                      <div 
+                        className="preview-sidebar"
+                        style={previewStyles.previewSidebar}
+                      ></div>
+                      <div 
+                        className="preview-main"
+                        style={previewStyles.previewMain}
+                      >
+                        <div 
+                          className="preview-line short"
+                          style={previewStyles.previewLine}
+                        ></div>
+                        <div 
+                          className="preview-line medium"
+                          style={previewStyles.previewLine}
+                        ></div>
+                        <div 
+                          className="preview-line long"
+                          style={previewStyles.previewLine}
+                        ></div>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="theme-info">
                     <IconComponent size={18} />
                     <span>{option.label}</span>
@@ -146,7 +207,21 @@ const AppearanceSettings = () => {
           </div>
         </div>
 
-        {/* Language Section */}
+        {/* Current Theme Info */}
+        <div className="current-theme-info">
+          <div className="theme-badge">
+            <span className="theme-label">Current Theme:</span>
+            <span className="theme-value">{theme}</span>
+          </div>
+          {theme === 'auto' && (
+            <div className="system-theme-info">
+              <Monitor size={14} />
+              <span>Following system preference</span>
+            </div>
+          )}
+        </div>
+
+        {/* Rest of your component remains the same */}
         <div className="settings-section">
           <h2>Language & Region</h2>
           <p className="section-description">
