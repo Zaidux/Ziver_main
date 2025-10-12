@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../../context/AuthContext';
 import { ArrowLeft, Paperclip, Send, AlertCircle, CheckCircle } from 'lucide-react';
 import './FeedbackPage.css';
 
