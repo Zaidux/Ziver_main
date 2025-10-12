@@ -6,7 +6,8 @@ const {
   googleAuth,
   googleCallback,
   getReferrerInfo,
-  createPendingReferral
+  createPendingReferral,
+  verify2FALogin
 } = require('../controllers/authController');
 
 // @route   POST /api/auth/register
@@ -38,5 +39,10 @@ router.get('/referrer-info/:referralCode', getReferrerInfo);
 // @desc    Create a pending referral
 // @access  Public
 router.post('/pending-referral', createPendingReferral);
+
+// @route   POST /api/auth/verify-2fa
+// @desc    Verify 2FA code and complete login
+// @access  Public
+router.post('/verify-2fa', verify2FALogin);
 
 module.exports = router;
