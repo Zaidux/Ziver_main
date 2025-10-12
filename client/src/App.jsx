@@ -21,6 +21,9 @@ import LoadingScreen from './components/LoadingScreen';
 // Profile-related imports
 import ProfilePage from './pages/profile/pages/ProfilePage';
 
+// NEW: Import Feedback Page
+import FeedbackPage from './pages/profile/pages/FeedbackPage';
+
 // Settings Pages (thin wrappers)
 import SettingsPage from './pages/profile/pages/settings/SettingsPage';
 import AppearanceSettingsPage from './pages/profile/pages/settings/AppearanceSettingsPage';
@@ -167,6 +170,9 @@ const AppRoutes = ({ user, isLockdown }) => (
 
             {/* Profile Page */}
             <Route path="/profile" element={<ProfilePage />} />
+
+            {/* NEW: Feedback Page */}
+            <Route path="/feedback" element={<FeedbackPage />} />
 
             {/* New Settings Pages */}
             <Route path="/settings" element={<SettingsPage />} />
