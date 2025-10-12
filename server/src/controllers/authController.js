@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../config/db');
 const { sendReferralNotification } = require('./telegramController');
 const { OAuth2Client } = require('google-auth-library');
+const TwoFactorUtils = require('../utils/twoFactor');
 
 // Initialize Google OAuth client
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -19,14 +20,32 @@ const generateReferralCode = (length = 6) => {
 };
 
 // Helper function to generate a JWT
-const generateToken = (user) => {
+const generateToken = (user, options = {}) => {
+  const payload = { 
+    id: user.id,
+    role: user.role
+  };
+
+  // Add 2FA status if provided
+  if (options.twoFactorPending) {
+    payload.twoFactorPending = true;
+  }
+
+  return jwt.sign(payload, process.env.JWT_SECRET, { 
+    expiresIn: options.twoFactorPending ? '15m' : '30d' // Short expiry for 2FA pending tokens
+  });
+};
+
+// Generate temporary token for 2FA verification
+const generate2FAToken = (user) => {
   return jwt.sign(
     { 
       id: user.id,
-      role: user.role
+      twoFactorPending: true,
+      temp: true
     }, 
     process.env.JWT_SECRET, 
-    { expiresIn: '30d' }
+    { expiresIn: '15m' } // 15 minutes for 2FA verification
   );
 };
 
@@ -78,7 +97,7 @@ const googleCallback = asyncHandler(async (req, res) => {
         const newUserQuery = `
           INSERT INTO users (username, email, google_id, auth_provider, avatar_url, referral_code, zp_balance) 
           VALUES ($1, $2, $3, $4, $5, $6, 100) 
-          RETURNING id, username, email, created_at, role, zp_balance, social_capital_score, avatar_url, auth_provider
+          RETURNING id, username, email, created_at, role, zp_balance, social_capital_score, avatar_url, auth_provider, two_factor_enabled
         `;
 
         const newUserResult = await client.query(newUserQuery, [
@@ -94,7 +113,19 @@ const googleCallback = asyncHandler(async (req, res) => {
         );
       }
 
-      // Generate JWT token
+      // Check if 2FA is enabled
+      if (user.two_factor_enabled) {
+        // Generate temporary token for 2FA verification
+        const tempToken = generate2FAToken(user);
+        
+        await client.query('COMMIT');
+        
+        // Redirect to frontend with temp token for 2FA
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        return res.redirect(`${frontendUrl}/auth/2fa?token=${tempToken}&isNewUser=${!userResult.rows[0]}`);
+      }
+
+      // Generate full JWT token (no 2FA required)
       const token = generateToken(user);
 
       await client.query('COMMIT');
@@ -221,9 +252,9 @@ const googleAuth = asyncHandler(async (req, res) => {
   try {
     // Check if it's an access token (starts with 'ya29.') or ID token
     const isAccessToken = googleToken.startsWith('ya29.');
-    
+
     let payload;
-    
+
     if (isAccessToken) {
       console.log('Processing Google access token');
       // For access tokens, we need to get user info from Google API
@@ -232,13 +263,13 @@ const googleAuth = asyncHandler(async (req, res) => {
           'Authorization': `Bearer ${googleToken}`
         }
       });
-      
+
       if (!userInfoResponse.ok) {
         throw new Error('Failed to fetch user info from Google');
       }
-      
+
       const userInfo = await userInfoResponse.json();
-      
+
       // Create a payload similar to what verifyIdToken would return
       payload = {
         sub: userInfo.sub, // Google ID
@@ -247,9 +278,9 @@ const googleAuth = asyncHandler(async (req, res) => {
         picture: userInfo.picture,
         email_verified: userInfo.email_verified
       };
-      
+
       console.log('User info from access token:', payload.email);
-      
+
     } else {
       console.log('Processing Google ID token');
       // For ID tokens, verify normally
@@ -308,7 +339,7 @@ const googleAuth = asyncHandler(async (req, res) => {
         console.log('No existing user found, creating new user with email:', email);
         isNewUser = true;
         const newReferralCode = generateReferralCode();
-        
+
         // Generate username from name or email
         let username;
         if (name) {
@@ -320,7 +351,7 @@ const googleAuth = asyncHandler(async (req, res) => {
         const newUserQuery = `
           INSERT INTO users (username, email, google_id, auth_provider, avatar_url, referral_code, zp_balance) 
           VALUES ($1, $2, $3, $4, $5, $6, 100) 
-          RETURNING id, username, email, created_at, role, zp_balance, social_capital_score, avatar_url, auth_provider
+          RETURNING id, username, email, created_at, role, zp_balance, social_capital_score, avatar_url, auth_provider, two_factor_enabled
         `;
 
         const newUserResult = await client.query(newUserQuery, [
@@ -373,8 +404,29 @@ const googleAuth = asyncHandler(async (req, res) => {
       referral_code: user.referral_code,
       referred_by: user.referred_by,
       avatar_url: user.avatar_url,
-      auth_provider: user.auth_provider
+      auth_provider: user.auth_provider,
+      two_factor_enabled: user.two_factor_enabled
     };
+
+    // Check if 2FA is enabled
+    if (user.two_factor_enabled) {
+      console.log('2FA is enabled for user, generating temporary token');
+      const tempToken = generate2FAToken(user);
+      
+      await client.query('COMMIT');
+
+      return res.json({
+        user: userResponseData,
+        token: tempToken,
+        appSettings,
+        isNewUser: isNewUser,
+        twoFactorRequired: true,
+        message: 'Two-factor authentication required'
+      });
+    }
+
+    // No 2FA required - generate full token
+    const token = generateToken(user);
 
     await client.query('COMMIT');
 
@@ -382,9 +434,10 @@ const googleAuth = asyncHandler(async (req, res) => {
 
     res.json({
       user: userResponseData,
-      token: generateToken(user),
+      token: token,
       appSettings,
-      isNewUser: isNewUser
+      isNewUser: isNewUser,
+      twoFactorRequired: false
     });
 
   } catch (error) {
@@ -555,7 +608,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const newUserQuery = `
       INSERT INTO users (username, email, password_hash, referral_code, zp_balance, auth_provider) 
       VALUES ($1, $2, $3, $4, 100, 'email') 
-      RETURNING id, username, email, created_at, role, zp_balance, social_capital_score
+      RETURNING id, username, email, created_at, role, zp_balance, social_capital_score, two_factor_enabled
     `;
     const newUserResult = await client.query(newUserQuery, [username, email, hashedPassword, newReferralCode]);
     const user = newUserResult.rows[0];
@@ -634,7 +687,8 @@ const registerUser = asyncHandler(async (req, res) => {
       referralApplied: !!referrerInfo,
       referrer: referrerInfo,
       bonusReceived: referrerInfo ? 100 : 0,
-      auth_provider: 'email'
+      auth_provider: 'email',
+      two_factor_enabled: user.two_factor_enabled
     };
 
     if (referrerInfo) {
@@ -655,7 +709,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 });
 
-// --- Controller for User Login ---
+// --- UPDATED: Controller for User Login with 2FA Support ---
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const client = await db.getClient();
@@ -684,13 +738,32 @@ const loginUser = asyncHandler(async (req, res) => {
         referral_code: user.referral_code,
         referred_by: user.referred_by,
         avatar_url: user.avatar_url,
-        auth_provider: user.auth_provider
+        auth_provider: user.auth_provider,
+        two_factor_enabled: user.two_factor_enabled
       };
+
+      // Check if 2FA is enabled
+      if (user.two_factor_enabled) {
+        console.log('2FA is enabled for user, generating temporary token');
+        const tempToken = generate2FAToken(user);
+
+        return res.json({
+          user: userResponseData,
+          token: tempToken,
+          appSettings,
+          twoFactorRequired: true,
+          message: 'Two-factor authentication required'
+        });
+      }
+
+      // No 2FA required - generate full token
+      const token = generateToken(user);
 
       res.json({
         user: userResponseData,
-        token: generateToken(user),
+        token: token,
         appSettings,
+        twoFactorRequired: false
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
@@ -703,11 +776,129 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 });
 
+// --- NEW: Verify 2FA Code and Complete Login ---
+const verify2FALogin = asyncHandler(async (req, res) => {
+  const { token: tempToken, verificationCode } = req.body;
+
+  if (!tempToken || !verificationCode) {
+    return res.status(400).json({ 
+      success: false,
+      message: 'Token and verification code are required' 
+    });
+  }
+
+  try {
+    // Verify the temporary token
+    const decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
+    
+    if (!decoded.twoFactorPending) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid token for 2FA verification'
+      });
+    }
+
+    const userId = decoded.id;
+
+    // Get user's 2FA secret
+    const userResult = await db.query(
+      'SELECT two_factor_secret, two_factor_enabled FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const user = userResult.rows[0];
+
+    if (!user.two_factor_enabled) {
+      return res.status(400).json({
+        success: false,
+        message: 'Two-factor authentication is not enabled for this user'
+      });
+    }
+
+    if (!user.two_factor_secret) {
+      return res.status(400).json({
+        success: false,
+        message: 'Two-factor authentication not properly configured'
+      });
+    }
+
+    // Verify the 2FA code
+    const isValid = TwoFactorUtils.verifyToken(user.two_factor_secret, verificationCode);
+
+    if (!isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid verification code'
+      });
+    }
+
+    // Get complete user data
+    const fullUserResult = await db.query(
+      `SELECT 
+        id, username, email, role, zp_balance, social_capital_score,
+        mining_session_start_time, last_claim_time, daily_streak_count,
+        referral_code, referred_by, avatar_url, auth_provider
+       FROM users WHERE id = $1`,
+      [userId]
+    );
+
+    const fullUser = fullUserResult.rows[0];
+
+    // Get app settings
+    const settingsResult = await db.query('SELECT * FROM app_settings');
+    const appSettings = settingsResult.rows.reduce((acc, setting) => {
+      acc[setting.setting_key] = setting.setting_value;
+      return acc;
+    }, {});
+
+    // Generate full access token
+    const accessToken = generateToken(fullUser);
+
+    res.json({
+      success: true,
+      user: fullUser,
+      token: accessToken,
+      appSettings,
+      message: 'Two-factor authentication successful'
+    });
+
+  } catch (error) {
+    console.error('2FA verification error:', error);
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Verification session expired. Please login again.'
+      });
+    }
+
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid verification token'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Error during 2FA verification'
+    });
+  }
+});
+
 module.exports = {
   registerUser,
   loginUser,
   googleAuth,
   googleCallback,
   getReferrerInfo,
-  createPendingReferral
+  createPendingReferral,
+  verify2FALogin
 };
