@@ -657,3 +657,105 @@
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
+
+/* Disable 2FA Modal Styles */
+.verification-methods {
+  margin-top: 1rem;
+}
+
+.method-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.method-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.method-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.method-tab.active {
+  color: #00FF80;
+  border-bottom-color: #00FF80;
+  background: rgba(0, 255, 128, 0.1);
+}
+
+.backup-code-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  color: #FFFFFF;
+  font-size: 1rem;
+  font-family: monospace;
+  letter-spacing: 1px;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.backup-code-input:focus {
+  outline: none;
+  border-color: #00FF80;
+  box-shadow: 0 0 0 3px rgba(0, 255, 128, 0.1);
+}
+
+.security-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 8px;
+  margin: 1.5rem 0;
+  color: #FFC107;
+}
+
+.security-warning p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-warning:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+}
+
+.btn-warning:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.input-hint {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
