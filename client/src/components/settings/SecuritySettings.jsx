@@ -36,9 +36,15 @@ const SecuritySettings = () => {
   const [formErrors, setFormErrors] = useState({});
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [show2FASetup, setShow2FASetup] = useState(false);
+  const [showDisable2FA, setShowDisable2FA] = useState(false); // NEW: Disable 2FA modal
   const [qrCodeData, setQrCodeData] = useState(null);
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [backupCodes, setBackupCodes] = useState([]);
+  
+  // NEW: Disable 2FA states
+  const [disableVerificationCode, setDisableVerificationCode] = useState('');
+  const [disableBackupCode, setDisableBackupCode] = useState('');
+  const [verificationMethod, setVerificationMethod] = useState('code'); // 'code' or 'backup'
 
   // Password states
   const [currentPassword, setCurrentPassword] = useState('');
@@ -63,7 +69,7 @@ const SecuritySettings = () => {
     try {
       const result = await getSetting('/settings/security');
       frontendDebugLog('loadSecuritySettings', 'Security settings loaded', { success: result.success });
-      
+
       if (result.success) {
         setTwoFactorEnabled(result.data.settings.two_factor_enabled || false);
         frontendDebugLog('loadSecuritySettings', '2FA status set', { enabled: result.data.settings.two_factor_enabled });
@@ -138,6 +144,7 @@ const SecuritySettings = () => {
     }
   };
 
+  // UPDATED: Handle 2FA toggle with disable verification
   const handleToggle2FA = async () => {
     frontendDebugLog('handleToggle2FA', 'Toggling 2FA', { currentState: twoFactorEnabled });
     clearError();
@@ -148,17 +155,61 @@ const SecuritySettings = () => {
       return;
     }
 
-    frontendDebugLog('handleToggle2FA', 'Disabling 2FA');
+    // Show disable verification modal instead of directly calling API
+    frontendDebugLog('handleToggle2FA', 'Showing disable 2FA verification modal');
+    setShowDisable2FA(true);
+  };
+
+  // NEW: Handle disable 2FA with verification
+  const handleDisable2FA = async (e) => {
+    e.preventDefault();
+    frontendDebugLog('handleDisable2FA', 'Disabling 2FA with verification', { 
+      method: verificationMethod,
+      hasCode: !!disableVerificationCode,
+      hasBackupCode: !!disableBackupCode
+    });
+    clearError();
+    setFormErrors({});
+
+    // Validate input based on selected method
+    if (verificationMethod === 'code' && (!disableVerificationCode || disableVerificationCode.length !== 6)) {
+      frontendDebugLog('handleDisable2FA', 'Invalid verification code', { code: disableVerificationCode });
+      setFormErrors({ disableVerificationCode: 'Please enter a valid 6-digit code' });
+      return;
+    }
+
+    if (verificationMethod === 'backup' && !disableBackupCode) {
+      frontendDebugLog('handleDisable2FA', 'No backup code provided');
+      setFormErrors({ disableBackupCode: 'Please enter a backup code' });
+      return;
+    }
+
+    // Prepare request data based on verification method
+    const disableData = {
+      enable: false
+    };
+
+    if (verificationMethod === 'code') {
+      disableData.verificationCode = disableVerificationCode;
+    } else {
+      disableData.backupCode = disableBackupCode;
+    }
+
+    frontendDebugLog('handleDisable2FA', 'Calling updateSetting to disable 2FA', { data: disableData });
     const result = await updateSetting(
       '/settings/security/two-factor',
-      { enable: false }
+      disableData
     );
 
-    frontendDebugLog('handleToggle2FA', '2FA disable result', { success: result.success, error: result.error });
+    frontendDebugLog('handleDisable2FA', '2FA disable result', { success: result.success, error: result.error });
 
     if (result.success) {
       setTwoFactorEnabled(false);
-      showMessage('Two-factor authentication disabled');
+      setShowDisable2FA(false);
+      setDisableVerificationCode('');
+      setDisableBackupCode('');
+      setVerificationMethod('code');
+      showMessage('Two-factor authentication disabled successfully');
     }
   };
 
@@ -201,6 +252,21 @@ const SecuritySettings = () => {
     setter(e.target.value);
     clearError();
     setFormErrors(prev => ({ ...prev, [e.target.name]: '' }));
+  };
+
+  // NEW: Reset disable 2FA form
+  const resetDisable2FAForm = () => {
+    setDisableVerificationCode('');
+    setDisableBackupCode('');
+    setVerificationMethod('code');
+    setFormErrors({});
+    clearError();
+  };
+
+  // NEW: Close disable 2FA modal
+  const handleCloseDisable2FA = () => {
+    setShowDisable2FA(false);
+    resetDisable2FAForm();
   };
 
   const renderPasswordStrength = () => {
@@ -538,6 +604,125 @@ const SecuritySettings = () => {
                     </form>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* NEW: Disable 2FA Verification Modal */}
+      {showDisable2FA && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Disable Two-Factor Authentication</h3>
+              <button 
+                className="close-button"
+                onClick={handleCloseDisable2FA}
+                disabled={loading}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="verification-methods">
+                <div className="method-tabs">
+                  <button
+                    className={`method-tab ${verificationMethod === 'code' ? 'active' : ''}`}
+                    onClick={() => setVerificationMethod('code')}
+                  >
+                    <Key size={16} />
+                    Verification Code
+                  </button>
+                  <button
+                    className={`method-tab ${verificationMethod === 'backup' ? 'active' : ''}`}
+                    onClick={() => setVerificationMethod('backup')}
+                  >
+                    <Shield size={16} />
+                    Backup Code
+                  </button>
+                </div>
+
+                <form onSubmit={handleDisable2FA}>
+                  {verificationMethod === 'code' && (
+                    <div className="form-group">
+                      <label htmlFor="disableVerificationCode">
+                        Enter 6-digit code from your authenticator app
+                      </label>
+                      <input
+                        type="text"
+                        id="disableVerificationCode"
+                        name="disableVerificationCode"
+                        value={disableVerificationCode}
+                        onChange={(e) => setDisableVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        placeholder="000000"
+                        maxLength={6}
+                        className="code-input"
+                        required
+                      />
+                      {formErrors.disableVerificationCode && (
+                        <span className="field-error">{formErrors.disableVerificationCode}</span>
+                      )}
+                      <div className="input-hint">
+                        Enter the current code from your authenticator app (Google Authenticator, Authy, etc.)
+                      </div>
+                    </div>
+                  )}
+
+                  {verificationMethod === 'backup' && (
+                    <div className="form-group">
+                      <label htmlFor="disableBackupCode">
+                        Enter a backup code
+                      </label>
+                      <input
+                        type="text"
+                        id="disableBackupCode"
+                        name="disableBackupCode"
+                        value={disableBackupCode}
+                        onChange={(e) => setDisableBackupCode(e.target.value.toUpperCase())}
+                        placeholder="XXXX-XXXX-XXXX"
+                        className="backup-code-input"
+                        required
+                      />
+                      {formErrors.disableBackupCode && (
+                        <span className="field-error">{formErrors.disableBackupCode}</span>
+                      )}
+                      <div className="input-hint">
+                        Enter one of your backup codes. Each code can only be used once.
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="security-warning">
+                    <AlertTriangle size={16} />
+                    <p>Disabling two-factor authentication reduces your account security.</p>
+                  </div>
+
+                  <div className="modal-actions">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={handleCloseDisable2FA}
+                      disabled={loading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-warning"
+                      disabled={loading || 
+                        (verificationMethod === 'code' && disableVerificationCode.length !== 6) ||
+                        (verificationMethod === 'backup' && !disableBackupCode)
+                      }
+                    >
+                      {loading ? (
+                        <Loader size={16} className="spinner" />
+                      ) : (
+                        'Disable 2FA'
+                      )}
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
