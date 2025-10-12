@@ -56,7 +56,7 @@ const register = async (username, email, password, referralCode = null) => {
   }
 };
 
-// Login user
+// Login user with 2FA support
 const login = async (email, password) => {
   try {
     const response = await api.post('/auth/login', {
@@ -76,7 +76,7 @@ const login = async (email, password) => {
   }
 };
 
-// Google OAuth login/register
+// Google OAuth login/register with 2FA support
 const googleAuth = async (googleToken, referralCode = null) => {
   try {
     const response = await api.post('/auth/google', {
@@ -88,6 +88,26 @@ const googleAuth = async (googleToken, referralCode = null) => {
     console.error('Google OAuth error:', error);
 
     let errorMessage = 'Google authentication failed. Please try again.';
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    }
+
+    throw new Error(errorMessage);
+  }
+};
+
+// NEW: Verify 2FA code and complete login
+const verify2FA = async (tempToken, verificationCode) => {
+  try {
+    const response = await api.post('/auth/verify-2fa', {
+      token: tempToken,
+      verificationCode
+    });
+    return response.data;
+  } catch (error) {
+    console.error('2FA verification error:', error);
+
+    let errorMessage = 'Two-factor authentication failed. Please try again.';
     if (error.response?.data?.message) {
       errorMessage = error.response.data.message;
     }
@@ -133,6 +153,7 @@ const authService = {
   register,
   login,
   googleAuth,
+  verify2FA, // NEW: Added 2FA verification
   logout,
   getCurrentUser,
   validateReferralCode
