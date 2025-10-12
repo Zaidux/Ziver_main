@@ -10,6 +10,8 @@ router.post('/security/two-factor', protect, settingsController.security.toggleT
 router.get('/security/two-factor/setup', protect, settingsController.security.generateTwoFactorSetup);
 router.post('/security/backup-codes', protect, settingsController.security.generateBackupCodes);
 router.get('/security', protect, settingsController.security.getSecuritySettings);
+router.post('/security/two-factor/verify', protect, settingsController.security.verifyTwoFactor);
+router.get('/security/two-factor/status', protect, settingsController.security.getTwoFactorStatus);
 
 // Appearance routes
 router.put('/appearance/theme', protect, settingsController.appearance.updateTheme);
