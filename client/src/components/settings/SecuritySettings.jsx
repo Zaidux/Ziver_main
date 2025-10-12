@@ -19,7 +19,7 @@ import './SecuritySettings.css';
 const SecuritySettings = () => {
   const navigate = useNavigate();
   const { loading, error, updateSetting, getSetting, clearError } = useSettings();
-  
+
   const [message, setMessage] = useState('');
   const [formErrors, setFormErrors] = useState({});
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
@@ -90,17 +90,18 @@ const SecuritySettings = () => {
   const handleGenerate2FASetup = async () => {
     clearError();
     const result = await getSetting('/settings/security/two-factor/setup');
-    
+
     if (result.success) {
       setQrCodeData(result.data);
       setShow2FASetup(true);
+      // FIX: Handle case where backupCodes might not be in response yet
       setBackupCodes(result.data.backupCodes || []);
     }
   };
 
   const handleToggle2FA = async () => {
     clearError();
-    
+
     if (!twoFactorEnabled) {
       await handleGenerate2FASetup();
       return;
@@ -136,6 +137,10 @@ const SecuritySettings = () => {
       setTwoFactorEnabled(true);
       setShow2FASetup(false);
       setTwoFactorCode('');
+      // FIX: Get backup codes from the enable response if available
+      if (result.data.backupCodes) {
+        setBackupCodes(result.data.backupCodes);
+      }
       showMessage('Two-factor authentication enabled successfully');
     }
   };
@@ -148,7 +153,7 @@ const SecuritySettings = () => {
 
   const renderPasswordStrength = () => {
     if (!newPassword) return null;
-    
+
     return (
       <div className="password-strength-indicator">
         <div className="strength-label">
@@ -434,7 +439,8 @@ const SecuritySettings = () => {
                         className="code-input"
                       />
                       {formErrors.twoFactorCode && <span className="field-error">{formErrors.twoFactorCode}</span>}
-                      
+
+                      {/* FIX: Only show backup codes section if we have backup codes */}
                       {backupCodes.length > 0 && (
                         <div className="backup-codes">
                           <h5>🔐 Backup Codes</h5>
