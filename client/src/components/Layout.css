@@ -1,3 +1,360 @@
+/* Global Header Styles */
+.global-header {
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.logo-icon {
+  font-size: 1.75rem;
+  animation: logoPulse 2s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Header Actions */
+.header-actions {
+  position: relative;
+}
+
+.actions-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Theme Toggle Button */
+.theme-toggle-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle-button:hover {
+  background: var(--primary-alpha);
+  border-color: var(--primary);
+  transform: scale(1.05);
+}
+
+/* Profile Dropdown Styles */
+.profile-dropdown-button.global {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-dropdown-button.global:hover {
+  background: var(--primary-alpha);
+  border-color: var(--primary);
+}
+
+.profile-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  overflow: hidden;
+}
+
+.profile-arrow {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.profile-dropdown-button.global:hover .profile-arrow {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu */
+.profile-dropdown-menu.global {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.75rem;
+  min-width: 280px;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  margin-top: 0.5rem;
+  animation: dropdownSlide 0.2s ease;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0.5rem;
+}
+
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.125rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.user-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-email {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-theme {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 0.5rem 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.dropdown-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.dropdown-item.feedback {
+  color: var(--primary);
+}
+
+.dropdown-item.logout {
+  color: var(--error);
+}
+
+.dropdown-item.logout:hover {
+  background: var(--error-bg);
+}
+
+/* Avatar Images */
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* Navbar Container with Toggle */
+.navbar-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.navbar-container.collapsed {
+  transform: translateY(100%);
+}
+
+.navbar-toggle {
+  position: absolute;
+  top: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48px;
+  height: 32px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 1001;
+}
+
+.navbar-toggle:hover {
+  background: var(--primary-alpha);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Main Content Area */
+.main-content {
+  min-height: calc(100vh - 140px);
+  padding-bottom: 90px;
+}
+
+/* When navbar is collapsed */
+.app-container.navbar-collapsed .main-content {
+  padding-bottom: 20px;
+}
+
+/* Safe area support */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .navbar-container {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .main-content {
+    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+  }
+  
+  .app-container.navbar-collapsed .main-content {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-content {
+    padding: 0 1rem;
+  }
+  
+  .profile-dropdown-menu.global {
+    min-width: 250px;
+    right: 1rem;
+  }
+  
+  .header-logo {
+    font-size: 1.25rem;
+  }
+  
+  .logo-icon {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .global-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .profile-dropdown-menu.global {
+    min-width: 220px;
+  }
+  
+  .user-details {
+    min-width: 120px;
+  }
+  
+  .actions-container {
+    gap: 0.5rem;
+  }
+  
+  .theme-toggle-button {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Lockdown Banner Styles (keep your existing ones) */
 .admin-lockdown-banner {
   position: sticky;
   top: 0;
@@ -57,210 +414,4 @@
   60% {
     transform: translateY(-1px);
   }
-}
-
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-  .lockdown-indicator {
-    flex-direction: column;
-    gap: 6px;
-  }
-  
-  .lockdown-text {
-    font-size: 0.9rem;
-  }
-  
-  .lockdown-message {
-    font-size: 0.8rem;
-  }
-}
-
-/* Global Header Styles */
-.global-header {
-  background: #1a1a1a;
-  border-bottom: 1px solid #333;
-  padding: 1rem;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.header-logo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #00ff00;
-}
-
-.logo-icon {
-  font-size: 1.75rem;
-}
-
-/* Profile Dropdown Styles */
-.profile-dropdown-button.global {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.profile-dropdown-button.global:hover {
-  background: #333;
-  border-color: #00ff00;
-}
-
-.profile-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #00ff00;
-  color: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-
-.profile-arrow {
-  font-size: 0.8rem;
-  color: #b0b0b0;
-}
-
-.profile-dropdown-menu.global {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 8px;
-  padding: 0.5rem;
-  min-width: 200px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
-}
-
-.dropdown-user-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border-bottom: 1px solid #333;
-  margin-bottom: 0.5rem;
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #00ff00;
-  color: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1rem;
-}
-
-.user-details {
-  flex: 1;
-}
-
-.user-name {
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 0.25rem;
-}
-
-.user-email {
-  font-size: 0.8rem;
-  color: #b0b0b0;
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.75rem;
-  background: none;
-  border: none;
-  color: #fff;
-  text-align: left;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
-}
-
-.dropdown-item:hover {
-  background: #2a2a2a;
-}
-
-.dropdown-item.feedback {
-  color: #00ff00;
-}
-
-.dropdown-item.logout {
-  color: #ff4444;
-}
-
-.dropdown-item.logout:hover {
-  background: rgba(255, 68, 68, 0.1);
-}
-
-.dropdown-icon {
-  font-size: 1rem;
-  width: 20px;
-  text-align: center;
-}
-
-.dropdown-divider {
-  height: 1px;
-  background: #333;
-  margin: 0.5rem 0;
-}
-
-/* Avatar Styles */
-.profile-avatar, .user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--primary);
-  color: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.875rem;
-  overflow: hidden;
-}
-
-.avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-.user-avatar {
-  width: 48px;
-  height: 48px;
-  font-size: 1.125rem;
 }
