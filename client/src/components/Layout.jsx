@@ -44,18 +44,23 @@ const Layout = () => {
 
   const handleMenuAction = (action) => {
   setShowProfileDropdown(false);
+  console.log('Menu action:', action); // DEBUG
 
   switch (action) {
     case 'profile':
+      console.log('Navigating to /profile'); // DEBUG
       navigate('/profile');
       break;
     case 'settings':
+      console.log('Navigating to /settings'); // DEBUG
       navigate('/settings');
       break;
     case 'feedback':
-      navigate('/feedback'); // NEW: Navigate to feedback page
+      console.log('Navigating to /feedback'); // DEBUG
+      navigate('/feedback');
       break;
     case 'logout':
+      console.log('Logging out'); // DEBUG
       logout();
       break;
     default:
