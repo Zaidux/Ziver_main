@@ -3,9 +3,11 @@
   background: var(--card-bg);
   border-bottom: 1px solid var(--border-color);
   padding: 0.75rem 1rem;
-  position: sticky;
+  position: fixed; /* CHANGED: from sticky to fixed */
   top: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  z-index: 1000; /* INCREASED: for proper layering */
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow);
   height: 60px;
@@ -129,7 +131,7 @@
   padding: 0.75rem;
   min-width: 260px;
   box-shadow: var(--shadow-lg);
-  z-index: 1000;
+  z-index: 1001; /* INCREASED: to appear above header */
   margin-top: 0.5rem;
   animation: dropdownSlide 0.2s ease;
 }
@@ -286,10 +288,12 @@
   border-color: var(--primary);
 }
 
-/* Main Content Area */
+/* Main Content Area - FIXED POSITIONING */
 .main-content {
-  min-height: calc(100vh - 60px);
-  padding-bottom: 80px;
+  min-height: 100vh;
+  padding-top: 60px; /* ADDED: Account for fixed header */
+  padding-bottom: 80px; /* Account for navbar */
+  background-color: var(--bg-primary);
 }
 
 /* When navbar is collapsed */
@@ -297,18 +301,37 @@
   padding-bottom: 20px;
 }
 
+/* Desktop Styles - Hide bottom navbar on larger screens */
+@media (min-width: 1024px) {
+  .navbar-container {
+    display: none; /* HIDE: Bottom navbar on desktop */
+  }
+  
+  .main-content {
+    padding-bottom: 0; /* REMOVE: Bottom padding since navbar is hidden */
+    min-height: calc(100vh - 60px); /* ADJUST: Account for header only */
+  }
+}
+
 /* Safe area support */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .navbar-container {
     padding-bottom: env(safe-area-inset-bottom);
   }
-  
+
   .main-content {
     padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
-  
+
   .app-container.navbar-collapsed .main-content {
     padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  
+  /* Desktop safe area adjustment */
+  @media (min-width: 1024px) {
+    .main-content {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
   }
 }
 
@@ -318,27 +341,28 @@
     padding: 0.5rem 1rem;
     height: 56px;
   }
-  
+
   .header-content {
     padding: 0;
   }
-  
+
   .profile-dropdown-menu.global {
     min-width: 240px;
     right: 0;
   }
-  
+
   .header-logo {
     font-size: 1.1rem;
   }
-  
+
   .logo-icon {
     width: 18px;
     height: 18px;
   }
-  
+
   .main-content {
     min-height: calc(100vh - 56px);
+    padding-top: 56px; /* ADJUST: For smaller header height */
   }
 }
 
@@ -346,29 +370,30 @@
   .global-header {
     padding: 0.5rem;
   }
-  
+
   .profile-dropdown-menu.global {
     min-width: 220px;
+    right: 0.5rem; /* ADDED: Prevent touching screen edges */
   }
-  
+
   .user-details {
     min-width: 120px;
   }
-  
+
   .actions-container {
     gap: 0.5rem;
   }
-  
+
   .theme-toggle-button {
     width: 32px;
     height: 32px;
   }
-  
+
   .profile-dropdown-button.global {
     width: 32px;
     height: 32px;
   }
-  
+
   .profile-avatar {
     width: 24px;
     height: 24px;
@@ -378,17 +403,22 @@
 
 /* Lockdown Banner Styles */
 .admin-lockdown-banner {
-  position: sticky;
-  top: 60px; /* Below header */
+  position: fixed; /* CHANGED: from sticky to fixed */
+  top: 60px; /* Below fixed header */
   left: 0;
   right: 0;
-  z-index: 99;
+  z-index: 999; /* BELOW: header but above content */
   background: linear-gradient(135deg, #ff6b35, #ff8e53);
   color: white;
   padding: 12px 16px;
   box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
   border-bottom: 2px solid #ff4444;
   animation: pulseWarning 2s infinite;
+}
+
+/* ADJUST: Main content when lockdown banner is present */
+.admin-lockdown-banner + .main-content {
+  padding-top: 112px; /* 60px header + 52px banner (approx) */
 }
 
 @keyframes pulseWarning {
@@ -398,4 +428,30 @@
   50% {
     background: linear-gradient(135deg, #ff4444, #ff6b35);
   }
+}
+
+/* App Container Base Styles */
+.app-container {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  position: relative;
+}
+
+/* Ensure proper scrolling behavior */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Remove any default margins that might cause issues */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Smooth transitions for theme changes */
+.app-container,
+.global-header,
+.navbar-container,
+.main-content {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
