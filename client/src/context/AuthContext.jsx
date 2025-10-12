@@ -20,23 +20,23 @@ export const AuthProvider = ({ children, navigate }) => {
       if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
         const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
         const telegramUsername = tgUser.username;
-        
+
         if (telegramUsername && !user.telegram_username) {
           console.log('Auto-saving Telegram username:', telegramUsername);
-          
+
           // Auto-save Telegram username to profile
           await api.post('/user/telegram-auto-save', {
             telegram_username: telegramUsername
           }, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
-          
+
           console.log('Telegram username auto-saved:', telegramUsername);
-          
+
           // Update local user state
           const updatedUser = { ...user, telegram_username: telegramUsername };
           setUser(updatedUser);
-          
+
           // Update localStorage
           const storedData = localStorage.getItem('session');
           if (storedData) {
@@ -44,7 +44,7 @@ export const AuthProvider = ({ children, navigate }) => {
             const updatedSession = { ...sessionData, user: updatedUser };
             localStorage.setItem('session', JSON.stringify(updatedSession));
           }
-          
+
           return true;
         }
       }
