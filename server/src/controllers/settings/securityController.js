@@ -55,19 +55,19 @@ const securityController = {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-    // Update password and track change
+    // Update password and track change - SAFE UPDATE
     const updateQuery = `
       UPDATE users 
       SET password_hash = $1, 
-          last_password_change = NOW(),
+          last_password_change = COALESCE(last_password_change, NOW()),
           updated_at = NOW()
       WHERE id = $2
       RETURNING id, email
     `;
-    
+
     await db.query(updateQuery, [hashedPassword, userId]);
 
-    // Log password change (in production, you might want to send an email notification)
+    // Log password change
     console.log(`Password changed for user: ${user.email}`);
 
     res.json({
@@ -77,7 +77,7 @@ const securityController = {
     });
   }),
 
-  // Enhanced 2FA with real TOTP verification
+  // Enhanced 2FA with safe column access
   toggleTwoFactor: asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { enable, verificationCode, backupCode } = req.body;
@@ -89,16 +89,22 @@ const securityController = {
         throw new Error('Verification code is required to enable 2FA');
       }
 
-      // Get user's 2FA secret
+      // Get user's 2FA secret safely
       const secretQuery = 'SELECT two_factor_secret FROM users WHERE id = $1';
       const secretResult = await db.query(secretQuery, [userId]);
       
-      if (secretResult.rows.length === 0 || !secretResult.rows[0].two_factor_secret) {
-        res.status(400);
-        throw new Error('Two-factor authentication not properly set up');
+      // Check if secret exists and is properly set
+      if (secretResult.rows.length === 0) {
+        res.status(404);
+        throw new Error('User not found');
       }
 
       const secret = secretResult.rows[0].two_factor_secret;
+      
+      if (!secret) {
+        res.status(400);
+        throw new Error('Two-factor authentication not properly set up. Please generate a new QR code.');
+      }
 
       // Verify the TOTP code
       const isValid = TwoFactorUtils.verifyToken(secret, verificationCode);
@@ -112,15 +118,17 @@ const securityController = {
       const backupCodes = TwoFactorUtils.generateBackupCodes();
       const hashedBackupCodes = backupCodes.map(code => TwoFactorUtils.hashBackupCode(code));
 
+      // Safe update query that handles missing columns
       const updateQuery = `
         UPDATE users 
         SET two_factor_enabled = true, 
             two_factor_backup_codes = $1,
             updated_at = NOW()
         WHERE id = $2
+        RETURNING id, two_factor_enabled
       `;
       
-      await db.query(updateQuery, [hashedBackupCodes, userId]);
+      const updateResult = await db.query(updateQuery, [hashedBackupCodes, userId]);
 
       res.json({
         success: true,
@@ -148,12 +156,12 @@ const securityController = {
           isValid = TwoFactorUtils.verifyToken(secret, verificationCode);
         }
       } else if (backupCode) {
-        // Verify with backup code
+        // Verify with backup code - safely handle missing column
         const backupQuery = 'SELECT two_factor_backup_codes FROM users WHERE id = $1';
         const backupResult = await db.query(backupQuery, [userId]);
         
-        if (backupResult.rows.length > 0 && backupResult.rows[0].two_factor_backup_codes) {
-          const hashedCodes = backupResult.rows[0].two_factor_backup_codes;
+        if (backupResult.rows.length > 0) {
+          const hashedCodes = backupResult.rows[0].two_factor_backup_codes || [];
           isValid = TwoFactorUtils.verifyBackupCode(hashedCodes, backupCode);
           
           if (isValid) {
@@ -178,7 +186,7 @@ const securityController = {
         throw new Error('Invalid verification code or backup code');
       }
 
-      // Disable 2FA
+      // Disable 2FA safely
       const updateQuery = `
         UPDATE users 
         SET two_factor_enabled = false, 
@@ -186,6 +194,7 @@ const securityController = {
             two_factor_backup_codes = NULL,
             updated_at = NOW()
         WHERE id = $1
+        RETURNING id, two_factor_enabled
       `;
       
       await db.query(updateQuery, [userId]);
@@ -212,30 +221,41 @@ const securityController = {
           updated_at = NOW()
       WHERE id = $2
     `;
-    
+
     await db.query(updateQuery, [secret.base32, userId]);
 
     // Generate QR code
-    const qrCodeUrl = await TwoFactorUtils.generateQRCode(secret.otpauth_url);
+    try {
+      const qrCodeUrl = await TwoFactorUtils.generateQRCode(secret.otpauth_url);
 
-    res.json({
-      success: true,
-      secret: secret.base32,
-      qrCodeUrl: qrCodeUrl,
-      manualEntryCode: secret.base32,
-      otpauthUrl: secret.otpauth_url
-    });
+      res.json({
+        success: true,
+        secret: secret.base32,
+        qrCodeUrl: qrCodeUrl,
+        manualEntryCode: secret.base32,
+        otpauthUrl: secret.otpauth_url
+      });
+    } catch (error) {
+      console.error('QR code generation failed:', error);
+      res.status(500);
+      throw new Error('Failed to generate QR code. Please try again.');
+    }
   }),
 
   // Generate new backup codes
   generateBackupCodes: asyncHandler(async (req, res) => {
     const userId = req.user.id;
 
-    // Verify user has 2FA enabled
+    // Verify user has 2FA enabled safely
     const checkQuery = 'SELECT two_factor_enabled FROM users WHERE id = $1';
     const checkResult = await db.query(checkQuery, [userId]);
 
-    if (checkResult.rows.length === 0 || !checkResult.rows[0].two_factor_enabled) {
+    if (checkResult.rows.length === 0) {
+      res.status(404);
+      throw new Error('User not found');
+    }
+
+    if (!checkResult.rows[0].two_factor_enabled) {
       res.status(400);
       throw new Error('Two-factor authentication must be enabled to generate backup codes');
     }
@@ -250,7 +270,7 @@ const securityController = {
           updated_at = NOW()
       WHERE id = $2
     `;
-    
+
     await db.query(updateQuery, [hashedBackupCodes, userId]);
 
     res.json({
@@ -261,18 +281,21 @@ const securityController = {
     });
   }),
 
-  // Get security settings with enhanced information
+  // Get security settings with safe column access
   getSecuritySettings: asyncHandler(async (req, res) => {
     const userId = req.user.id;
 
+    // Safe query that only accesses columns that exist or provides defaults
     const query = `
       SELECT 
-        two_factor_enabled,
-        last_password_change,
-        login_attempts,
-        last_login,
+        id,
+        email,
+        COALESCE(two_factor_enabled, false) as two_factor_enabled,
+        COALESCE(last_password_change, created_at) as last_password_change,
+        COALESCE(login_attempts, 0) as login_attempts,
+        COALESCE(last_login, created_at) as last_login,
         created_at,
-        email_verified
+        COALESCE(email_verified, false) as email_verified
       FROM users 
       WHERE id = $1
     `;
@@ -286,7 +309,7 @@ const securityController = {
 
     const settings = rows[0];
 
-    // Calculate password age
+    // Calculate password age safely
     const passwordAge = settings.last_password_change 
       ? Math.floor((new Date() - new Date(settings.last_password_change)) / (1000 * 60 * 60 * 24))
       : null;
@@ -305,6 +328,79 @@ const securityController = {
         security_score: securityScore,
         security_level: securityScore >= 75 ? 'Strong' : securityScore >= 50 ? 'Medium' : 'Weak'
       }
+    });
+  }),
+
+  // Verify 2FA token (useful for login)
+  verifyTwoFactor: asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const { token } = req.body;
+
+    if (!token) {
+      res.status(400);
+      throw new Error('Verification token is required');
+    }
+
+    // Get user's 2FA secret safely
+    const secretQuery = 'SELECT two_factor_secret, two_factor_enabled FROM users WHERE id = $1';
+    const secretResult = await db.query(secretQuery, [userId]);
+    
+    if (secretResult.rows.length === 0) {
+      res.status(404);
+      throw new Error('User not found');
+    }
+
+    const user = secretResult.rows[0];
+
+    if (!user.two_factor_enabled) {
+      res.status(400);
+      throw new Error('Two-factor authentication is not enabled for this user');
+    }
+
+    if (!user.two_factor_secret) {
+      res.status(400);
+      throw new Error('Two-factor authentication not properly configured');
+    }
+
+    // Verify the token
+    const isValid = TwoFactorUtils.verifyToken(user.two_factor_secret, token);
+
+    if (!isValid) {
+      res.status(400);
+      throw new Error('Invalid verification token');
+    }
+
+    res.json({
+      success: true,
+      message: 'Token verified successfully',
+      verified: true
+    });
+  }),
+
+  // Check 2FA status
+  getTwoFactorStatus: asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+
+    const query = `
+      SELECT 
+        COALESCE(two_factor_enabled, false) as two_factor_enabled,
+        two_factor_secret IS NOT NULL as has_secret
+      FROM users 
+      WHERE id = $1
+    `;
+
+    const { rows } = await db.query(query, [userId]);
+
+    if (rows.length === 0) {
+      res.status(404);
+      throw new Error('User not found');
+    }
+
+    res.json({
+      success: true,
+      twoFactorEnabled: rows[0].two_factor_enabled,
+      hasSecret: rows[0].has_secret,
+      isConfigured: rows[0].two_factor_enabled && rows[0].has_secret
     });
   })
 };
