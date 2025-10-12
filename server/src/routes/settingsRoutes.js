@@ -4,9 +4,10 @@ const { protect } = require('../middleware/authMiddleware');
 const twoFactorMiddleware = require('../middleware/twoFactorMiddleware');
 const settingsController = require('../controllers/settings');
 
-// Security routes
+// Security routes - FIXED: Add PUT method for toggleTwoFactor
 router.put('/security/password', protect, settingsController.security.changePassword);
 router.post('/security/two-factor', protect, settingsController.security.toggleTwoFactor);
+router.put('/security/two-factor', protect, settingsController.security.toggleTwoFactor); // ADD THIS LINE
 router.get('/security/two-factor/setup', protect, settingsController.security.generateTwoFactorSetup);
 router.post('/security/backup-codes', protect, settingsController.security.generateBackupCodes);
 router.get('/security', protect, settingsController.security.getSecuritySettings);
