@@ -43,26 +43,25 @@ const Layout = () => {
   };
 
   const handleMenuAction = (action) => {
-    setShowProfileDropdown(false);
+  setShowProfileDropdown(false);
 
-    switch (action) {
-      case 'profile':
-        navigate('/profile');
-        break;
-      case 'settings':
-        navigate('/settings');
-        break;
-      case 'feedback':
-        // Open feedback modal or navigate to feedback page
-        console.log('Open feedback');
-        break;
-      case 'logout':
-        logout();
-        break;
-      default:
-        break;
-    }
-  };
+  switch (action) {
+    case 'profile':
+      navigate('/profile');
+      break;
+    case 'settings':
+      navigate('/settings');
+      break;
+    case 'feedback':
+      navigate('/feedback'); // NEW: Navigate to feedback page
+      break;
+    case 'logout':
+      logout();
+      break;
+    default:
+      break;
+  }
+};
 
   const handleThemeToggle = () => {
     const themes = ['light', 'dark', 'auto'];
