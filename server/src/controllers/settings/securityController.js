@@ -206,7 +206,7 @@ const securityController = {
     }
   }),
 
-  // Generate 2FA setup with real QR code
+  // Generate 2FA setup with real QR code - FIXED: Include backup codes in response
   generateTwoFactorSetup: asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const userEmail = req.user.email;
@@ -214,15 +214,20 @@ const securityController = {
     // Generate a real secret
     const secret = TwoFactorUtils.generateSecret(userEmail);
 
-    // Store the secret temporarily (user hasn't verified yet)
+    // Generate backup codes upfront so they're available for the response
+    const backupCodes = TwoFactorUtils.generateBackupCodes();
+    const hashedBackupCodes = backupCodes.map(code => TwoFactorUtils.hashBackupCode(code));
+
+    // Store the secret and backup codes temporarily (user hasn't verified yet)
     const updateQuery = `
       UPDATE users 
       SET two_factor_secret = $1,
+          two_factor_backup_codes = $2,
           updated_at = NOW()
-      WHERE id = $2
+      WHERE id = $3
     `;
 
-    await db.query(updateQuery, [secret.base32, userId]);
+    await db.query(updateQuery, [secret.base32, hashedBackupCodes, userId]);
 
     // Generate QR code
     try {
@@ -233,7 +238,8 @@ const securityController = {
         secret: secret.base32,
         qrCodeUrl: qrCodeUrl,
         manualEntryCode: secret.base32,
-        otpauthUrl: secret.otpauth_url
+        otpauthUrl: secret.otpauth_url,
+        backupCodes: backupCodes // Include backup codes in the setup response
       });
     } catch (error) {
       console.error('QR code generation failed:', error);
