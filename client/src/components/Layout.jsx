@@ -12,7 +12,8 @@ import {
   ChevronDown,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  Zap
 } from 'lucide-react';
 import './Layout.css';
 
@@ -100,12 +101,14 @@ const Layout = () => {
       {/* Global Profile Dropdown in Header */}
       <header className="global-header">
         <div className="header-content">
-          <div className="header-logo">
-            <span className="logo-icon">⚡</span>
-            <span className="logo-text">ZIVER</span>
+          <div className="header-left">
+            <div className="header-logo">
+              <Zap className="logo-icon" size={20} />
+              <span className="logo-text">ZIVER</span>
+            </div>
           </div>
 
-          <div className="header-actions" ref={dropdownRef}>
+          <div className="header-right" ref={dropdownRef}>
             {user && (
               <div className="actions-container">
                 {/* Theme Toggle Button */}
@@ -114,7 +117,7 @@ const Layout = () => {
                   className="theme-toggle-button"
                   title={`Current theme: ${theme}`}
                 >
-                  <ThemeIcon size={20} />
+                  <ThemeIcon size={18} />
                 </button>
 
                 {/* Profile Dropdown */}
@@ -125,7 +128,6 @@ const Layout = () => {
                   <span className="profile-avatar">
                     {getUserAvatar()}
                   </span>
-                  <span className="profile-arrow">▼</span>
                 </button>
 
                 {/* Profile Dropdown Menu */}
