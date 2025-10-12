@@ -1,27 +1,111 @@
 /* Global styles for the entire application */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+/* CSS Custom Properties for Themes */
 :root {
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #1A1A1A;
+  
+  /* Default (Dark Theme) */
+  --bg-primary: #1A1A1A;
+  --bg-secondary: #2A2A2A;
+  --bg-tertiary: #3A3A3A;
+  --card-bg: #2A2A2A;
+  --text-primary: #FFFFFF;
+  --text-secondary: #A5A5A5;
+  --text-muted: #666666;
+  --primary: #00FF80;
+  --primary-dark: #00CC66;
+  --primary-hover: #33FF99;
+  --primary-alpha: rgba(0, 255, 128, 0.1);
+  --border-color: #404040;
+  --success: #00FF80;
+  --success-bg: rgba(0, 255, 128, 0.1);
+  --error: #FF4444;
+  --error-bg: rgba(255, 68, 68, 0.1);
+  --warning: #FFAA00;
+  --warning-bg: rgba(255, 170, 0, 0.1);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
 }
 
-/* Global App Layout */
-.app-container {
-  position: relative;
-  min-height: 100vh;
+/* Light Theme */
+[data-theme="light"] {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F8FAFC;
+  --bg-tertiary: #F1F5F9;
+  --card-bg: #FFFFFF;
+  --text-primary: #1A1A1A;
+  --text-secondary: #666666;
+  --text-muted: #A5A5A5;
+  --primary: #00CC66;
+  --primary-dark: #00994C;
+  --primary-hover: #00E673;
+  --primary-alpha: rgba(0, 204, 102, 0.1);
+  --border-color: #E2E8F0;
+  --success: #00CC66;
+  --success-bg: rgba(0, 204, 102, 0.1);
+  --error: #DC2626;
+  --error-bg: rgba(220, 38, 38, 0.1);
+  --warning: #D97706;
+  --warning-bg: rgba(217, 119, 6, 0.1);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
-.main-content {
-  padding-bottom: 90px;
-  min-height: calc(100vh - 90px);
+/* Auto Theme - follows system preference */
+@media (prefers-color-scheme: light) {
+  [data-theme="auto"] {
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F8FAFC;
+    --bg-tertiary: #F1F5F9;
+    --card-bg: #FFFFFF;
+    --text-primary: #1A1A1A;
+    --text-secondary: #666666;
+    --text-muted: #A5A5A5;
+    --primary: #00CC66;
+    --primary-dark: #00994C;
+    --primary-hover: #00E673;
+    --primary-alpha: rgba(0, 204, 102, 0.1);
+    --border-color: #E2E8F0;
+    --success: #00CC66;
+    --success-bg: rgba(0, 204, 102, 0.1);
+    --error: #DC2626;
+    --error-bg: rgba(220, 38, 38, 0.1);
+    --warning: #D97706;
+    --warning-bg: rgba(217, 119, 6, 0.1);
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
 }
 
-/* A common CSS reset */
+@media (prefers-color-scheme: dark) {
+  [data-theme="auto"] {
+    --bg-primary: #1A1A1A;
+    --bg-secondary: #2A2A2A;
+    --bg-tertiary: #3A3A3A;
+    --card-bg: #2A2A2A;
+    --text-primary: #FFFFFF;
+    --text-secondary: #A5A5A5;
+    --text-muted: #666666;
+    --primary: #00FF80;
+    --primary-dark: #00CC66;
+    --primary-hover: #33FF99;
+    --primary-alpha: rgba(0, 255, 128, 0.1);
+    --border-color: #404040;
+    --success: #00FF80;
+    --success-bg: rgba(0, 255, 128, 0.1);
+    --error: #FF4444;
+    --error-bg: rgba(255, 68, 68, 0.1);
+    --warning: #FFAA00;
+    --warning-bg: rgba(255, 170, 0, 0.1);
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Apply theme variables to elements */
 * {
   margin: 0;
   padding: 0;
@@ -30,15 +114,30 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #1A1A1A;
-  color: #FFFFFF;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--bg-primary);
+}
+
+/* Global App Layout */
+.app-container {
+  position: relative;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+}
+
+.main-content {
+  padding-bottom: 90px;
+  min-height: calc(100vh - 90px);
+  background-color: var(--bg-primary);
 }
 
 /* Scrollbar Styling */
@@ -47,27 +146,27 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #2A2A2A;
+  background: var(--bg-secondary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #00FF80;
+  background: var(--primary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #00CC66;
+  background: var(--primary-dark);
 }
 
 /* Selection Styling */
 ::selection {
-  background-color: #00FF80;
-  color: #1A1A1A;
+  background-color: var(--primary);
+  color: var(--bg-primary);
 }
 
 /* Focus Outline */
 *:focus {
-  outline: 2px solid #00FF80;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -78,17 +177,63 @@ html {
 
 /* Utility Classes */
 .text-green {
-  color: #00FF80;
+  color: var(--primary);
 }
 
 .text-gray {
-  color: #A5A5A5;
+  color: var(--text-secondary);
 }
 
 .bg-dark {
-  background-color: #1A1A1A;
+  background-color: var(--bg-secondary);
 }
 
 .bg-darker {
-  background-color: #2A2A2A;
+  background-color: var(--bg-tertiary);
+}
+
+/* Common component styles using CSS variables */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.button {
+  background: var(--primary);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+.input {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: var(--text-primary);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-alpha);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
 }
