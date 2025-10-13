@@ -437,3 +437,44 @@
     font-size: 1.5rem;
   }
 }
+
+/* Improved Radio Button Styles */
+.type-option input:checked + .option-content {
+  background: rgba(0, 255, 128, 0.1);
+  border-color: #00FF80;
+  color: #00FF80;
+  transform: scale(1.02);
+}
+
+.option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.priority-option input:checked + .priority-content {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: currentColor;
+}
+
+.priority-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.priority-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+}
