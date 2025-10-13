@@ -50,12 +50,14 @@ router.post('/',
   feedbackController.submitFeedback
 );
 
+// ❌❌❌ DELETE THIS DUPLICATE ROUTE - IT'S CAUSING THE ISSUE ❌❌❌
+// router.post('/', protect, upload.array('attachments', 5), feedbackController.submitFeedback);
+
 // Public routes (require authentication)
-router.post('/', protect, upload.array('attachments', 5), feedbackController.submitFeedback);
 router.get('/my-feedback', protect, feedbackController.getUserFeedback);
 router.get('/:id', protect, feedbackController.getFeedbackDetails);
 
-// Admin routes - CHANGED: adminOnly to admin
+// Admin routes
 router.get('/', protect, admin, feedbackController.getAllFeedback);
 router.get('/stats/overview', protect, admin, feedbackController.getFeedbackStats);
 router.put('/:id/status', protect, admin, feedbackController.updateFeedbackStatus);
