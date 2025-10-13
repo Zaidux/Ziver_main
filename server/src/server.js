@@ -25,37 +25,64 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Temporary debug middleware for feedback - ADD THIS
+// More comprehensive feedback debug middleware
 app.use('/api/feedback', (req, res, next) => {
   if (req.method === 'POST') {
-    console.log('🔍 Feedback Request Debug:');
-    console.log('  Headers:', {
-      authorization: req.headers.authorization ? 'Present' : 'Missing',
-      'content-type': req.headers['content-type'],
-      'content-length': req.headers['content-length']
+    console.log('🎯 FEEDBACK SUBMISSION STARTED ==========');
+    console.log('📨 Request details:', {
+      method: req.method,
+      path: req.path,
+      contentType: req.headers['content-type'],
+      contentLength: req.headers['content-length'],
+      authorization: req.headers.authorization ? 'Present' : 'Missing'
     });
-    console.log('  Body keys:', Object.keys(req.body));
-    console.log('  Files count:', req.files ? req.files.length : 0);
     
-    // Create a copy of the response methods to log the response
+    // Store the original response methods
     const originalSend = res.send;
     const originalJson = res.json;
+    const originalEnd = res.end;
     
+    let responseSent = false;
+    
+    // Override response methods to catch all response types
     res.send = function(data) {
-      console.log('📤 Feedback Response:', {
-        statusCode: res.statusCode,
-        data: data ? (typeof data === 'string' ? data.substring(0, 200) : 'Object') : 'Empty'
-      });
+      if (!responseSent) {
+        console.log('📤 Response sent via res.send():', {
+          statusCode: res.statusCode,
+          dataLength: data ? (typeof data === 'string' ? data.length : 'object') : 0,
+          dataPreview: data ? (typeof data === 'string' ? data.substring(0, 100) : 'object') : 'empty'
+        });
+        responseSent = true;
+      }
       originalSend.apply(this, arguments);
     };
     
     res.json = function(data) {
-      console.log('📤 Feedback JSON Response:', {
-        statusCode: res.statusCode,
-        data: data ? JSON.stringify(data).substring(0, 200) : 'Empty'
-      });
+      if (!responseSent) {
+        console.log('📤 Response sent via res.json():', {
+          statusCode: res.statusCode,
+          data: data ? JSON.stringify(data).substring(0, 200) : 'empty'
+        });
+        responseSent = true;
+      }
       originalJson.apply(this, arguments);
     };
+    
+    res.end = function(data) {
+      if (!responseSent) {
+        console.log('📤 Response sent via res.end():', {
+          statusCode: res.statusCode,
+          dataLength: data ? data.length : 0
+        });
+        responseSent = true;
+      }
+      originalEnd.apply(this, arguments);
+    };
+    
+    // Log when the request completes
+    res.on('finish', () => {
+      console.log('✅ FEEDBACK REQUEST COMPLETED ==========\n');
+    });
   }
   next();
 });
