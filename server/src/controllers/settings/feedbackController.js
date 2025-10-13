@@ -3,6 +3,20 @@ const Feedback = require('../../models/Feedback');
 const { uploadToS3, deleteFromS3 } = require('../../utils/fileUpload');
 
 const feedbackController = {
+
+  submitFeedback: asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  
+  // ADD THIS DEBUG LOG:
+  console.log('🔍 USER ID DEBUG:', {
+    userId: userId,
+    type: typeof userId,
+    length: userId ? userId.length : 0,
+    sample: userId ? userId.substring(0, 8) + '...' : 'undefined'
+  });
+
+  const { title, message, type, priority } = req.body;
+  // ... rest of your code
   // Submit new feedback - FIXED VERSION
   submitFeedback: asyncHandler(async (req, res) => {
     const userId = req.user.id;
