@@ -143,32 +143,43 @@ const FeedbackPage = () => {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${user.token}`
-        // Don't set Content-Type - let browser set it for FormData with boundary
       },
       body: submitData
     });
 
     console.log('📡 Response status:', response.status);
+    console.log('📡 Response ok:', response.ok);
 
-    // Handle different response types
-    if (!response.ok) {
-      // Try to get error message from response
-      let errorMessage = `Server returned ${response.status}`;
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-      } catch (parseError) {
-        // If response isn't JSON, use status text
-        errorMessage = response.statusText || errorMessage;
+    // Get the raw response text first to handle empty responses
+    const responseText = await response.text();
+    console.log('📡 Raw response text:', responseText);
+
+    let result;
+    
+    // Check if response is empty
+    if (!responseText || responseText.trim() === '') {
+      console.log('⚠️ Empty response received from server');
+      if (response.ok) {
+        // If it's a 200 with empty body, assume success
+        result = { success: true, message: 'Feedback submitted successfully' };
+      } else {
+        throw new Error(`Server returned ${response.status} with empty body`);
       }
-      throw new Error(errorMessage);
+    } else {
+      // Try to parse JSON
+      try {
+        result = JSON.parse(responseText);
+        console.log('✅ Parsed result:', result);
+      } catch (parseError) {
+        console.error('❌ JSON parse error:', parseError);
+        console.error('❌ Response text that failed to parse:', responseText);
+        throw new Error(`Server returned invalid JSON: ${responseText.substring(0, 100)}`);
+      }
     }
 
-    const result = await response.json();
-    console.log('✅ Response result:', result);
-
+    // Handle the result
     if (result.success) {
-      setMessage('Thank you for your feedback! We\'ll review it and get back to you soon.');
+      setMessage(result.message || 'Thank you for your feedback! We\'ll review it and get back to you soon.');
       setFormData({
         title: '',
         message: '',
@@ -179,6 +190,7 @@ const FeedbackPage = () => {
     } else {
       setError(result.message || 'Failed to submit feedback. Please try again.');
     }
+
   } catch (err) {
     console.error('❌ Feedback submission error:', err);
     setError(`Submission failed: ${err.message}. Please try again.`);
