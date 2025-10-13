@@ -192,6 +192,9 @@ const initializeApp = async () => {
   // Initialize settings system
   await initializeSettingsSystem();
 
+  // ADDED: Initialize feedback system
+  await initializeFeedbackSystem();
+
   // Set up Telegram webhook if bot token exists
   if (process.env.TELEGRAM_BOT_TOKEN) {
     console.log('🤖 Setting up Telegram webhook...');
