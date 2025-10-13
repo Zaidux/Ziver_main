@@ -8,17 +8,21 @@ const protect = asyncHandler(async (req, res, next) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];
+      console.log('🔐 Token verification started');
 
       // Verify token and decode it
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Check if this is a temporary 2FA token
       if (decoded.twoFactorPending) {
-        res.status(401);
-        throw new Error('Two-factor authentication required. Please complete 2FA verification.');
+        console.log('❌ 2FA required');
+        return res.status(401).json({
+          success: false,
+          message: 'Two-factor authentication required. Please complete 2FA verification.'
+        });
       }
 
-      // Get ALL user fields that might be needed by other controllers
+      // Get user from database
       const userResult = await db.query(
         `SELECT 
           id, 
@@ -37,34 +41,47 @@ const protect = asyncHandler(async (req, res, next) => {
       );
 
       if (userResult.rows.length === 0) {
-        res.status(401);
-        throw new Error('Not authorized, user not found');
+        console.log('❌ User not found in database');
+        return res.status(401).json({
+          success: false,
+          message: 'Not authorized, user not found'
+        });
       }
 
       // Attach complete user data to request
       req.user = userResult.rows[0];
+      console.log('✅ Authentication successful for user:', req.user.id);
       next();
     } catch (error) {
-      console.error('Token verification error:', error);
-      
+      console.error('❌ Token verification error:', error.message);
+
       if (error.name === 'TokenExpiredError') {
-        res.status(401);
-        throw new Error('Token expired. Please login again.');
+        return res.status(401).json({
+          success: false,
+          message: 'Token expired. Please login again.'
+        });
       }
-      
+
       if (error.name === 'JsonWebTokenError') {
-        res.status(401);
-        throw new Error('Invalid token.');
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid token.'
+        });
       }
-      
-      res.status(401);
-      throw new Error('Not authorized, token failed');
+
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized, token failed'
+      });
     }
   }
 
   if (!token) {
-    res.status(401);
-    throw new Error('Not authorized, no token');
+    console.log('❌ No token provided');
+    return res.status(401).json({
+      success: false,
+      message: 'Not authorized, no token'
+    });
   }
 });
 
@@ -89,14 +106,18 @@ const require2FAVerification = asyncHandler(async (req, res, next) => {
       next();
     } catch (error) {
       console.error('2FA verification middleware error:', error);
-      res.status(401);
-      throw new Error('Two-factor authentication verification failed');
+      return res.status(401).json({
+        success: false,
+        message: 'Two-factor authentication verification failed'
+      });
     }
   }
 
   if (!token) {
-    res.status(401);
-    throw new Error('Not authorized, no token');
+    return res.status(401).json({
+      success: false,
+      message: 'Not authorized, no token'
+    });
   }
 });
 
