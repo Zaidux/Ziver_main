@@ -4,9 +4,6 @@ const db = require('../config/db');
 
 const protect = asyncHandler(async (req, res, next) => {
   let token;
-// In authMiddleware.js - add this debug log
-const protect = asyncHandler(async (req, res, next) => {
-  let token;
 
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
@@ -14,19 +11,10 @@ const protect = asyncHandler(async (req, res, next) => {
       console.log('🔐 Token verification started');
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-      // Add this debug log:
+
+      // ADDED: Debug log for user ID
       console.log('👤 Decoded user ID (should be UUID):', decoded.id);
       console.log('👤 Decoded user ID type:', typeof decoded.id);
-
-      // ... rest of your auth code
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      token = req.headers.authorization.split(' ')[1];
-      console.log('🔐 Token verification started');
-
-      // Verify token and decode it
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Check if this is a temporary 2FA token
       if (decoded.twoFactorPending) {
