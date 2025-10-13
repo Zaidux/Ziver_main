@@ -65,7 +65,7 @@ const feedbackController = {
 
     } catch (error) {
       console.error('Feedback submission error:', error);
-      
+
       // Clean up uploaded files if feedback creation fails
       if (attachments.length > 0) {
         for (const attachment of attachments) {
@@ -145,27 +145,38 @@ const feedbackController = {
     }
   }),
 
-  // Get feedback statistics (Admin only)
+  // Get feedback statistics (Admin only) - FIXED: Ensure this method exists
   getFeedbackStats: asyncHandler(async (req, res) => {
     try {
       const stats = await Feedback.getStats();
 
-      // Format stats
+      // Format stats properly
       const formattedStats = {
         byStatus: {},
         byType: {},
         byPriority: {}
       };
 
+      // Initialize all possible values to 0
+      const allStatuses = ['pending', 'reviewed', 'in_progress', 'resolved', 'rewarded', 'closed'];
+      const allTypes = ['suggestion', 'bug', 'complaint', 'feature'];
+      const allPriorities = ['low', 'medium', 'high'];
+
+      allStatuses.forEach(status => formattedStats.byStatus[status] = 0);
+      allTypes.forEach(type => formattedStats.byType[type] = 0);
+      allPriorities.forEach(priority => formattedStats.byPriority[priority] = 0);
+
+      // Fill with actual data
       stats.forEach(stat => {
-        // Status stats
-        formattedStats.byStatus[stat.status] = (formattedStats.byStatus[stat.status] || 0) + parseInt(stat.count);
-        
-        // Type stats
-        formattedStats.byType[stat.type] = (formattedStats.byType[stat.type] || 0) + parseInt(stat.count);
-        
-        // Priority stats
-        formattedStats.byPriority[stat.priority] = (formattedStats.byPriority[stat.priority] || 0) + parseInt(stat.count);
+        if (stat.status && formattedStats.byStatus.hasOwnProperty(stat.status)) {
+          formattedStats.byStatus[stat.status] = parseInt(stat.count) || 0;
+        }
+        if (stat.type && formattedStats.byType.hasOwnProperty(stat.type)) {
+          formattedStats.byType[stat.type] = parseInt(stat.count) || 0;
+        }
+        if (stat.priority && formattedStats.byPriority.hasOwnProperty(stat.priority)) {
+          formattedStats.byPriority[stat.priority] = parseInt(stat.count) || 0;
+        }
       });
 
       res.json({
@@ -188,7 +199,7 @@ const feedbackController = {
     const { status, adminNotes } = req.body;
 
     const validStatuses = ['pending', 'reviewed', 'in_progress', 'resolved', 'closed'];
-    
+
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -256,7 +267,7 @@ const feedbackController = {
 
     } catch (error) {
       console.error('Reward user error:', error);
-      
+
       if (error.message === 'Feedback not found') {
         return res.status(404).json({
           success: false,
@@ -308,4 +319,5 @@ const feedbackController = {
   })
 };
 
+// Make sure the module exports correctly
 module.exports = feedbackController;
