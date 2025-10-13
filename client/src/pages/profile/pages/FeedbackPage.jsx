@@ -106,75 +106,86 @@ const FeedbackPage = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    clearMessages();
+  e.preventDefault();
+  setLoading(true);
+  clearMessages();
 
-    console.log('Submitting form data:', formData); // Debug
+  console.log('Submitting form data:', formData);
 
-    // Validation
-    if (!formData.title.trim()) {
-      setError('Please enter a title for your feedback');
-      setLoading(false);
-      return;
-    }
+  // Validation
+  if (!formData.title.trim()) {
+    setError('Please enter a title for your feedback');
+    setLoading(false);
+    return;
+  }
 
-    if (!formData.message.trim()) {
-      setError('Please provide details about your feedback');
-      setLoading(false);
-      return;
-    }
+  if (!formData.message.trim()) {
+    setError('Please provide details about your feedback');
+    setLoading(false);
+    return;
+  }
 
-    try {
-      const submitData = new FormData();
-      submitData.append('title', formData.title.trim());
-      submitData.append('message', formData.message.trim());
-      submitData.append('type', formData.type);
-      submitData.append('priority', formData.priority);
+  try {
+    const submitData = new FormData();
+    submitData.append('title', formData.title.trim());
+    submitData.append('message', formData.message.trim());
+    submitData.append('type', formData.type);
+    submitData.append('priority', formData.priority);
 
-      // Add attachments
-      attachments.forEach(file => {
-        submitData.append('attachments', file);
-      });
+    // Add attachments
+    attachments.forEach(file => {
+      submitData.append('attachments', file);
+    });
 
-      console.log('Sending request to /api/feedback...'); // Debug
+    console.log('🔄 Sending feedback request...');
 
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${user.token}`
-        },
-        body: submitData
-      });
+    const response = await fetch('/api/feedback', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${user.token}`
+        // Don't set Content-Type - let browser set it for FormData with boundary
+      },
+      body: submitData
+    });
 
-      console.log('Response status:', response.status); // Debug
+    console.log('📡 Response status:', response.status);
 
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}`);
+    // Handle different response types
+    if (!response.ok) {
+      // Try to get error message from response
+      let errorMessage = `Server returned ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (parseError) {
+        // If response isn't JSON, use status text
+        errorMessage = response.statusText || errorMessage;
       }
-
-      const result = await response.json();
-      console.log('Response result:', result); // Debug
-
-      if (result.success) {
-        setMessage('Thank you for your feedback! We\'ll review it and get back to you soon.');
-        setFormData({
-          title: '',
-          message: '',
-          type: 'suggestion',
-          priority: 'medium'
-        });
-        setAttachments([]);
-      } else {
-        setError(result.message || 'Failed to submit feedback. Please try again.');
-      }
-    } catch (err) {
-      console.error('Feedback submission error:', err);
-      setError(`Submission failed: ${err.message}. Please check your connection and try again.`);
-    } finally {
-      setLoading(false);
+      throw new Error(errorMessage);
     }
-  };
+
+    const result = await response.json();
+    console.log('✅ Response result:', result);
+
+    if (result.success) {
+      setMessage('Thank you for your feedback! We\'ll review it and get back to you soon.');
+      setFormData({
+        title: '',
+        message: '',
+        type: 'suggestion',
+        priority: 'medium'
+      });
+      setAttachments([]);
+    } else {
+      setError(result.message || 'Failed to submit feedback. Please try again.');
+    }
+  } catch (err) {
+    console.error('❌ Feedback submission error:', err);
+    setError(`Submission failed: ${err.message}. Please try again.`);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
