@@ -13,7 +13,7 @@ class Feedback {
     } = feedbackData;
 
     const client = await db.getClient();
-    
+
     try {
       await client.query('BEGIN');
 
@@ -45,43 +45,66 @@ class Feedback {
     }
   }
 
-  // In the findAll method, update the return statement:
-static async findAll(page = 1, limit = 20, filters = {}) {
-  const offset = (page - 1) * limit;
-  let whereConditions = ['1=1'];
-  let queryParams = [limit, offset];
-  let paramCount = 2;
+  // ✅ FIXED: Complete findAll method with proper filter handling
+  static async findAll(page = 1, limit = 20, filters = {}) {
+    const offset = (page - 1) * limit;
+    let whereConditions = ['1=1'];
+    let queryParams = [limit, offset];
+    let paramCount = 2;
 
-  // Apply filters (your existing code...)
+    // Apply filters
+    if (filters.status && filters.status !== 'all') {
+      paramCount++;
+      whereConditions.push(`status = $${paramCount}`);
+      queryParams.push(filters.status);
+    }
 
-  const whereClause = whereConditions.join(' AND ');
+    if (filters.type && filters.type !== 'all') {
+      paramCount++;
+      whereConditions.push(`type = $${paramCount}`);
+      queryParams.push(filters.type);
+    }
 
-  const query = `
-    SELECT 
-      f.*,
-      u.username,
-      u.email,
-      u.avatar_url,
-      COUNT(*) OVER() as total_count
-    FROM feedback f
-    LEFT JOIN users u ON f.user_id = u.id
-    WHERE ${whereClause}
-    ORDER BY f.created_at DESC
-    LIMIT $1 OFFSET $2
-  `;
+    if (filters.priority && filters.priority !== 'all') {
+      paramCount++;
+      whereConditions.push(`priority = $${paramCount}`);
+      queryParams.push(filters.priority);
+    }
 
-  const result = await db.query(query, queryParams);
+    if (filters.userId) {
+      paramCount++;
+      whereConditions.push(`user_id = $${paramCount}`);
+      queryParams.push(filters.userId);
+    }
 
-  // ✅ FIX: Handle case when no rows are returned
-  const totalCount = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0;
+    const whereClause = whereConditions.join(' AND ');
 
-  return {
-    feedback: result.rows,
-    totalCount: totalCount,
-    currentPage: page,
-    totalPages: Math.ceil(totalCount / limit)
-  };
-}
+    const query = `
+      SELECT 
+        f.*,
+        u.username,
+        u.email,
+        u.avatar_url,
+        COUNT(*) OVER() as total_count
+      FROM feedback f
+      LEFT JOIN users u ON f.user_id = u.id
+      WHERE ${whereClause}
+      ORDER BY f.created_at DESC
+      LIMIT $1 OFFSET $2
+    `;
+
+    const result = await db.query(query, queryParams);
+
+    // ✅ FIX: Handle case when no rows are returned
+    const totalCount = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0;
+
+    return {
+      feedback: result.rows,
+      totalCount: totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit)
+    };
+  }
 
   // Get feedback by ID
   static async findById(id) {
@@ -118,7 +141,7 @@ static async findAll(page = 1, limit = 20, filters = {}) {
     const { zpReward = 0, sebReward = 0, adminNotes } = rewardData;
 
     const client = await db.getClient();
-    
+
     try {
       await client.query('BEGIN');
 
@@ -196,7 +219,7 @@ static async findAll(page = 1, limit = 20, filters = {}) {
     `;
 
     const result = await db.query(query, [userId, limit, offset]);
-    
+
     return {
       feedback: result.rows,
       totalCount: result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0,
