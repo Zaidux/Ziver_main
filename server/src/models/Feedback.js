@@ -1,10 +1,10 @@
 const db = require('../config/db');
 
 class Feedback {
-  // Create new feedback
+  // Create new feedback - FIXED for UUID
   static async create(feedbackData) {
     const {
-      userId,
+      userId,  // This is a UUID, not integer!
       title,
       message,
       type = 'suggestion',
@@ -17,7 +17,7 @@ class Feedback {
     try {
       await client.query('BEGIN');
 
-      // Insert feedback
+      // Insert feedback - user_id is UUID
       const feedbackQuery = `
         INSERT INTO feedback (
           user_id, title, message, type, priority, attachments
@@ -25,8 +25,10 @@ class Feedback {
         RETURNING *
       `;
 
+      console.log('💾 Inserting feedback with user_id (UUID):', userId);
+
       const feedbackResult = await client.query(feedbackQuery, [
-        userId,
+        userId,  // UUID value
         title,
         message,
         type,
@@ -35,17 +37,19 @@ class Feedback {
       ]);
 
       await client.query('COMMIT');
+      console.log('✅ Feedback saved successfully');
       return feedbackResult.rows[0];
 
     } catch (error) {
       await client.query('ROLLBACK');
+      console.error('❌ Database insertion error:', error.message);
       throw error;
     } finally {
       client.release();
     }
   }
 
-  // ✅ FIXED: Complete findAll method with proper filter handling
+  // Get all feedback with pagination
   static async findAll(page = 1, limit = 20, filters = {}) {
     const offset = (page - 1) * limit;
     let whereConditions = ['1=1'];
@@ -95,7 +99,7 @@ class Feedback {
 
     const result = await db.query(query, queryParams);
 
-    // ✅ FIX: Handle case when no rows are returned
+    // Handle case when no rows are returned
     const totalCount = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0;
 
     return {
@@ -204,7 +208,7 @@ class Feedback {
     }
   }
 
-  // Get user's feedback history
+  // Get user's feedback history - FIXED for UUID
   static async findByUserId(userId, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
 
