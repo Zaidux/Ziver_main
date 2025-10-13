@@ -45,63 +45,43 @@ class Feedback {
     }
   }
 
-  // Get all feedback with pagination
-  static async findAll(page = 1, limit = 20, filters = {}) {
-    const offset = (page - 1) * limit;
-    let whereConditions = ['1=1'];
-    let queryParams = [limit, offset];
-    let paramCount = 2;
+  // In the findAll method, update the return statement:
+static async findAll(page = 1, limit = 20, filters = {}) {
+  const offset = (page - 1) * limit;
+  let whereConditions = ['1=1'];
+  let queryParams = [limit, offset];
+  let paramCount = 2;
 
-    // Apply filters
-    if (filters.status) {
-      paramCount++;
-      whereConditions.push(`status = $${paramCount}`);
-      queryParams.push(filters.status);
-    }
+  // Apply filters (your existing code...)
 
-    if (filters.type) {
-      paramCount++;
-      whereConditions.push(`type = $${paramCount}`);
-      queryParams.push(filters.type);
-    }
+  const whereClause = whereConditions.join(' AND ');
 
-    if (filters.priority) {
-      paramCount++;
-      whereConditions.push(`priority = $${paramCount}`);
-      queryParams.push(filters.priority);
-    }
+  const query = `
+    SELECT 
+      f.*,
+      u.username,
+      u.email,
+      u.avatar_url,
+      COUNT(*) OVER() as total_count
+    FROM feedback f
+    LEFT JOIN users u ON f.user_id = u.id
+    WHERE ${whereClause}
+    ORDER BY f.created_at DESC
+    LIMIT $1 OFFSET $2
+  `;
 
-    if (filters.userId) {
-      paramCount++;
-      whereConditions.push(`user_id = $${paramCount}`);
-      queryParams.push(filters.userId);
-    }
+  const result = await db.query(query, queryParams);
 
-    const whereClause = whereConditions.join(' AND ');
+  // ✅ FIX: Handle case when no rows are returned
+  const totalCount = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0;
 
-    const query = `
-      SELECT 
-        f.*,
-        u.username,
-        u.email,
-        u.avatar_url,
-        COUNT(*) OVER() as total_count
-      FROM feedback f
-      LEFT JOIN users u ON f.user_id = u.id
-      WHERE ${whereClause}
-      ORDER BY f.created_at DESC
-      LIMIT $1 OFFSET $2
-    `;
-
-    const result = await db.query(query, queryParams);
-    
-    return {
-      feedback: result.rows,
-      totalCount: result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0,
-      currentPage: page,
-      totalPages: Math.ceil((result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0) / limit)
-    };
-  }
+  return {
+    feedback: result.rows,
+    totalCount: totalCount,
+    currentPage: page,
+    totalPages: Math.ceil(totalCount / limit)
+  };
+}
 
   // Get feedback by ID
   static async findById(id) {
