@@ -25,6 +25,22 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Add this after your existing middleware but before routes
+app.use((req, res, next) => {
+  if (req.path === '/api/feedback' && req.method === 'POST') {
+    console.log('📥 Feedback request received:', {
+      method: req.method,
+      path: req.path,
+      contentType: req.headers['content-type'],
+      contentLength: req.headers['content-length'],
+      hasFiles: !!req.files,
+      filesCount: req.files ? req.files.length : 0,
+      bodyFields: Object.keys(req.body)
+    });
+  }
+  next();
+});
+
 // Diagnostic Middleware
 app.use((req, res, next) => {
   console.log(`[LOG] Incoming Request: ${req.method} ${req.originalUrl}`);
