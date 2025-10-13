@@ -16,7 +16,6 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     console.log('📁 Multer processing file:', file.originalname);
-    // Allow only images
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
@@ -26,26 +25,26 @@ const upload = multer({
   }
 });
 
-// Add route-level debugging
-router.use((req, res, next) => {
-  console.log(`🛣️  Feedback route hit: ${req.method} ${req.path}`);
-  next();
-});
-
-// Public routes (require authentication)
+// ✅ FIXED: Single POST route with proper middleware chain
 router.post('/', 
   (req, res, next) => {
-    console.log('🔐 Checking authentication...');
+    console.log('🔐 Starting feedback submission process...');
     next();
   },
-  protect, 
+  protect,
   (req, res, next) => {
-    console.log('✅ Authentication passed, proceeding to file upload');
+    console.log('✅ Authentication passed, user:', req.user?.id);
     next();
   },
   upload.array('attachments', 5),
   (req, res, next) => {
-    console.log('✅ File upload completed, files:', req.files ? req.files.length : 0);
+    console.log('✅ File upload completed, files count:', req.files ? req.files.length : 0);
+    if (req.files) {
+      req.files.forEach((file, index) => {
+        console.log(`   File ${index + 1}: ${file.originalname} (${file.size} bytes)`);
+      });
+    }
+    console.log('📝 Body fields:', Object.keys(req.body));
     next();
   },
   feedbackController.submitFeedback
