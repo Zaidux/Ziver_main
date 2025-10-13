@@ -1,7 +1,20 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
-import { ArrowLeft, Paperclip, Send, AlertCircle, CheckCircle } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Paperclip, 
+  Send, 
+  AlertCircle, 
+  CheckCircle, 
+  Lightbulb,
+  Bug,
+  Frown,
+  Rocket,
+  Zap,
+  AlertTriangle,
+  Check
+} from 'lucide-react';
 import './FeedbackPage.css';
 
 const FeedbackPage = () => {
@@ -12,8 +25,8 @@ const FeedbackPage = () => {
   const [formData, setFormData] = useState({
     title: '',
     message: '',
-    type: 'suggestion', // suggestion, bug, complaint, feature
-    priority: 'medium' // low, medium, high
+    type: 'suggestion',
+    priority: 'medium'
   });
   const [attachments, setAttachments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -21,20 +34,31 @@ const FeedbackPage = () => {
   const [error, setError] = useState('');
 
   const feedbackTypes = [
-    { value: 'suggestion', label: 'Suggestion', emoji: '💡' },
-    { value: 'bug', label: 'Bug Report', emoji: '🐛' },
-    { value: 'complaint', label: 'Complaint', emoji: '😠' },
-    { value: 'feature', label: 'Feature Request', emoji: '🚀' }
+    { value: 'suggestion', label: 'Suggestion', emoji: '💡', icon: Lightbulb },
+    { value: 'bug', label: 'Bug Report', emoji: '🐛', icon: Bug },
+    { value: 'complaint', label: 'Complaint', emoji: '😠', icon: Frown },
+    { value: 'feature', label: 'Feature Request', emoji: '🚀', icon: Rocket }
   ];
 
   const priorityLevels = [
-    { value: 'low', label: 'Low', color: '#10B981' },
-    { value: 'medium', label: 'Medium', color: '#F59E0B' },
-    { value: 'high', label: 'High', color: '#EF4444' }
+    { value: 'low', label: 'Low', color: '#10B981', icon: Check },
+    { value: 'medium', label: 'Medium', color: '#F59E0B', icon: AlertTriangle },
+    { value: 'high', label: 'High', color: '#EF4444', icon: Zap }
   ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    console.log(`Input changed: ${name} = ${value}`); // Debug
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    clearMessages();
+  };
+
+  // FIXED: Separate handler for radio buttons
+  const handleRadioChange = (name, value) => {
+    console.log(`Radio changed: ${name} = ${value}`); // Debug
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -44,22 +68,22 @@ const FeedbackPage = () => {
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
-    
+
     // Validate file types and sizes
     const validFiles = files.filter(file => {
       const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
       const maxSize = 5 * 1024 * 1024; // 5MB
-      
+
       if (!validTypes.includes(file.type)) {
         setError(`Invalid file type: ${file.name}. Only images are allowed.`);
         return false;
       }
-      
+
       if (file.size > maxSize) {
         setError(`File too large: ${file.name}. Maximum size is 5MB.`);
         return false;
       }
-      
+
       return true;
     });
 
@@ -67,7 +91,7 @@ const FeedbackPage = () => {
       setAttachments(prev => [...prev, ...validFiles]);
       setError('');
     }
-    
+
     // Reset file input
     e.target.value = '';
   };
@@ -85,6 +109,8 @@ const FeedbackPage = () => {
     e.preventDefault();
     setLoading(true);
     clearMessages();
+
+    console.log('Submitting form data:', formData); // Debug
 
     // Validation
     if (!formData.title.trim()) {
@@ -111,7 +137,9 @@ const FeedbackPage = () => {
         submitData.append('attachments', file);
       });
 
-      const response = await fetch('https://ziver-api.onrender.com/api/feedback', {
+      console.log('Sending request to /api/feedback...'); // Debug
+
+      const response = await fetch('/api/feedback', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${user.token}`
@@ -119,7 +147,14 @@ const FeedbackPage = () => {
         body: submitData
       });
 
+      console.log('Response status:', response.status); // Debug
+
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}`);
+      }
+
       const result = await response.json();
+      console.log('Response result:', result); // Debug
 
       if (result.success) {
         setMessage('Thank you for your feedback! We\'ll review it and get back to you soon.');
@@ -135,7 +170,7 @@ const FeedbackPage = () => {
       }
     } catch (err) {
       console.error('Feedback submission error:', err);
-      setError('Network error. Please check your connection and try again.');
+      setError(`Submission failed: ${err.message}. Please check your connection and try again.`);
     } finally {
       setLoading(false);
     }
@@ -152,6 +187,7 @@ const FeedbackPage = () => {
         <button 
           className="back-button"
           onClick={() => navigate(-1)}
+          type="button"
         >
           <ArrowLeft size={20} />
           Back
@@ -184,42 +220,49 @@ const FeedbackPage = () => {
           <div className="form-section">
             <label className="section-label">What type of feedback is this?</label>
             <div className="type-options">
-              {feedbackTypes.map(type => (
-                <label key={type.value} className="type-option">
+              {feedbackTypes.map(({ value, label, emoji, icon: Icon }) => (
+                <label key={value} className="type-option">
                   <input
                     type="radio"
                     name="type"
-                    value={type.value}
-                    checked={formData.type === type.value}
-                    onChange={handleInputChange}
+                    value={value}
+                    checked={formData.type === value}
+                    onChange={(e) => handleRadioChange('type', e.target.value)}
                   />
                   <span className="option-content">
-                    <span className="option-emoji">{type.emoji}</span>
-                    <span className="option-label">{type.label}</span>
+                    <span className="option-icon">
+                      <Icon size={20} />
+                    </span>
+                    <span className="option-emoji">{emoji}</span>
+                    <span className="option-label">{label}</span>
                   </span>
                 </label>
               ))}
             </div>
           </div>
 
-          {/* Priority Level */}
+          {/* Priority Level - FIXED: Using proper radio button handling */}
           <div className="form-section">
             <label className="section-label">Priority Level</label>
             <div className="priority-options">
-              {priorityLevels.map(priority => (
-                <label key={priority.value} className="priority-option">
+              {priorityLevels.map(({ value, label, color, icon: Icon }) => (
+                <label key={value} className="priority-option">
                   <input
                     type="radio"
                     name="priority"
-                    value={priority.value}
-                    checked={formData.priority === priority.value}
-                    onChange={handleInputChange}
+                    value={value}
+                    checked={formData.priority === value}
+                    onChange={(e) => handleRadioChange('priority', e.target.value)}
                   />
-                  <span 
-                    className="priority-indicator"
-                    style={{ '--priority-color': priority.color }}
-                  ></span>
-                  <span className="priority-label">{priority.label}</span>
+                  <span className="priority-content">
+                    <span 
+                      className="priority-indicator"
+                      style={{ backgroundColor: color }}
+                    >
+                      <Icon size={14} />
+                    </span>
+                    <span className="priority-label">{label}</span>
+                  </span>
                 </label>
               ))}
             </div>
@@ -279,7 +322,7 @@ const FeedbackPage = () => {
                 multiple
                 className="file-input"
               />
-              
+
               <button
                 type="button"
                 onClick={triggerFileInput}
