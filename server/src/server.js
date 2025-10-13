@@ -13,7 +13,9 @@ const tasksRoutes = require('./routes/tasksRoutes');
 const referralsRoutes = require('./routes/referralsRoutes');
 const telegramRoutes = require('./routes/telegramRoutes');
 const systemStatusRoutes = require('./routes/systemStatusRoutes');
-const settingsRoutes = require('./routes/settingsRoutes'); // NEW: Settings routes
+const settingsRoutes = require('./routes/settingsRoutes');
+const feedbackRoutes = require('./routes/feedbackRoutes'); // ADDED: Feedback routes
+
 const TaskValidation = require('./models/TaskValidation');
 
 const app = express();
@@ -46,7 +48,7 @@ app.get('/api/telegram/health', (req, res) => {
   });
 });
 
-// Use Routes - MOVED BEFORE INITIALIZATION
+// Use Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/mining', miningRoutes);
@@ -55,7 +57,8 @@ app.use('/api/tasks', tasksRoutes);
 app.use('/api/referrals', referralsRoutes);
 app.use('/api/telegram', telegramRoutes);
 app.use('/api/system', systemStatusRoutes);
-app.use('/api/settings', settingsRoutes); // NEW: Settings routes
+app.use('/api/settings', settingsRoutes);
+app.use('/api/feedback', feedbackRoutes); // ADDED: Mount feedback routes
 
 // Test Database Connection
 const checkDbConnection = async () => {
@@ -124,6 +127,50 @@ const initializeSettingsSystem = async () => {
     }
   } catch (error) {
     console.error('❌ Failed to initialize settings system:', error);
+  }
+};
+
+// Add this to your initializeSettingsSystem function in server.js
+const initializeFeedbackSystem = async () => {
+  try {
+    // Check if feedback table exists, create if not
+    const tableCheck = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'feedback'
+      );
+    `);
+
+    if (!tableCheck.rows[0].exists) {
+      console.log('📝 Creating feedback table...');
+      await db.query(`
+        CREATE TABLE feedback (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          title VARCHAR(255) NOT NULL,
+          message TEXT NOT NULL,
+          type VARCHAR(50) DEFAULT 'suggestion',
+          priority VARCHAR(20) DEFAULT 'medium',
+          status VARCHAR(20) DEFAULT 'pending',
+          attachments JSONB DEFAULT '[]',
+          zp_reward INTEGER DEFAULT 0,
+          seb_reward INTEGER DEFAULT 0,
+          admin_notes TEXT,
+          rewarded_at TIMESTAMP,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+        );
+        
+        CREATE INDEX idx_feedback_user_id ON feedback(user_id);
+        CREATE INDEX idx_feedback_status ON feedback(status);
+        CREATE INDEX idx_feedback_created_at ON feedback(created_at DESC);
+      `);
+      console.log('✅ Feedback table created successfully');
+    } else {
+      console.log('✅ Feedback table already exists');
+    }
+  } catch (error) {
+    console.error('❌ Failed to initialize feedback system:', error);
   }
 };
 
