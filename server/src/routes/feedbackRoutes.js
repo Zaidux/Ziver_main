@@ -3,6 +3,25 @@ const router = express.Router();
 const multer = require('multer');
 const { protect } = require('../middleware/authMiddleware');
 const { adminOnly } = require('../middleware/adminMiddleware');
+
+// DEBUG: Check if the controller file exists
+try {
+  console.log('🔍 Attempting to load feedback controller...');
+  const feedbackController = require('../controllers/settings/feedbackController');
+  console.log('✅ Feedback controller loaded successfully');
+  console.log('📋 Available methods:', Object.keys(feedbackController));
+  
+  // Check if getFeedbackStats exists
+  if (typeof feedbackController.getFeedbackStats === 'function') {
+    console.log('✅ getFeedbackStats method exists');
+  } else {
+    console.log('❌ getFeedbackStats method is undefined');
+  }
+} catch (error) {
+  console.error('❌ Failed to load feedback controller:', error);
+  process.exit(1);
+}
+
 const feedbackController = require('../controllers/settings/feedbackController');
 
 // Configure multer for file uploads
