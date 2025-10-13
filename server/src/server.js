@@ -241,7 +241,40 @@ const initializeFeedbackSystem = async () => {
       `);
       console.log('✅ Feedback table created successfully');
     } else {
-      console.log('✅ Feedback table already exists');
+      // ✅ Check if all required columns exist
+      const columnsCheck = await db.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'feedback'
+      `);
+      
+      const existingColumns = columnsCheck.rows.map(row => row.column_name);
+      const requiredColumns = ['attachments', 'zp_reward', 'seb_reward', 'admin_notes', 'rewarded_at'];
+      
+      const missingColumns = requiredColumns.filter(col => !existingColumns.includes(col));
+      
+      if (missingColumns.length > 0) {
+        console.log('🔧 Adding missing columns to feedback table:', missingColumns);
+        
+        for (const column of missingColumns) {
+          try {
+            if (column === 'attachments') {
+              await db.query(`ALTER TABLE feedback ADD COLUMN attachments JSONB DEFAULT '[]'`);
+            } else if (column === 'zp_reward' || column === 'seb_reward') {
+              await db.query(`ALTER TABLE feedback ADD COLUMN ${column} INTEGER DEFAULT 0`);
+            } else if (column === 'admin_notes') {
+              await db.query(`ALTER TABLE feedback ADD COLUMN admin_notes TEXT`);
+            } else if (column === 'rewarded_at') {
+              await db.query(`ALTER TABLE feedback ADD COLUMN rewarded_at TIMESTAMP`);
+            }
+            console.log(`✅ Added column: ${column}`);
+          } catch (alterError) {
+            console.log(`ℹ️ Column ${column} might already exist:`, alterError.message);
+          }
+        }
+      }
+      
+      console.log('✅ Feedback table schema is up to date');
     }
   } catch (error) {
     console.error('❌ Failed to initialize feedback system:', error);
