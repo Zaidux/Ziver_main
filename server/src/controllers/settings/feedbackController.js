@@ -3,16 +3,27 @@ const Feedback = require('../../models/Feedback');
 const { uploadToS3, deleteFromS3 } = require('../../utils/fileUpload');
 
 const feedbackController = {
-  // Submit new feedback
+  // Submit new feedback - FIXED VERSION
   submitFeedback: asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { title, message, type, priority } = req.body;
 
+    console.log('📝 Feedback submission started for user:', userId);
+
     // Validate required fields
-    if (!title || !message) {
+    if (!title || !title.trim()) {
+      console.log('❌ Validation failed: Title required');
       return res.status(400).json({
         success: false,
-        message: 'Title and message are required'
+        message: 'Title is required'
+      });
+    }
+
+    if (!message || !message.trim()) {
+      console.log('❌ Validation failed: Message required');
+      return res.status(400).json({
+        success: false,
+        message: 'Message is required'
       });
     }
 
@@ -20,7 +31,7 @@ const feedbackController = {
     let attachments = [];
     if (req.files && req.files.length > 0) {
       try {
-        // Upload each file to S3 or your storage service
+        console.log(`📎 Processing ${req.files.length} attachment(s)`);
         for (const file of req.files) {
           const uploadResult = await uploadToS3(file);
           attachments.push({
@@ -32,7 +43,7 @@ const feedbackController = {
           });
         }
       } catch (uploadError) {
-        console.error('File upload error:', uploadError);
+        console.error('❌ File upload failed:', uploadError.message);
         return res.status(500).json({
           success: false,
           message: 'Error uploading attachments'
@@ -41,14 +52,17 @@ const feedbackController = {
     }
 
     try {
+      console.log('💾 Saving feedback to database');
       const feedback = await Feedback.create({
         userId,
-        title,
-        message,
+        title: title.trim(),
+        message: message.trim(),
         type: type || 'suggestion',
         priority: priority || 'medium',
         attachments
       });
+
+      console.log('✅ Feedback saved successfully, ID:', feedback.id);
 
       res.status(201).json({
         success: true,
@@ -64,15 +78,16 @@ const feedbackController = {
       });
 
     } catch (error) {
-      console.error('Feedback submission error:', error);
+      console.error('❌ Feedback submission failed:', error.message);
 
       // Clean up uploaded files if feedback creation fails
       if (attachments.length > 0) {
+        console.log('🧹 Cleaning up uploaded files');
         for (const attachment of attachments) {
           try {
             await deleteFromS3(attachment.key);
           } catch (deleteError) {
-            console.error('Error cleaning up attachment:', deleteError);
+            console.error('Cleanup error:', deleteError.message);
           }
         }
       }
@@ -104,7 +119,7 @@ const feedbackController = {
       });
 
     } catch (error) {
-      console.error('Get user feedback error:', error);
+      console.error('Get user feedback error:', error.message);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch feedback'
@@ -137,7 +152,7 @@ const feedbackController = {
       });
 
     } catch (error) {
-      console.error('Get all feedback error:', error);
+      console.error('Get all feedback error:', error.message);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch feedback'
@@ -145,19 +160,17 @@ const feedbackController = {
     }
   }),
 
-  // Get feedback statistics (Admin only) - FIXED: Ensure this method exists
+  // Get feedback statistics (Admin only)
   getFeedbackStats: asyncHandler(async (req, res) => {
     try {
       const stats = await Feedback.getStats();
 
-      // Format stats properly
       const formattedStats = {
         byStatus: {},
         byType: {},
         byPriority: {}
       };
 
-      // Initialize all possible values to 0
       const allStatuses = ['pending', 'reviewed', 'in_progress', 'resolved', 'rewarded', 'closed'];
       const allTypes = ['suggestion', 'bug', 'complaint', 'feature'];
       const allPriorities = ['low', 'medium', 'high'];
@@ -166,7 +179,6 @@ const feedbackController = {
       allTypes.forEach(type => formattedStats.byType[type] = 0);
       allPriorities.forEach(priority => formattedStats.byPriority[priority] = 0);
 
-      // Fill with actual data
       stats.forEach(stat => {
         if (stat.status && formattedStats.byStatus.hasOwnProperty(stat.status)) {
           formattedStats.byStatus[stat.status] = parseInt(stat.count) || 0;
@@ -185,7 +197,7 @@ const feedbackController = {
       });
 
     } catch (error) {
-      console.error('Get feedback stats error:', error);
+      console.error('Get feedback stats error:', error.message);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch feedback statistics'
@@ -224,7 +236,7 @@ const feedbackController = {
       });
 
     } catch (error) {
-      console.error('Update feedback status error:', error);
+      console.error('Update feedback status error:', error.message);
       res.status(500).json({
         success: false,
         message: 'Failed to update feedback status'
@@ -237,7 +249,6 @@ const feedbackController = {
     const { id } = req.params;
     const { zpReward = 0, sebReward = 0, adminNotes } = req.body;
 
-    // Validate rewards
     if (zpReward < 0 || sebReward < 0) {
       return res.status(400).json({
         success: false,
@@ -266,7 +277,7 @@ const feedbackController = {
       });
 
     } catch (error) {
-      console.error('Reward user error:', error);
+      console.error('Reward user error:', error.message);
 
       if (error.message === 'Feedback not found') {
         return res.status(404).json({
@@ -296,7 +307,6 @@ const feedbackController = {
         });
       }
 
-      // Check if user owns the feedback or is admin
       if (feedback.user_id !== req.user.id && req.user.role !== 'admin') {
         return res.status(403).json({
           success: false,
@@ -310,7 +320,7 @@ const feedbackController = {
       });
 
     } catch (error) {
-      console.error('Get feedback details error:', error);
+      console.error('Get feedback details error:', error.message);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch feedback details'
@@ -319,5 +329,4 @@ const feedbackController = {
   })
 };
 
-// Make sure the module exports correctly
 module.exports = feedbackController;
