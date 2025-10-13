@@ -14,7 +14,7 @@ const referralsRoutes = require('./routes/referralsRoutes');
 const telegramRoutes = require('./routes/telegramRoutes');
 const systemStatusRoutes = require('./routes/systemStatusRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
-const feedbackRoutes = require('./routes/feedbackRoutes'); // ADDED: Feedback routes
+const feedbackRoutes = require('./routes/feedbackRoutes');
 
 const TaskValidation = require('./models/TaskValidation');
 
@@ -25,7 +25,42 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Add this after your existing middleware but before routes
+// Temporary debug middleware for feedback - ADD THIS
+app.use('/api/feedback', (req, res, next) => {
+  if (req.method === 'POST') {
+    console.log('🔍 Feedback Request Debug:');
+    console.log('  Headers:', {
+      authorization: req.headers.authorization ? 'Present' : 'Missing',
+      'content-type': req.headers['content-type'],
+      'content-length': req.headers['content-length']
+    });
+    console.log('  Body keys:', Object.keys(req.body));
+    console.log('  Files count:', req.files ? req.files.length : 0);
+    
+    // Create a copy of the response methods to log the response
+    const originalSend = res.send;
+    const originalJson = res.json;
+    
+    res.send = function(data) {
+      console.log('📤 Feedback Response:', {
+        statusCode: res.statusCode,
+        data: data ? (typeof data === 'string' ? data.substring(0, 200) : 'Object') : 'Empty'
+      });
+      originalSend.apply(this, arguments);
+    };
+    
+    res.json = function(data) {
+      console.log('📤 Feedback JSON Response:', {
+        statusCode: res.statusCode,
+        data: data ? JSON.stringify(data).substring(0, 200) : 'Empty'
+      });
+      originalJson.apply(this, arguments);
+    };
+  }
+  next();
+});
+
+// Your existing feedback debug middleware
 app.use((req, res, next) => {
   if (req.path === '/api/feedback' && req.method === 'POST') {
     console.log('📥 Feedback request received:', {
@@ -74,7 +109,7 @@ app.use('/api/referrals', referralsRoutes);
 app.use('/api/telegram', telegramRoutes);
 app.use('/api/system', systemStatusRoutes);
 app.use('/api/settings', settingsRoutes);
-app.use('/api/feedback', feedbackRoutes); // ADDED: Mount feedback routes
+app.use('/api/feedback', feedbackRoutes);
 
 // Test Database Connection
 const checkDbConnection = async () => {
@@ -102,7 +137,6 @@ const initializeTaskValidation = async () => {
 // Initialize settings system (create tables if needed)
 const initializeSettingsSystem = async () => {
   try {
-    // Check if user_preferences table exists, create if not
     const tableCheck = await db.query(`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -125,7 +159,6 @@ const initializeSettingsSystem = async () => {
         
         CREATE INDEX idx_user_preferences_user_id ON user_preferences(user_id);
         
-        -- Add two_factor fields to users table if not exists
         DO $$ 
         BEGIN 
           IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
@@ -146,10 +179,8 @@ const initializeSettingsSystem = async () => {
   }
 };
 
-// Add this to your initializeSettingsSystem function in server.js
 const initializeFeedbackSystem = async () => {
   try {
-    // Check if feedback table exists, create if not
     const tableCheck = await db.query(`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -194,7 +225,6 @@ const initializeFeedbackSystem = async () => {
 const initializeApp = async () => {
   console.log('🔧 Starting application initialization...');
 
-  // First, check database connection
   const dbConnected = await checkDbConnection();
 
   if (!dbConnected) {
@@ -202,16 +232,10 @@ const initializeApp = async () => {
     process.exit(1);
   }
 
-  // Initialize task validation system AFTER database is confirmed connected
   await initializeTaskValidation();
-
-  // Initialize settings system
   await initializeSettingsSystem();
-
-  // ADDED: Initialize feedback system
   await initializeFeedbackSystem();
 
-  // Set up Telegram webhook if bot token exists
   if (process.env.TELEGRAM_BOT_TOKEN) {
     console.log('🤖 Setting up Telegram webhook...');
     await setWebhook();
@@ -219,18 +243,10 @@ const initializeApp = async () => {
     console.log('⚠️  TELEGRAM_BOT_TOKEN not set, skipping webhook setup');
   }
 
-  // Start the server
   app.listen(PORT, () => {
     console.log(`🎉 Server is running on port ${PORT}`);
     console.log(`🔗 Available routes:`);
-    console.log(`   GET  /api/auth/google/callback - Google OAuth callback`);
-    console.log(`   POST /api/auth/google - Google OAuth direct`);
-    console.log(`   POST /api/auth/register - User registration`);
-    console.log(`   POST /api/auth/login - User login`);
-    console.log(`   PUT  /api/settings/security/password - Change password`); // NEW
-    console.log(`   POST /api/settings/security/two-factor - Toggle 2FA`); // NEW
-    console.log(`   PUT  /api/settings/appearance/theme - Update theme`); // NEW
-    console.log(`   PUT  /api/settings/notifications - Update notifications`); // NEW
+    console.log(`   POST /api/feedback - Submit feedback`);
   });
 };
 
