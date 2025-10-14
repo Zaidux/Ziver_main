@@ -1,5 +1,13 @@
 const express = require('express');
-const feedbackController = require('../controllers/settings/feedbackController');
+const { 
+  submitFeedback,
+  getUserFeedback,
+  getFeedbackDetails,
+  getAllFeedback,
+  getFeedbackStats,
+  updateFeedbackStatus,
+  rewardUser
+} = require('../controllers/settings/feedbackController');
 const { protect } = require('../middleware/authMiddleware');
 const { adminProtect } = require('../middleware/adminMiddleware');
 
@@ -14,16 +22,16 @@ router.get('/', (req, res) => {
 });
 
 // Submit feedback (with built-in form parsing)
-router.post('/', protect, feedbackController.submitFeedback);
+router.post('/', protect, submitFeedback);
 
 // User routes
-router.get('/user', protect, feedbackController.getUserFeedback);
-router.get('/:id', protect, feedbackController.getFeedbackDetails);
+router.get('/user', protect, getUserFeedback);
+router.get('/:id', protect, getFeedbackDetails);
 
 // Admin routes
-router.get('/admin/all', protect, adminProtect, feedbackController.getAllFeedback);
-router.get('/admin/stats', protect, adminProtect, feedbackController.getFeedbackStats);
-router.put('/admin/:id/status', protect, adminProtect, feedbackController.updateFeedbackStatus);
-router.post('/admin/:id/reward', protect, adminProtect, feedbackController.rewardUser);
+router.get('/admin/all', protect, adminProtect, getAllFeedback);
+router.get('/admin/stats', protect, adminProtect, getFeedbackStats);
+router.put('/admin/:id/status', protect, adminProtect, updateFeedbackStatus);
+router.post('/admin/:id/reward', protect, adminProtect, rewardUser);
 
 module.exports = router;
