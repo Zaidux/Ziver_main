@@ -2,15 +2,33 @@ const Feedback = require('../../models/Feedback');
 const UploadHandler = require('../../utils/uploadHandler');
 const { uploadToS3, deleteFromS3 } = require('../../utils/fileUpload');
 
-class FeedbackController {
+/**
+ * Clean up uploaded attachments on failure
+ */
+async function cleanupAttachments(attachments) {
+  if (!attachments || attachments.length === 0) return;
+
+  console.log(`🧹 Cleaning up ${attachments.length} attachment(s)...`);
+
+  for (const attachment of attachments) {
+    try {
+      await deleteFromS3(attachment.key);
+      console.log(`✅ Cleaned up: ${attachment.filename}`);
+    } catch (cleanupError) {
+      console.error(`❌ Failed to cleanup ${attachment.filename}:`, cleanupError.message);
+    }
+  }
+}
+
+const feedbackController = {
   /**
    * Submit new feedback with robust error handling
    */
-  async submitFeedback(req, res) {
+  submitFeedback: async (req, res) => {
     console.log('🟢 Feedback submission started...');
-    
+
     let uploadedAttachments = [];
-    
+
     try {
       // Check authentication
       const userId = req.user?.id;
@@ -39,7 +57,7 @@ class FeedbackController {
       }
 
       const { title, message, type = 'suggestion', priority = 'medium' } = fields;
-      
+
       console.log('📥 Parsed data:', { title, type, priority, fileCount: files.length });
 
       // Validate input
@@ -55,7 +73,7 @@ class FeedbackController {
       // Handle file uploads
       if (files.length > 0) {
         console.log(`📎 Processing ${files.length} attachment(s)...`);
-        
+
         try {
           uploadedAttachments = await Promise.all(
             files.map(async (file) => {
@@ -73,10 +91,10 @@ class FeedbackController {
           console.log('✅ All attachments uploaded successfully');
         } catch (uploadError) {
           console.error('❌ File upload error:', uploadError.message);
-          
+
           // Clean up any uploaded files
-          await this.cleanupAttachments(uploadedAttachments);
-          
+          await cleanupAttachments(uploadedAttachments);
+
           return res.status(500).json({
             success: false,
             message: 'Failed to upload attachments. Please try again.'
@@ -116,11 +134,11 @@ class FeedbackController {
 
     } catch (error) {
       console.error('💥 Critical error in submitFeedback:', error);
-      
+
       // Clean up uploaded files on error
       if (uploadedAttachments.length > 0) {
         console.log('🧹 Cleaning up uploaded files due to error...');
-        await this.cleanupAttachments(uploadedAttachments);
+        await cleanupAttachments(uploadedAttachments);
       }
 
       return res.status(500).json({
@@ -128,30 +146,12 @@ class FeedbackController {
         message: 'Internal server error. Please try again later.'
       });
     }
-  }
-
-  /**
-   * Clean up uploaded attachments on failure
-   */
-  async cleanupAttachments(attachments) {
-    if (!attachments || attachments.length === 0) return;
-    
-    console.log(`🧹 Cleaning up ${attachments.length} attachment(s)...`);
-    
-    for (const attachment of attachments) {
-      try {
-        await deleteFromS3(attachment.key);
-        console.log(`✅ Cleaned up: ${attachment.filename}`);
-      } catch (cleanupError) {
-        console.error(`❌ Failed to cleanup ${attachment.filename}:`, cleanupError.message);
-      }
-    }
-  }
+  },
 
   /**
    * Get user's feedback history
    */
-  async getUserFeedback(req, res) {
+  getUserFeedback: async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -165,7 +165,7 @@ class FeedbackController {
       const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
 
       const result = await Feedback.findByUserId(userId, page, limit);
-      
+
       return res.json({
         success: true,
         feedback: result.feedback,
@@ -182,12 +182,12 @@ class FeedbackController {
         message: 'Failed to fetch feedback history.'
       });
     }
-  }
+  },
 
   /**
    * Get all feedback (Admin)
    */
-  async getAllFeedback(req, res) {
+  getAllFeedback: async (req, res) => {
     try {
       const page = Math.max(1, parseInt(req.query.page) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
@@ -199,7 +199,7 @@ class FeedbackController {
       if (priority && priority !== 'all') filters.priority = priority;
 
       const result = await Feedback.findAll(page, limit, filters);
-      
+
       return res.json({
         success: true,
         feedback: result.feedback,
@@ -216,12 +216,12 @@ class FeedbackController {
         message: 'Failed to fetch feedback list.'
       });
     }
-  }
+  },
 
   /**
    * Get feedback statistics (Admin)
    */
-  async getFeedbackStats(req, res) {
+  getFeedbackStats: async (req, res) => {
     try {
       const stats = await Feedback.getStats();
 
@@ -245,12 +245,12 @@ class FeedbackController {
         message: 'Failed to load feedback stats.'
       });
     }
-  }
+  },
 
   /**
    * Update feedback status (Admin)
    */
-  async updateFeedbackStatus(req, res) {
+  updateFeedbackStatus: async (req, res) => {
     try {
       const { id } = req.params;
       const { status, adminNotes } = req.body;
@@ -283,12 +283,12 @@ class FeedbackController {
         message: 'Failed to update feedback status.'
       });
     }
-  }
+  },
 
   /**
    * Reward user for feedback (Admin)
    */
-  async rewardUser(req, res) {
+  rewardUser: async (req, res) => {
     try {
       const { id } = req.params;
       const { zpReward = 0, sebReward = 0, adminNotes } = req.body;
@@ -322,18 +322,18 @@ class FeedbackController {
       const message = error.message === 'Feedback not found' 
         ? 'Feedback not found.' 
         : 'Failed to reward user.';
-      
+
       return res.status(error.message === 'Feedback not found' ? 404 : 500).json({
         success: false,
         message
       });
     }
-  }
+  },
 
   /**
    * Get single feedback details
    */
-  async getFeedbackDetails(req, res) {
+  getFeedbackDetails: async (req, res) => {
     try {
       const { id } = req.params;
       const userId = req.user.id;
@@ -367,6 +367,6 @@ class FeedbackController {
       });
     }
   }
-}
+};
 
-module.exports = new FeedbackController();
+module.exports = feedbackController;
