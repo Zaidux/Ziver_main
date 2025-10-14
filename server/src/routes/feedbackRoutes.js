@@ -35,6 +35,16 @@ router.get('/', (req, res) => {
   });
 });
 
+// Add this to your feedbackRoutes.js temporarily
+router.post('/test-simple', protect, (req, res) => {
+  console.log('🧪 Simple test endpoint hit');
+  res.json({ 
+    success: true, 
+    message: 'Simple endpoint works',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Submit feedback (with built-in form parsing)
 router.post('/', protect, submitFeedback);
 
