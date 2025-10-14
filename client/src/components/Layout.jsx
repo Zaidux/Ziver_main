@@ -13,7 +13,8 @@ import {
   Sun,
   Moon,
   Monitor,
-  Zap
+  Zap,
+  History // ADDED: History icon
 } from 'lucide-react';
 import './Layout.css';
 
@@ -43,30 +44,29 @@ const Layout = () => {
   };
 
   const handleMenuAction = (action) => {
-  setShowProfileDropdown(false);
-  console.log('Menu action:', action); // DEBUG
+    setShowProfileDropdown(false);
+    console.log('Menu action:', action);
 
-  switch (action) {
-    case 'profile':
-      console.log('Navigating to /profile'); // DEBUG
-      navigate('/profile');
-      break;
-    case 'settings':
-      console.log('Navigating to /settings'); // DEBUG
-      navigate('/settings');
-      break;
-    case 'feedback':
-      console.log('Navigating to /feedback'); // DEBUG
-      navigate('/feedback');
-      break;
-    case 'logout':
-      console.log('Logging out'); // DEBUG
-      logout();
-      break;
-    default:
-      break;
-  }
-};
+    switch (action) {
+      case 'profile':
+        navigate('/profile');
+        break;
+      case 'settings':
+        navigate('/settings');
+        break;
+      case 'feedback':
+        navigate('/feedback');
+        break;
+      case 'history': // ADDED: History navigation
+        navigate('/history');
+        break;
+      case 'logout':
+        logout();
+        break;
+      default:
+        break;
+    }
+  };
 
   const handleThemeToggle = () => {
     const themes = ['light', 'dark', 'auto'];
@@ -102,28 +102,13 @@ const Layout = () => {
 
   return (
     <div className={`app-container ${navbarCollapsed ? 'navbar-collapsed' : ''}`}>
-      {/* Global Profile Dropdown in Header */}
+      {/* Global Profile Dropdown in Header - MOVED TO LEFT */}
       <header className="global-header">
         <div className="header-content">
-          <div className="header-left">
-            <div className="header-logo">
-              <Zap className="logo-icon" size={20} />
-              <span className="logo-text">ZIVER</span>
-            </div>
-          </div>
-
-          <div className="header-right" ref={dropdownRef}>
+          {/* MOVED: Profile dropdown to left side */}
+          <div className="header-left" ref={dropdownRef}>
             {user && (
               <div className="actions-container">
-                {/* Theme Toggle Button */}
-                <button 
-                  onClick={handleThemeToggle}
-                  className="theme-toggle-button"
-                  title={`Current theme: ${theme}`}
-                >
-                  <ThemeIcon size={18} />
-                </button>
-
                 {/* Profile Dropdown */}
                 <button 
                   onClick={handleProfileClick}
@@ -136,7 +121,7 @@ const Layout = () => {
 
                 {/* Profile Dropdown Menu */}
                 {showProfileDropdown && (
-                  <div className="profile-dropdown-menu global">
+                  <div className="profile-dropdown-menu global left-aligned">
                     <div className="dropdown-user-info">
                       <div className="user-avatar">
                         {getUserAvatar()}
@@ -160,6 +145,16 @@ const Layout = () => {
                       <User size={18} />
                       <span>Profile</span>
                     </button>
+
+                    {/* ADDED: History option with grey color */}
+                    <button 
+                      className="dropdown-item history"
+                      onClick={() => handleMenuAction('history')}
+                    >
+                      <History size={18} />
+                      <span>History</span>
+                    </button>
+
                     <button 
                       className="dropdown-item"
                       onClick={() => handleMenuAction('settings')}
@@ -174,9 +169,9 @@ const Layout = () => {
                       <MessageCircle size={18} />
                       <span>Feedback</span>
                     </button>
-                    
+
                     <div className="dropdown-divider"></div>
-                    
+
                     <button 
                       className="dropdown-item logout"
                       onClick={() => handleMenuAction('logout')}
@@ -188,6 +183,22 @@ const Layout = () => {
                 )}
               </div>
             )}
+          </div>
+
+          <div className="header-right">
+            <div className="header-logo">
+              <Zap className="logo-icon" size={20} />
+              <span className="logo-text">ZIVER</span>
+            </div>
+
+            {/* Theme Toggle Button - MOVED TO RIGHT */}
+            <button 
+              onClick={handleThemeToggle}
+              className="theme-toggle-button"
+              title={`Current theme: ${theme}`}
+            >
+              <ThemeIcon size={18} />
+            </button>
           </div>
         </div>
       </header>
