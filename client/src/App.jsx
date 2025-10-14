@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-
 import { useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { usePlatformDetection } from './hooks/usePlatformDetection';
+import TransactionHistoryPage from './pages/TransactionHistoryPage';
 import api from './services/api';
 
 // Layout and Component Imports
@@ -180,6 +181,7 @@ const AppRoutes = ({ user, isLockdown }) => (
             <Route path="/settings/security" element={<SecuritySettingsPage />} />
             <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
             <Route path="/settings/account" element={<AccountSettingsPage />} />
+            <Route path="/history" element={<TransactionHistoryPage />} />
 
             {/* Updated Coming Soon routes with admin bypass */}
             <Route path="/job-marketplace" element={
