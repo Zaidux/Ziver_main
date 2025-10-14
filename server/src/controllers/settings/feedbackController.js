@@ -2,80 +2,82 @@ const asyncHandler = require('express-async-handler');
 const Feedback = require('../../models/Feedback');
 const { uploadToS3, deleteFromS3 } = require('../../utils/fileUpload');
 
+// Utility: sanitize string
+function cleanString(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
 const feedbackController = {
-  // Submit new feedback - FIXED VERSION
+  // =====================================================
+  // 1️⃣ Submit new feedback (User)
+  // =====================================================
   submitFeedback: asyncHandler(async (req, res) => {
-    const userId = req.user.id;
+    console.log('🟢 Feedback submission started...');
 
-    // ADDED: Debug log for user ID
-    console.log('🔍 USER ID DEBUG:', {
-      userId: userId,
-      type: typeof userId,
-      length: userId ? userId.length : 0,
-      sample: userId ? userId.substring(0, 8) + '...' : 'undefined'
-    });
+    // --- Authentication check
+    const userId = req.user?.id;
+    if (!userId) {
+      console.warn('⚠️ Unauthorized feedback submission attempt.');
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized: Please log in first.'
+      });
+    }
 
+    // --- Extract body fields
     const { title, message, type, priority } = req.body;
+    console.log('📥 Body received:', { title, message, type, priority });
 
-    console.log('📝 Feedback submission started for user:', userId);
-
-    // Validate required fields
-    if (!title || !title.trim()) {
-      console.log('❌ Validation failed: Title required');
-      return res.status(400).json({
-        success: false,
-        message: 'Title is required'
-      });
+    // --- Validation
+    if (!title || !cleanString(title)) {
+      return res.status(400).json({ success: false, message: 'Title is required.' });
+    }
+    if (!message || !cleanString(message)) {
+      return res.status(400).json({ success: false, message: 'Message is required.' });
     }
 
-    if (!message || !message.trim()) {
-      console.log('❌ Validation failed: Message required');
-      return res.status(400).json({
-        success: false,
-        message: 'Message is required'
-      });
-    }
-
-    // Process file uploads
+    // --- Handle file uploads (if any)
     let attachments = [];
-    if (req.files && req.files.length > 0) {
-      try {
-        console.log(`📎 Processing ${req.files.length} attachment(s)`);
+    try {
+      if (Array.isArray(req.files) && req.files.length > 0) {
+        console.log(`📎 Processing ${req.files.length} attachment(s)...`);
         for (const file of req.files) {
-          const uploadResult = await uploadToS3(file);
+          const uploaded = await uploadToS3(file);
           attachments.push({
             filename: file.originalname,
-            key: uploadResult.key,
-            url: uploadResult.url,
+            key: uploaded.key,
+            url: uploaded.url,
             size: file.size,
             mimetype: file.mimetype
           });
         }
-      } catch (uploadError) {
-        console.error('❌ File upload failed:', uploadError.message);
-        return res.status(500).json({
-          success: false,
-          message: 'Error uploading attachments'
-        });
+      } else {
+        console.log('📁 No attachments uploaded.');
       }
+    } catch (uploadErr) {
+      console.error('❌ File upload error:', uploadErr.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Attachment upload failed. Please retry.'
+      });
     }
 
+    // --- Save feedback to database
     try {
-      console.log('💾 Saving feedback to database');
       const feedback = await Feedback.create({
         userId,
-        title: title.trim(),
-        message: message.trim(),
+        title: cleanString(title),
+        message: cleanString(message),
         type: type || 'suggestion',
         priority: priority || 'medium',
         attachments
       });
 
-      console.log('✅ Feedback saved successfully, ID:', feedback.id);
+      console.log('✅ Feedback saved successfully:', feedback.id);
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
-        message: 'Feedback submitted successfully',
+        message: 'Feedback submitted successfully.',
         feedback: {
           id: feedback.id,
           title: feedback.title,
@@ -85,39 +87,43 @@ const feedbackController = {
           createdAt: feedback.created_at
         }
       });
+    } catch (dbErr) {
+      console.error('❌ Database save failed:', dbErr.message);
 
-    } catch (error) {
-      console.error('❌ Feedback submission failed:', error.message);
-
-      // Clean up uploaded files if feedback creation fails
+      // Rollback any uploaded files
       if (attachments.length > 0) {
-        console.log('🧹 Cleaning up uploaded files');
-        for (const attachment of attachments) {
+        console.log('🧹 Rolling back uploaded files...');
+        for (const a of attachments) {
           try {
-            await deleteFromS3(attachment.key);
-          } catch (deleteError) {
-            console.error('Cleanup error:', deleteError.message);
+            await deleteFromS3(a.key);
+          } catch (cleanupErr) {
+            console.error('Cleanup failed for', a.key, cleanupErr.message);
           }
         }
       }
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        message: 'Failed to submit feedback'
+        message: 'Internal error while saving feedback.'
       });
     }
   }),
 
-  // Get user's feedback history
+  // =====================================================
+  // 2️⃣ Get user’s feedback (User)
+  // =====================================================
   getUserFeedback: asyncHandler(async (req, res) => {
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized access.' });
+    }
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
     try {
       const result = await Feedback.findByUserId(userId, page, limit);
-
-      res.json({
+      return res.json({
         success: true,
         feedback: result.feedback,
         pagination: {
@@ -126,17 +132,18 @@ const feedbackController = {
           totalCount: result.totalCount
         }
       });
-
-    } catch (error) {
-      console.error('Get user feedback error:', error.message);
-      res.status(500).json({
+    } catch (err) {
+      console.error('❌ getUserFeedback error:', err.message);
+      return res.status(500).json({
         success: false,
-        message: 'Failed to fetch feedback'
+        message: 'Failed to fetch feedback history.'
       });
     }
   }),
 
-  // Get all feedback (Admin only)
+  // =====================================================
+  // 3️⃣ Get all feedback (Admin only)
+  // =====================================================
   getAllFeedback: asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
@@ -149,8 +156,7 @@ const feedbackController = {
 
     try {
       const result = await Feedback.findAll(page, limit, filters);
-
-      res.json({
+      return res.json({
         success: true,
         feedback: result.feedback,
         pagination: {
@@ -159,117 +165,88 @@ const feedbackController = {
           totalCount: result.totalCount
         }
       });
-
     } catch (error) {
-      console.error('Get all feedback error:', error.message);
-      res.status(500).json({
+      console.error('❌ getAllFeedback error:', error.message);
+      return res.status(500).json({
         success: false,
-        message: 'Failed to fetch feedback'
+        message: 'Failed to fetch feedback list.'
       });
     }
   }),
 
-  // Get feedback statistics (Admin only)
+  // =====================================================
+  // 4️⃣ Feedback statistics (Admin)
+  // =====================================================
   getFeedbackStats: asyncHandler(async (req, res) => {
     try {
       const stats = await Feedback.getStats();
 
-      const formattedStats = {
-        byStatus: {},
-        byType: {},
-        byPriority: {}
+      const formatted = {
+        byStatus: { pending: 0, reviewed: 0, in_progress: 0, resolved: 0, rewarded: 0, closed: 0 },
+        byType: { suggestion: 0, bug: 0, complaint: 0, feature: 0 },
+        byPriority: { low: 0, medium: 0, high: 0 }
       };
 
-      const allStatuses = ['pending', 'reviewed', 'in_progress', 'resolved', 'rewarded', 'closed'];
-      const allTypes = ['suggestion', 'bug', 'complaint', 'feature'];
-      const allPriorities = ['low', 'medium', 'high'];
-
-      allStatuses.forEach(status => formattedStats.byStatus[status] = 0);
-      allTypes.forEach(type => formattedStats.byType[type] = 0);
-      allPriorities.forEach(priority => formattedStats.byPriority[priority] = 0);
-
-      stats.forEach(stat => {
-        if (stat.status && formattedStats.byStatus.hasOwnProperty(stat.status)) {
-          formattedStats.byStatus[stat.status] = parseInt(stat.count) || 0;
-        }
-        if (stat.type && formattedStats.byType.hasOwnProperty(stat.type)) {
-          formattedStats.byType[stat.type] = parseInt(stat.count) || 0;
-        }
-        if (stat.priority && formattedStats.byPriority.hasOwnProperty(stat.priority)) {
-          formattedStats.byPriority[stat.priority] = parseInt(stat.count) || 0;
-        }
+      stats.forEach(s => {
+        if (formatted.byStatus[s.status] !== undefined) formatted.byStatus[s.status] = parseInt(s.count);
+        if (formatted.byType[s.type] !== undefined) formatted.byType[s.type] = parseInt(s.count);
+        if (formatted.byPriority[s.priority] !== undefined) formatted.byPriority[s.priority] = parseInt(s.count);
       });
 
-      res.json({
-        success: true,
-        stats: formattedStats
-      });
-
+      return res.json({ success: true, stats: formatted });
     } catch (error) {
-      console.error('Get feedback stats error:', error.message);
-      res.status(500).json({
+      console.error('❌ getFeedbackStats error:', error.message);
+      return res.status(500).json({
         success: false,
-        message: 'Failed to fetch feedback statistics'
+        message: 'Failed to load feedback stats.'
       });
     }
   }),
 
-  // Update feedback status (Admin only)
+  // =====================================================
+  // 5️⃣ Update feedback status (Admin)
+  // =====================================================
   updateFeedbackStatus: asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { status, adminNotes } = req.body;
 
-    const validStatuses = ['pending', 'reviewed', 'in_progress', 'resolved', 'closed'];
-
+    const validStatuses = ['pending', 'reviewed', 'in_progress', 'resolved', 'rewarded', 'closed'];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid status'
-      });
+      return res.status(400).json({ success: false, message: 'Invalid status provided.' });
     }
 
     try {
       const feedback = await Feedback.updateStatus(id, status, adminNotes);
-
       if (!feedback) {
-        return res.status(404).json({
-          success: false,
-          message: 'Feedback not found'
-        });
+        return res.status(404).json({ success: false, message: 'Feedback not found.' });
       }
 
-      res.json({
+      return res.json({
         success: true,
-        message: 'Feedback status updated successfully',
+        message: 'Feedback status updated successfully.',
         feedback
       });
-
     } catch (error) {
-      console.error('Update feedback status error:', error.message);
-      res.status(500).json({
+      console.error('❌ updateFeedbackStatus error:', error.message);
+      return res.status(500).json({
         success: false,
-        message: 'Failed to update feedback status'
+        message: 'Failed to update feedback status.'
       });
     }
   }),
 
-  // Reward user for feedback (Admin only)
+  // =====================================================
+  // 6️⃣ Reward user (Admin)
+  // =====================================================
   rewardUser: asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { zpReward = 0, sebReward = 0, adminNotes } = req.body;
 
     if (zpReward < 0 || sebReward < 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Rewards cannot be negative'
-      });
+      return res.status(400).json({ success: false, message: 'Rewards cannot be negative.' });
     }
-
     if (zpReward === 0 && sebReward === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'At least one reward must be provided'
-      });
+      return res.status(400).json({ success: false, message: 'At least one reward is required.' });
     }
 
     try {
@@ -279,60 +256,44 @@ const feedbackController = {
         adminNotes
       });
 
-      res.json({
+      return res.json({
         success: true,
-        message: 'User rewarded successfully',
+        message: 'User rewarded successfully.',
         feedback
       });
-
     } catch (error) {
-      console.error('Reward user error:', error.message);
-
-      if (error.message === 'Feedback not found') {
-        return res.status(404).json({
-          success: false,
-          message: 'Feedback not found'
-        });
-      }
-
-      res.status(500).json({
+      console.error('❌ rewardUser error:', error.message);
+      const message = error.message === 'Feedback not found' ? 'Feedback not found.' : 'Failed to reward user.';
+      return res.status(error.message === 'Feedback not found' ? 404 : 500).json({
         success: false,
-        message: 'Failed to reward user'
+        message
       });
     }
   }),
 
-  // Get single feedback details
+  // =====================================================
+  // 7️⃣ Get single feedback (User or Admin)
+  // =====================================================
   getFeedbackDetails: asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     try {
       const feedback = await Feedback.findById(id);
-
       if (!feedback) {
-        return res.status(404).json({
-          success: false,
-          message: 'Feedback not found'
-        });
+        return res.status(404).json({ success: false, message: 'Feedback not found.' });
       }
 
+      // Only admin or owner can access
       if (feedback.user_id !== req.user.id && req.user.role !== 'admin') {
-        return res.status(403).json({
-          success: false,
-          message: 'Access denied'
-        });
+        return res.status(403).json({ success: false, message: 'Access denied.' });
       }
 
-      res.json({
-        success: true,
-        feedback
-      });
-
+      return res.json({ success: true, feedback });
     } catch (error) {
-      console.error('Get feedback details error:', error.message);
-      res.status(500).json({
+      console.error('❌ getFeedbackDetails error:', error.message);
+      return res.status(500).json({
         success: false,
-        message: 'Failed to fetch feedback details'
+        message: 'Failed to fetch feedback details.'
       });
     }
   })
