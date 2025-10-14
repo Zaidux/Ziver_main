@@ -1,7 +1,8 @@
 // server/src/routes/feedbackRoutes.js
 const express = require('express');
 const multer = require('multer');
-const asyncHandler = require('express-async-handler');
+// 💡 NOTE: asyncHandler is no longer needed for the POST route handler itself
+// const asyncHandler = require('express-async-handler'); 
 const feedbackController = require('../controllers/settings/feedbackController');
 const { protect } = require('../middleware/authMiddleware'); // adjust if needed
 
@@ -14,14 +15,14 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/', (req, res) => res.json({ status: 'Feedback API working' }));
 
 // Handle feedback submission with multiple attachments
+// FIX: Removed the outer asyncHandler and the unnecessary anonymous async function.
+// Express will execute middleware/handlers in order: protect, upload.array, feedbackController.submitFeedback.
+// Since submitFeedback is already wrapped in asyncHandler, it handles errors gracefully.
 router.post(
   '/',
-  protect, // ensure user is authenticated
-  upload.array('attachments'), // <-- must match frontend field name
-  asyncHandler(async (req, res) => {
-    console.log('📥 Incoming feedback submission');
-    await feedbackController.submitFeedback(req, res);
-  })
+  protect, 
+  upload.array('attachments'), // <-- multer populates req.files and req.body
+  feedbackController.submitFeedback // <-- Direct call to the wrapped controller function
 );
 
 // Optional: get user feedback
