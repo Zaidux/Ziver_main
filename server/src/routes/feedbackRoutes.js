@@ -1,31 +1,29 @@
-// server/src/routes/feedbackRoutes.js
 const express = require('express');
-const multer = require('multer');
-// 💡 NOTE: asyncHandler is no longer needed for the POST route handler itself
-// const asyncHandler = require('express-async-handler'); 
 const feedbackController = require('../controllers/settings/feedbackController');
-const { protect } = require('../middleware/authMiddleware'); // adjust if needed
+const { protect } = require('../middleware/authMiddleware');
+const { adminProtect } = require('../middleware/adminMiddleware');
 
 const router = express.Router();
 
-// Use in-memory storage for uploading to S3
-const upload = multer({ storage: multer.memoryStorage() });
-
 // Health check
-router.get('/', (req, res) => res.json({ status: 'Feedback API working' }));
+router.get('/', (req, res) => {
+  res.json({ 
+    status: 'Feedback API working',
+    timestamp: new Date().toISOString()
+  });
+});
 
-// Handle feedback submission with multiple attachments
-// FIX: Removed the outer asyncHandler and the unnecessary anonymous async function.
-// Express will execute middleware/handlers in order: protect, upload.array, feedbackController.submitFeedback.
-// Since submitFeedback is already wrapped in asyncHandler, it handles errors gracefully.
-router.post(
-  '/',
-  protect, 
-  upload.array('attachments'), // <-- multer populates req.files and req.body
-  feedbackController.submitFeedback // <-- Direct call to the wrapped controller function
-);
+// Submit feedback (with built-in form parsing)
+router.post('/', protect, feedbackController.submitFeedback);
 
-// Optional: get user feedback
+// User routes
 router.get('/user', protect, feedbackController.getUserFeedback);
+router.get('/:id', protect, feedbackController.getFeedbackDetails);
+
+// Admin routes
+router.get('/admin/all', protect, adminProtect, feedbackController.getAllFeedback);
+router.get('/admin/stats', protect, adminProtect, feedbackController.getFeedbackStats);
+router.put('/admin/:id/status', protect, adminProtect, feedbackController.updateFeedbackStatus);
+router.post('/admin/:id/reward', protect, adminProtect, feedbackController.rewardUser);
 
 module.exports = router;
