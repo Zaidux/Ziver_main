@@ -18,11 +18,12 @@ class FeedbackService {
         title: feedbackData.title,
         type: feedbackData.type,
         priority: feedbackData.priority,
-        attachmentCount: attachments.length
+        attachmentCount: attachments.length,
+        backendUrl: process.env.REACT_APP_API_URL || 'https://ziver-api.onrender.com'
       });
 
       const formData = new FormData();
-      
+
       // Append basic feedback data
       formData.append('title', feedbackData.title.trim());
       formData.append('message', feedbackData.message.trim());
@@ -34,7 +35,9 @@ class FeedbackService {
         formData.append('attachments', file);
       });
 
-      const response = await fetch('/api/feedback', {
+      // Use full backend URL instead of relative path
+      const backendUrl = process.env.REACT_APP_API_URL || 'https://ziver-api.onrender.com';
+      const response = await fetch(`${backendUrl}/api/feedback`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -45,6 +48,7 @@ class FeedbackService {
 
       console.log('📡 Response status:', response.status);
       console.log('📡 Response ok:', response.ok);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
 
       // Handle empty responses
       const responseText = await response.text();
@@ -87,7 +91,8 @@ class FeedbackService {
    */
   async getFeedbackHistory(token) {
     try {
-      const response = await fetch('/api/feedback/history', {
+      const backendUrl = process.env.REACT_APP_API_URL || 'https://ziver-api.onrender.com';
+      const response = await fetch(`${backendUrl}/api/feedback/user`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -115,7 +120,8 @@ class FeedbackService {
    */
   async getFeedbackById(feedbackId, token) {
     try {
-      const response = await fetch(`/api/feedback/${feedbackId}`, {
+      const backendUrl = process.env.REACT_APP_API_URL || 'https://ziver-api.onrender.com';
+      const response = await fetch(`${backendUrl}/api/feedback/${feedbackId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
