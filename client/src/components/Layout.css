@@ -455,3 +455,31 @@ body {
 .main-content {
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
+
+/* Left-aligned dropdown menu */
+.profile-dropdown-menu.global.left-aligned {
+  right: auto;
+  left: 0;
+}
+
+/* History dropdown item with grey color */
+.dropdown-item.history {
+  color: #6B7280; /* Grey color */
+}
+
+.dropdown-item.history:hover {
+  background: var(--bg-tertiary);
+  color: #6B7280;
+}
+
+/* Adjust header layout for new positioning */
+.header-left .actions-container {
+  display: flex;
+  align-items: center;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
