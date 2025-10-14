@@ -15,6 +15,7 @@ const telegramRoutes = require('./routes/telegramRoutes');
 const systemStatusRoutes = require('./routes/systemStatusRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
+const transactionRoutes = require('./routes/transactionRoutes'); // NEW ROUTE
 
 const TaskValidation = require('./models/TaskValidation');
 
@@ -151,6 +152,7 @@ app.use('/api/telegram', telegramRoutes);
 app.use('/api/system', systemStatusRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/transactions', transactionRoutes); // NEW ROUTES ADDED
 
 // Test Database Connection
 const checkDbConnection = async () => {
