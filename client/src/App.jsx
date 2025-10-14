@@ -171,7 +171,7 @@ const AppRoutes = ({ user, isLockdown }) => (
             {/* Profile Page */}
             <Route path="/profile" element={<ProfilePage />} />
 
-            {/* NEW: Feedback Page */}
+            // In your App.jsx, update the feedback route:
             <Route path="/feedback" element={<FeedbackPage />} />
 
             {/* New Settings Pages */}
