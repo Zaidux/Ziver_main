@@ -14,7 +14,6 @@ const feedbackController = {
   submitFeedback: asyncHandler(async (req, res) => {
     console.log('🟢 Feedback submission started...');
 
-    // --- Authentication check
     const userId = req.user?.id;
     if (!userId) {
       console.warn('⚠️ Unauthorized feedback submission attempt.');
@@ -24,7 +23,6 @@ const feedbackController = {
       });
     }
 
-    // --- Extract body fields
     const { title, message, type, priority } = req.body;
     console.log('📥 Body received:', { title, message, type, priority });
 
@@ -36,21 +34,23 @@ const feedbackController = {
       return res.status(400).json({ success: false, message: 'Message is required.' });
     }
 
-    // --- Handle file uploads (if any)
+    // --- Handle file uploads
     let attachments = [];
     try {
       if (Array.isArray(req.files) && req.files.length > 0) {
-        console.log(`📎 Processing ${req.files.length} attachment(s)...`);
-        for (const file of req.files) {
-          const uploaded = await uploadToS3(file);
-          attachments.push({
-            filename: file.originalname,
-            key: uploaded.key,
-            url: uploaded.url,
-            size: file.size,
-            mimetype: file.mimetype
-          });
-        }
+        console.log(`📎 Uploading ${req.files.length} attachment(s)...`);
+        attachments = await Promise.all(
+          req.files.map(async (file) => {
+            const uploaded = await uploadToS3(file);
+            return {
+              filename: file.originalname,
+              key: uploaded.key,
+              url: uploaded.url,
+              size: file.size,
+              mimetype: file.mimetype
+            };
+          })
+        );
       } else {
         console.log('📁 No attachments uploaded.');
       }
@@ -58,11 +58,11 @@ const feedbackController = {
       console.error('❌ File upload error:', uploadErr.message);
       return res.status(500).json({
         success: false,
-        message: 'Attachment upload failed. Please retry.'
+        message: 'Attachment upload failed. Please retry later.'
       });
     }
 
-    // --- Save feedback to database
+    // --- Save feedback to DB
     try {
       const feedback = await Feedback.create({
         userId,
@@ -90,7 +90,7 @@ const feedbackController = {
     } catch (dbErr) {
       console.error('❌ Database save failed:', dbErr.message);
 
-      // Rollback any uploaded files
+      // Rollback uploaded files if DB save failed
       if (attachments.length > 0) {
         console.log('🧹 Rolling back uploaded files...');
         for (const a of attachments) {
@@ -104,13 +104,13 @@ const feedbackController = {
 
       return res.status(500).json({
         success: false,
-        message: 'Internal error while saving feedback.'
+        message: 'Internal error while saving feedback. Please try again.'
       });
     }
   }),
 
   // =====================================================
-  // 2️⃣ Get user’s feedback (User)
+  // 2️⃣ Get user’s feedback
   // =====================================================
   getUserFeedback: asyncHandler(async (req, res) => {
     const userId = req.user?.id;
@@ -142,7 +142,7 @@ const feedbackController = {
   }),
 
   // =====================================================
-  // 3️⃣ Get all feedback (Admin only)
+  // 3️⃣ Get all feedback (Admin)
   // =====================================================
   getAllFeedback: asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
@@ -283,7 +283,6 @@ const feedbackController = {
         return res.status(404).json({ success: false, message: 'Feedback not found.' });
       }
 
-      // Only admin or owner can access
       if (feedback.user_id !== req.user.id && req.user.role !== 'admin') {
         return res.status(403).json({ success: false, message: 'Access denied.' });
       }
