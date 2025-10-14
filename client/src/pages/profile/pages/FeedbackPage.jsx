@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
-import { feedbackService } from '../../../services/feedbackService'; // Add this import
+import { feedbackService } from '../../../services/feedbackService';
 import { 
   ArrowLeft, 
   Paperclip, 
@@ -49,7 +49,6 @@ const FeedbackPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    console.log(`Input changed: ${name} = ${value}`); // Debug
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -57,9 +56,7 @@ const FeedbackPage = () => {
     clearMessages();
   };
 
-  // FIXED: Separate handler for radio buttons
   const handleRadioChange = (name, value) => {
-    console.log(`Radio changed: ${name} = ${value}`); // Debug
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -70,10 +67,9 @@ const FeedbackPage = () => {
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
 
-    // Validate file types and sizes
     const validFiles = files.filter(file => {
       const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      const maxSize = 5 * 1024 * 1024;
 
       if (!validTypes.includes(file.type)) {
         setError(`Invalid file type: ${file.name}. Only images are allowed.`);
@@ -93,7 +89,6 @@ const FeedbackPage = () => {
       setError('');
     }
 
-    // Reset file input
     e.target.value = '';
   };
 
@@ -104,6 +99,16 @@ const FeedbackPage = () => {
   const clearMessages = () => {
     setMessage('');
     setError('');
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      message: '',
+      type: 'suggestion',
+      priority: 'medium'
+    });
+    setAttachments([]);
   };
 
   const handleSubmit = async (e) => {
@@ -127,23 +132,22 @@ const FeedbackPage = () => {
     }
 
     try {
-      // Use the feedback service instead of direct fetch
       const result = await feedbackService.submitFeedback(
         formData,
         attachments,
         user.token
       );
 
-      // Handle the result
+      console.log('✅ Feedback submission result:', result);
+
       if (result.success) {
         setMessage(result.message || 'Thank you for your feedback! We\'ll review it and get back to you soon.');
-        setFormData({
-          title: '',
-          message: '',
-          type: 'suggestion',
-          priority: 'medium'
-        });
-        setAttachments([]);
+        resetForm(); // Clear the form after successful submission
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => {
+          setMessage('');
+        }, 5000);
       } else {
         setError(result.message || 'Failed to submit feedback. Please try again.');
       }
@@ -178,16 +182,16 @@ const FeedbackPage = () => {
         </div>
       </div>
 
-      {/* Messages */}
+      {/* Messages - Moved to top for better visibility */}
       {message && (
-        <div className="success-message">
+        <div className="success-message show">
           <CheckCircle size={16} />
           {message}
         </div>
       )}
 
       {error && (
-        <div className="error-message">
+        <div className="error-message show">
           <AlertCircle size={16} />
           {error}
         </div>
@@ -221,7 +225,7 @@ const FeedbackPage = () => {
             </div>
           </div>
 
-          {/* Priority Level - FIXED: Using proper radio button handling */}
+          {/* Priority Level */}
           <div className="form-section">
             <label className="section-label">Priority Level</label>
             <div className="priority-options">
