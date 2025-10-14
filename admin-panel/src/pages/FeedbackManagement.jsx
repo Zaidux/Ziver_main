@@ -14,6 +14,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import api from '../services/api';
+import adminService from '../services/adminService'; // Add admin service
 import './FeedbackManagement.css';
 
 const FeedbackManagement = () => {
@@ -86,15 +87,24 @@ const FeedbackManagement = () => {
         ...(filters.priority !== 'all' && { priority: filters.priority })
       });
 
-      const response = await api.get(`/feedback?${params}`);
-      setFeedback(response.data.feedback);
+      // Use the correct admin endpoint
+      const response = await api.get(`/feedback/admin/all?${params}`);
+      console.log('📊 Feedback response:', response.data);
+      
+      setFeedback(response.data.feedback || []);
       setPagination({
-        currentPage: response.data.pagination.currentPage,
-        totalPages: response.data.pagination.totalPages,
-        totalCount: response.data.pagination.totalCount
+        currentPage: response.data.pagination?.currentPage || 1,
+        totalPages: response.data.pagination?.totalPages || 1,
+        totalCount: response.data.pagination?.totalCount || 0
       });
     } catch (error) {
-      console.error('Error loading feedback:', error);
+      console.error('❌ Error loading feedback:', error);
+      setFeedback([]);
+      setPagination({
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 0
+      });
     } finally {
       setLoading(false);
     }
@@ -102,10 +112,18 @@ const FeedbackManagement = () => {
 
   const loadStats = async () => {
     try {
-      const response = await api.get('/feedback/stats/overview');
+      // Use the correct stats endpoint
+      const response = await api.get('/feedback/admin/stats');
+      console.log('📈 Stats response:', response.data);
       setStats(response.data.stats);
     } catch (error) {
-      console.error('Error loading stats:', error);
+      console.error('❌ Error loading stats:', error);
+      // Set default stats if API fails
+      setStats({
+        byStatus: { pending: 0, reviewed: 0, in_progress: 0, resolved: 0, rewarded: 0, closed: 0 },
+        byType: { suggestion: 0, bug: 0, complaint: 0, feature: 0 },
+        byPriority: { low: 0, medium: 0, high: 0 }
+      });
     }
   };
 
@@ -116,9 +134,9 @@ const FeedbackManagement = () => {
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
       filtered = filtered.filter(item => 
-        item.title.toLowerCase().includes(searchTerm) ||
-        item.message.toLowerCase().includes(searchTerm) ||
-        item.username.toLowerCase().includes(searchTerm)
+        item.title?.toLowerCase().includes(searchTerm) ||
+        item.message?.toLowerCase().includes(searchTerm) ||
+        item.username?.toLowerCase().includes(searchTerm)
       );
     }
 
@@ -132,7 +150,7 @@ const FeedbackManagement = () => {
 
   const handleStatusUpdate = async (feedbackId, newStatus) => {
     try {
-      await api.put(`/feedback/${feedbackId}/status`, { status: newStatus });
+      await api.put(`/feedback/admin/${feedbackId}/status`, { status: newStatus });
       await loadFeedback();
       await loadStats();
     } catch (error) {
@@ -142,7 +160,7 @@ const FeedbackManagement = () => {
 
   const handleRewardSubmit = async () => {
     try {
-      await api.post(`/feedback/${selectedFeedback.id}/reward`, rewardData);
+      await api.post(`/feedback/admin/${selectedFeedback.id}/reward`, rewardData);
       setShowRewardModal(false);
       setRewardData({ zpReward: 0, sebReward: 0, adminNotes: '' });
       await loadFeedback();
@@ -180,6 +198,7 @@ const FeedbackManagement = () => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -220,33 +239,33 @@ const FeedbackManagement = () => {
               <div className="stat-label">Total Feedback</div>
             </div>
           </div>
-          
+
           <div className="stat-card">
             <div className="stat-icon pending">
               <Clock size={24} />
             </div>
             <div className="stat-info">
-              <div className="stat-value">{stats.byStatus.pending || 0}</div>
+              <div className="stat-value">{stats.byStatus?.pending || 0}</div>
               <div className="stat-label">Pending Review</div>
             </div>
           </div>
-          
+
           <div className="stat-card">
             <div className="stat-icon rewarded">
               <Award size={24} />
             </div>
             <div className="stat-info">
-              <div className="stat-value">{stats.byStatus.rewarded || 0}</div>
+              <div className="stat-value">{stats.byStatus?.rewarded || 0}</div>
               <div className="stat-label">Rewarded</div>
             </div>
           </div>
-          
+
           <div className="stat-card">
             <div className="stat-icon high-priority">
               <AlertTriangle size={24} />
             </div>
             <div className="stat-info">
-              <div className="stat-value">{stats.byPriority.high || 0}</div>
+              <div className="stat-value">{stats.byPriority?.high || 0}</div>
               <div className="stat-label">High Priority</div>
             </div>
           </div>
@@ -323,7 +342,7 @@ const FeedbackManagement = () => {
             <div key={item.id} className="feedback-item">
               <div className="feedback-main">
                 <div className="feedback-header-info">
-                  <h3 className="feedback-title">{item.title}</h3>
+                  <h3 className="feedback-title">{item.title || 'No Title'}</h3>
                   <div className="feedback-meta">
                     <span className={`status-badge status-${item.status}`}>
                       {getStatusIcon(item.status)}
@@ -343,9 +362,9 @@ const FeedbackManagement = () => {
                 </div>
 
                 <div className="feedback-preview">
-                  {item.message.length > 150 
+                  {item.message && item.message.length > 150 
                     ? `${item.message.substring(0, 150)}...` 
-                    : item.message
+                    : item.message || 'No message provided'
                   }
                 </div>
 
@@ -355,15 +374,15 @@ const FeedbackManagement = () => {
                       <img src={item.avatar_url} alt={item.username} className="user-avatar" />
                     ) : (
                       <div className="user-avatar-fallback">
-                        {item.username?.charAt(0).toUpperCase()}
+                        {item.username?.charAt(0)?.toUpperCase() || 'U'}
                       </div>
                     )}
                     <div className="user-details">
-                      <span className="username">{item.username}</span>
-                      <span className="email">{item.email}</span>
+                      <span className="username">{item.username || 'Unknown User'}</span>
+                      <span className="email">{item.email || 'No email'}</span>
                     </div>
                   </div>
-                  
+
                   <div className="feedback-date">
                     {formatDate(item.created_at)}
                   </div>
@@ -380,7 +399,7 @@ const FeedbackManagement = () => {
                 {item.zp_reward > 0 && (
                   <div className="reward-info">
                     <Zap size={14} />
-                    <span>Rewarded: {item.zp_reward} ZP + {item.seb_reward} SEB</span>
+                    <span>Rewarded: {item.zp_reward} ZP + {item.seb_reward || 0} SEB</span>
                   </div>
                 )}
               </div>
@@ -435,11 +454,11 @@ const FeedbackManagement = () => {
           >
             Previous
           </button>
-          
+
           <span className="pagination-info">
             Page {pagination.currentPage} of {pagination.totalPages}
           </span>
-          
+
           <button
             disabled={pagination.currentPage === pagination.totalPages}
             onClick={() => setPagination(prev => ({ ...prev, currentPage: prev.currentPage + 1 }))}
@@ -463,7 +482,7 @@ const FeedbackManagement = () => {
                 ×
               </button>
             </div>
-            
+
             <div className="modal-body">
               <div className="detail-section">
                 <h3>Details</h3>
@@ -543,7 +562,7 @@ const FeedbackManagement = () => {
                   <div className="reward-details">
                     <div className="reward-amount">
                       <Zap size={20} />
-                      <span>{selectedFeedback.zp_reward} ZP + {selectedFeedback.seb_reward} SEB</span>
+                      <span>{selectedFeedback.zp_reward} ZP + {selectedFeedback.seb_reward || 0} SEB</span>
                     </div>
                     <div className="reward-date">
                       Rewarded on: {formatDate(selectedFeedback.rewarded_at)}
@@ -569,7 +588,7 @@ const FeedbackManagement = () => {
                 ×
               </button>
             </div>
-            
+
             <div className="modal-body">
               <div className="reward-info">
                 <p>Rewarding <strong>{selectedFeedback.username}</strong> for their feedback:</p>
