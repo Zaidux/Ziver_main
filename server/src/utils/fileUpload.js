@@ -1,133 +1,133 @@
-const busboy = require('busboy');
-const { uploadToS3 } = require('./fileUpload');
+const fs = require('fs');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
+const express = require('express');
+const AWS = require('aws-sdk');
 
-class UploadHandler {
-  /**
-   * Parse multipart form data with better error handling
-   */
-  static parseFormData(req, res) {
-    return new Promise((resolve, reject) => {
-      console.log('🔄 Starting form data parsing...');
-      
-      const bb = busboy({
-        headers: req.headers,
-        limits: {
-          fileSize: 5 * 1024 * 1024, // 5MB
-          files: 5 // max 5 files
-        }
-      });
-
-      const fields = {};
-      const files = [];
-
-      bb.on('field', (name, value) => {
-        console.log(`📝 Field: ${name} = ${value}`);
-        fields[name] = value;
-      });
-
-      bb.on('file', (name, file, info) => {
-        const { filename, encoding, mimeType } = info;
-        console.log(`📎 File: ${name} - ${filename} (${mimeType})`);
-
-        const chunks = [];
-        file.on('data', (chunk) => {
-          chunks.push(chunk);
-        });
-
-        file.on('end', () => {
-          if (chunks.length === 0) {
-            console.warn('⚠️ Empty file received:', filename);
-            return;
-          }
-
-          const buffer = Buffer.concat(chunks);
-          
-          // Validate file type
-          const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-          if (!allowedTypes.includes(mimeType)) {
-            console.error('❌ Invalid file type:', mimeType);
-            return;
-          }
-
-          // Validate file size
-          if (buffer.length > 5 * 1024 * 1024) {
-            console.error('❌ File too large:', filename, buffer.length);
-            return;
-          }
-
-          files.push({
-            fieldname: name,
-            originalname: filename,
-            encoding,
-            mimetype: mimeType,
-            buffer: buffer,
-            size: buffer.length
-          });
-        });
-
-        file.on('error', (error) => {
-          console.error('❌ File stream error:', error);
-        });
-      });
-
-      bb.on('close', () => {
-        console.log('✅ Form parsing completed');
-        console.log('📊 Results:', {
-          fields: Object.keys(fields),
-          files: files.length
-        });
-        
-        req.body = fields;
-        req.files = files;
-        resolve({ fields, files });
-      });
-
-      bb.on('error', (error) => {
-        console.error('❌ Busboy parsing error:', error);
-        reject(new Error(`Form parsing failed: ${error.message}`));
-      });
-
-      // Handle request errors
-      req.on('error', (error) => {
-        console.error('❌ Request error during parsing:', error);
-        reject(new Error(`Request error: ${error.message}`));
-      });
-
-      // Start parsing
-      req.pipe(bb);
-    });
-  }
-
-  /**
-   * Validate feedback data
-   */
-  static validateFeedbackData(data) {
-    const errors = [];
-    
-    if (!data.title || data.title.trim().length === 0) {
-      errors.push('Title is required');
-    } else if (data.title.trim().length > 100) {
-      errors.push('Title must be less than 100 characters');
-    }
-
-    if (!data.message || data.message.trim().length === 0) {
-      errors.push('Message is required');
-    } else if (data.message.trim().length > 1000) {
-      errors.push('Message must be less than 1000 characters');
-    }
-
-    const validTypes = ['suggestion', 'bug', 'complaint', 'feature'];
-    if (data.type && !validTypes.includes(data.type)) {
-      errors.push('Invalid feedback type');
-    }
-
-    const validPriorities = ['low', 'medium', 'high'];
-    if (data.priority && !validPriorities.includes(data.priority)) {
-      errors.push('Invalid priority level');
-    }
-
-    return errors;
-  }
+const uploadsDir = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('📁 Created uploads directory:', uploadsDir);
 }
 
-module.exports = UploadHandler;
+// Configure AWS SDK (only if credentials exist)
+let s3 = null;
+if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_REGION && process.env.AWS_BUCKET_NAME) {
+  s3 = new AWS.S3({
+    region: process.env.AWS_REGION,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+  });
+  console.log('☁️ AWS S3 initialized');
+}
+
+const fileUpload = {
+  /**
+   * Uploads file to either local storage (Render) or S3 (AWS)
+   */
+  uploadToS3: async (file) => {
+    try {
+      if (!file || !file.originalname) throw new Error('Invalid file upload data');
+
+      const fileExtension = path.extname(file.originalname);
+      const fileName = `${uuidv4()}${fileExtension}`;
+
+      // === AWS MODE ===
+      if (s3 && process.env.NODE_ENV === 'production') {
+        const params = {
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: `uploads/${fileName}`,
+          Body: file.buffer,
+          ContentType: file.mimetype,
+          ACL: 'public-read',
+        };
+
+        const result = await s3.upload(params).promise();
+
+        console.log(`📤 Uploaded to AWS S3: ${file.originalname} → ${result.Location}`);
+
+        return {
+          key: result.Key,
+          url: result.Location,
+          filename: file.originalname,
+          size: file.size,
+          mimetype: file.mimetype,
+          storage: 's3'
+        };
+      }
+
+      // === LOCAL MODE (Render / Testing) ===
+      const filePath = path.join(uploadsDir, fileName);
+      await fs.promises.writeFile(filePath, file.buffer);
+
+      const baseUrl = process.env.BASE_URL || 'https://ziver-api.onrender.com';
+      const fileUrl = `${baseUrl}/uploads/${fileName}`;
+
+      console.log(`📤 Uploaded locally: ${file.originalname} → ${fileUrl}`);
+
+      return {
+        key: fileName,
+        url: fileUrl,
+        filename: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
+        storage: 'local'
+      };
+    } catch (error) {
+      console.error('❌ File upload error:', error);
+      throw new Error('Failed to upload file');
+    }
+  },
+
+  /**
+   * Deletes file from either local disk or AWS S3
+   */
+  deleteFromS3: async (key) => {
+    try {
+      if (s3 && process.env.NODE_ENV === 'production') {
+        await s3.deleteObject({
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: key,
+        }).promise();
+        console.log(`🗑️ Deleted from AWS S3: ${key}`);
+      } else {
+        const filePath = path.join(uploadsDir, key);
+        if (fs.existsSync(filePath)) {
+          await fs.promises.unlink(filePath);
+          console.log(`🗑️ Deleted local file: ${key}`);
+        }
+      }
+    } catch (error) {
+      console.error('⚠️ File deletion error:', error.message);
+    }
+  },
+
+  /**
+   * Serve uploaded files securely (for local testing)
+   */
+  serveUploads: (app) => {
+    app.use(
+      '/uploads',
+      (req, res, next) => {
+        const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf'];
+        const ext = path.extname(req.path).toLowerCase();
+
+        if (!allowed.includes(ext)) {
+          console.warn(`🚫 Blocked disallowed file type: ${req.path}`);
+          return res.status(403).json({ error: 'File type not allowed' });
+        }
+
+        next();
+      },
+      express.static(uploadsDir, {
+        setHeaders: (res) => {
+          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+        },
+      })
+    );
+
+    console.log('✅ Static upload serving enabled at /uploads');
+  },
+};
+
+module.exports = fileUpload;
