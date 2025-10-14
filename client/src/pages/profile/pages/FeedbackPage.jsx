@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { feedbackService } from '../../../services/feedbackService'; // Add this import
 import { 
   ArrowLeft, 
   Paperclip, 
@@ -106,98 +107,54 @@ const FeedbackPage = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  clearMessages();
+    e.preventDefault();
+    setLoading(true);
+    clearMessages();
 
-  console.log('Submitting form data:', formData);
+    console.log('Submitting form data:', formData);
 
-  // Validation
-  if (!formData.title.trim()) {
-    setError('Please enter a title for your feedback');
-    setLoading(false);
-    return;
-  }
+    // Validation
+    if (!formData.title.trim()) {
+      setError('Please enter a title for your feedback');
+      setLoading(false);
+      return;
+    }
 
-  if (!formData.message.trim()) {
-    setError('Please provide details about your feedback');
-    setLoading(false);
-    return;
-  }
+    if (!formData.message.trim()) {
+      setError('Please provide details about your feedback');
+      setLoading(false);
+      return;
+    }
 
-  try {
-    const submitData = new FormData();
-    submitData.append('title', formData.title.trim());
-    submitData.append('message', formData.message.trim());
-    submitData.append('type', formData.type);
-    submitData.append('priority', formData.priority);
+    try {
+      // Use the feedback service instead of direct fetch
+      const result = await feedbackService.submitFeedback(
+        formData,
+        attachments,
+        user.token
+      );
 
-    // Add attachments
-    attachments.forEach(file => {
-      submitData.append('attachments', file);
-    });
-
-    console.log('🔄 Sending feedback request...');
-
-    const response = await fetch('/api/feedback', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${user.token}`
-      },
-      body: submitData
-    });
-
-    console.log('📡 Response status:', response.status);
-    console.log('📡 Response ok:', response.ok);
-
-    // Get the raw response text first to handle empty responses
-    const responseText = await response.text();
-    console.log('📡 Raw response text:', responseText);
-
-    let result;
-    
-    // Check if response is empty
-    if (!responseText || responseText.trim() === '') {
-      console.log('⚠️ Empty response received from server');
-      if (response.ok) {
-        // If it's a 200 with empty body, assume success
-        result = { success: true, message: 'Feedback submitted successfully' };
+      // Handle the result
+      if (result.success) {
+        setMessage(result.message || 'Thank you for your feedback! We\'ll review it and get back to you soon.');
+        setFormData({
+          title: '',
+          message: '',
+          type: 'suggestion',
+          priority: 'medium'
+        });
+        setAttachments([]);
       } else {
-        throw new Error(`Server returned ${response.status} with empty body`);
+        setError(result.message || 'Failed to submit feedback. Please try again.');
       }
-    } else {
-      // Try to parse JSON
-      try {
-        result = JSON.parse(responseText);
-        console.log('✅ Parsed result:', result);
-      } catch (parseError) {
-        console.error('❌ JSON parse error:', parseError);
-        console.error('❌ Response text that failed to parse:', responseText);
-        throw new Error(`Server returned invalid JSON: ${responseText.substring(0, 100)}`);
-      }
-    }
 
-    // Handle the result
-    if (result.success) {
-      setMessage(result.message || 'Thank you for your feedback! We\'ll review it and get back to you soon.');
-      setFormData({
-        title: '',
-        message: '',
-        type: 'suggestion',
-        priority: 'medium'
-      });
-      setAttachments([]);
-    } else {
-      setError(result.message || 'Failed to submit feedback. Please try again.');
+    } catch (err) {
+      console.error('❌ Feedback submission error:', err);
+      setError(`Submission failed: ${err.message}. Please try again.`);
+    } finally {
+      setLoading(false);
     }
-
-  } catch (err) {
-    console.error('❌ Feedback submission error:', err);
-    setError(`Submission failed: ${err.message}. Please try again.`);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
