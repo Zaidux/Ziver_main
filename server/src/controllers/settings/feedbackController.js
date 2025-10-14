@@ -18,12 +18,24 @@ async function cleanupAttachments(attachments) {
 
 // Submit feedback
 const submitFeedback = async (req, res) => {
-  console.log('🟢 Feedback submission started...');
+  console.log('🟢 ===== FEEDBACK SUBMISSION STARTED =====');
+  console.log('📨 Request details:', {
+    method: req.method,
+    url: req.url,
+    headers: {
+      contentType: req.headers['content-type'],
+      authorization: req.headers.authorization ? 'Present' : 'Missing',
+      contentLength: req.headers['content-length']
+    },
+    user: req.user ? `User ID: ${req.user.id}` : 'No user'
+  });
+
   let uploadedAttachments = [];
 
   try {
     const userId = req.user?.id;
     if (!userId) {
+      console.log('❌ No user ID found in request');
       return res.status(401).json({ success: false, message: 'Unauthorized: Please log in first.' });
     }
 
@@ -32,29 +44,46 @@ const submitFeedback = async (req, res) => {
     // Parse form data
     let fields, files;
     try {
+      console.log('🔄 Starting form data parsing with UploadHandler...');
       const result = await UploadHandler.parseFormData(req, res);
       fields = result.fields;
       files = result.files;
+      console.log('✅ Form parsing completed successfully');
+      console.log('📊 Parsed data:', {
+        fields: Object.keys(fields),
+        filesCount: files.length,
+        fieldValues: {
+          title: fields.title ? `${fields.title.substring(0, 50)}...` : 'Missing',
+          type: fields.type || 'Not provided',
+          priority: fields.priority || 'Not provided'
+        }
+      });
     } catch (parseError) {
       console.error('❌ Form parsing failed:', parseError.message);
+      console.error('❌ Parse error stack:', parseError.stack);
       return res.status(400).json({ success: false, message: 'Invalid form data: ' + parseError.message });
     }
 
     const { title, message, type = 'suggestion', priority = 'medium' } = fields;
-    console.log('📥 Parsed data:', { title, type, priority, fileCount: files.length });
 
     // Validate input
+    console.log('🔍 Validating input data...');
     const validationErrors = UploadHandler.validateFeedbackData({ title, message, type, priority });
     if (validationErrors.length > 0) {
+      console.warn('❌ Validation errors:', validationErrors);
       return res.status(400).json({ success: false, message: validationErrors.join(', ') });
     }
+    console.log('✅ Input validation passed');
 
     // Handle file uploads
     if (files.length > 0) {
+      console.log(`📎 Processing ${files.length} attachment(s)...`);
       try {
         uploadedAttachments = await Promise.all(
-          files.map(async (file) => {
+          files.map(async (file, index) => {
+            console.log(`📤 [${index + 1}/${files.length}] Uploading: ${file.originalname} (${file.size} bytes)`);
             const uploaded = await uploadToS3(file);
+            console.log(`✅ Uploaded: ${file.originalname} → ${uploaded.url}`);
             return {
               filename: file.originalname,
               key: uploaded.key,
@@ -64,47 +93,86 @@ const submitFeedback = async (req, res) => {
             };
           })
         );
+        console.log('✅ All attachments uploaded successfully');
       } catch (uploadError) {
+        console.error('❌ File upload error:', uploadError.message);
+        console.error('❌ Upload error stack:', uploadError.stack);
         await cleanupAttachments(uploadedAttachments);
         return res.status(500).json({ success: false, message: 'Failed to upload attachments.' });
       }
+    } else {
+      console.log('📁 No attachments to upload');
     }
 
     // Save to database
-    const feedback = await Feedback.create({
-      userId,
-      title: title.trim(),
-      message: message.trim(),
-      type,
-      priority,
-      attachments: uploadedAttachments
-    });
+    console.log('💾 Saving feedback to database...');
+    try {
+      const feedback = await Feedback.create({
+        userId,
+        title: title.trim(),
+        message: message.trim(),
+        type,
+        priority,
+        attachments: uploadedAttachments
+      });
 
-    console.log('✅ Feedback saved successfully with ID:', feedback.id);
-
-    return res.status(201).json({
-      success: true,
-      message: 'Feedback submitted successfully!',
-      feedback: {
+      console.log('✅ Feedback saved successfully with ID:', feedback.id);
+      console.log('📋 Saved feedback:', {
         id: feedback.id,
         title: feedback.title,
         type: feedback.type,
         priority: feedback.priority,
         status: feedback.status,
-        attachments: feedback.attachments?.length || 0,
-        createdAt: feedback.created_at
-      }
-    });
+        attachmentsCount: feedback.attachments?.length || 0
+      });
+
+      // Send success response
+      console.log('📤 Sending success response...');
+      const response = {
+        success: true,
+        message: 'Feedback submitted successfully!',
+        feedback: {
+          id: feedback.id,
+          title: feedback.title,
+          type: feedback.type,
+          priority: feedback.priority,
+          status: feedback.status,
+          attachments: feedback.attachments?.length || 0,
+          createdAt: feedback.created_at
+        }
+      };
+      
+      console.log('📄 Response payload:', JSON.stringify(response, null, 2));
+      return res.status(201).json(response);
+
+    } catch (dbError) {
+      console.error('❌ Database save error:', dbError.message);
+      console.error('❌ Database error stack:', dbError.stack);
+      throw dbError;
+    }
 
   } catch (error) {
-    console.error('💥 Critical error in submitFeedback:', error);
+    console.error('💥 Critical error in submitFeedback:', error.message);
+    console.error('💥 Error stack:', error.stack);
+    
     if (uploadedAttachments.length > 0) {
+      console.log('🧹 Cleaning up uploaded files due to error...');
       await cleanupAttachments(uploadedAttachments);
     }
-    return res.status(500).json({ success: false, message: 'Internal server error.' });
+
+    const errorResponse = {
+      success: false,
+      message: 'Internal server error.'
+    };
+    
+    console.log('📄 Error response:', JSON.stringify(errorResponse, null, 2));
+    return res.status(500).json(errorResponse);
+  } finally {
+    console.log('🔚 ===== FEEDBACK SUBMISSION COMPLETED =====\n');
   }
 };
 
+// ... rest of your functions remain the same
 // Get user feedback
 const getUserFeedback = async (req, res) => {
   try {
@@ -180,7 +248,7 @@ const updateFeedbackStatus = async (req, res) => {
     const { id } = req.params;
     const { status, adminNotes } = req.body;
     const validStatuses = ['pending', 'reviewed', 'in_progress', 'resolved', 'rewarded', 'closed'];
-    
+
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status provided.' });
     }
