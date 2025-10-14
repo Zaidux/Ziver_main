@@ -13,6 +13,17 @@ const { adminProtect } = require('../middleware/adminMiddleware');
 
 const router = express.Router();
 
+// Debug: Check what we're actually importing
+console.log('=== FEEDBACK CONTROLLER DEBUG ===');
+console.log('submitFeedback:', typeof submitFeedback);
+console.log('getUserFeedback:', typeof getUserFeedback);
+console.log('getAllFeedback:', typeof getAllFeedback); // This is the problematic one
+console.log('getFeedbackStats:', typeof getFeedbackStats);
+console.log('updateFeedbackStatus:', typeof updateFeedbackStatus);
+console.log('rewardUser:', typeof rewardUser);
+console.log('getFeedbackDetails:', typeof getFeedbackDetails);
+console.log('==============================');
+
 // Health check
 router.get('/', (req, res) => {
   res.json({ 
