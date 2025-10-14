@@ -9,7 +9,7 @@ const {
   rewardUser
 } = require('../controllers/settings/feedbackController');
 const { protect } = require('../middleware/authMiddleware');
-const { adminProtect } = require('../middleware/adminMiddleware');
+const { admin } = require('../middleware/adminMiddleware'); // FIXED: Changed from adminProtect to admin
 
 const router = express.Router();
 
@@ -17,11 +17,14 @@ const router = express.Router();
 console.log('=== FEEDBACK CONTROLLER DEBUG ===');
 console.log('submitFeedback:', typeof submitFeedback);
 console.log('getUserFeedback:', typeof getUserFeedback);
-console.log('getAllFeedback:', typeof getAllFeedback); // This is the problematic one
+console.log('getAllFeedback:', typeof getAllFeedback);
 console.log('getFeedbackStats:', typeof getFeedbackStats);
 console.log('updateFeedbackStatus:', typeof updateFeedbackStatus);
 console.log('rewardUser:', typeof rewardUser);
 console.log('getFeedbackDetails:', typeof getFeedbackDetails);
+console.log('=== MIDDLEWARE DEBUG ===');
+console.log('protect:', typeof protect);
+console.log('admin:', typeof admin); // FIXED: Changed from adminProtect to admin
 console.log('==============================');
 
 // Health check
@@ -39,10 +42,10 @@ router.post('/', protect, submitFeedback);
 router.get('/user', protect, getUserFeedback);
 router.get('/:id', protect, getFeedbackDetails);
 
-// Admin routes
-router.get('/admin/all', protect, adminProtect, getAllFeedback);
-router.get('/admin/stats', protect, adminProtect, getFeedbackStats);
-router.put('/admin/:id/status', protect, adminProtect, updateFeedbackStatus);
-router.post('/admin/:id/reward', protect, adminProtect, rewardUser);
+// Admin routes - FIXED: Changed from adminProtect to admin
+router.get('/admin/all', protect, admin, getAllFeedback);
+router.get('/admin/stats', protect, admin, getFeedbackStats);
+router.put('/admin/:id/status', protect, admin, updateFeedbackStatus);
+router.post('/admin/:id/reward', protect, admin, rewardUser);
 
 module.exports = router;
