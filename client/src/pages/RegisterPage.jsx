@@ -56,25 +56,30 @@ function RegisterPage() {
   }, [referralCode, urlReferralCode])
 
   // Get smart referral when no referral code exists
-  useEffect(() => {
-    const getSmartReferral = async () => {
-      if (!effectiveReferralCode && !checkingSmartReferral) {
-        setCheckingSmartReferral(true)
-        try {
-          const suggestion = await referralService.getSmartReferrerSuggestion()
-          if (suggestion && suggestion.success) {
-            setSmartReferrer(suggestion.referrer)
-          }
-        } catch (error) {
-          console.log("No smart referrer suggestion available:", error.message)
-        } finally {
-          setCheckingSmartReferral(false)
+useEffect(() => {
+  const getSmartReferral = async () => {
+    // Only proceed if no referral code exists and we're not already checking
+    if (!effectiveReferralCode && !checkingSmartReferral && !smartReferrer) {
+      setCheckingSmartReferral(true);
+      try {
+        console.log('Fetching smart referral suggestion...');
+        const suggestion = await referralService.getSmartReferrerSuggestion();
+        if (suggestion && suggestion.success) {
+          console.log('Smart referrer found:', suggestion.referrer.username);
+          setSmartReferrer(suggestion.referrer);
+        } else {
+          console.log('No smart referrer suggestion available');
         }
+      } catch (error) {
+        console.log("Error getting smart referrer suggestion:", error.message);
+      } finally {
+        setCheckingSmartReferral(false);
       }
     }
+  };
 
-    getSmartReferral()
-  }, [effectiveReferralCode, checkingSmartReferral])
+  getSmartReferral();
+}, [effectiveReferralCode]); // Remove checkingSmartReferral from dependencies to prevent loops
 
   const validateReferralCode = async (code) => {
     if (!code) return
