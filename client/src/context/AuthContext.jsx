@@ -13,6 +13,29 @@ export const AuthProvider = ({ children, navigate }) => {
   const [systemStatus, setSystemStatus] = useState(null);
   const [authError, setAuthError] = useState(null);
 
+  // NEW: Track user activity
+  const trackActivity = async (activityType) => {
+    if (!user) return;
+    
+    try {
+      await api.post('/user/activity', { activityType });
+      console.log(`Activity tracked: ${activityType}`);
+    } catch (error) {
+      console.error('Error tracking activity:', error);
+    }
+  };
+
+  // NEW: Update user activity on route changes and user actions
+  useEffect(() => {
+    if (user) {
+      // Track login activity
+      trackActivity('DAILY_LOGIN');
+      
+      // Update last_activity timestamp
+      api.post('/user/heartbeat').catch(console.error);
+    }
+  }, [user]);
+
   // NEW: Auto-save Telegram username function
   const autoSaveTelegramUsername = async (user, token) => {
     try {
@@ -207,6 +230,9 @@ export const AuthProvider = ({ children, navigate }) => {
       // Auto-save Telegram username after successful login
       await autoSaveTelegramUsername(fullUser, token);
 
+      // Track login activity
+      await trackActivity('DAILY_LOGIN');
+
       if (navigate) navigate('/mining');
     } catch (error) {
       console.error('Login error:', error);
@@ -271,6 +297,9 @@ export const AuthProvider = ({ children, navigate }) => {
 
       // Auto-save Telegram username after successful login
       await autoSaveTelegramUsername(fullUser, token);
+
+      // Track login activity
+      await trackActivity('DAILY_LOGIN');
 
       if (navigate) {
         if (isNewUser) {
@@ -451,6 +480,7 @@ export const AuthProvider = ({ children, navigate }) => {
     updateProfile, // NEW: Added profile update function
     uploadAvatar,  // NEW: Added avatar upload function
     autoSaveTelegramUsername, // NEW: Added Telegram auto-save function
+    trackActivity, // NEW: Added activity tracking function
     refreshReferralData,
     loadReferralData,
     checkSystemStatus,
