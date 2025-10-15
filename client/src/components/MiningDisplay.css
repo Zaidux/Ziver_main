@@ -1,159 +1,351 @@
-/* Mining Display Styles - Modern & Clean */
+/* Mining Display Styles - Enhanced & Professional */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
 .mining-display {
-  background-color: #1A1A1A;
-  padding: 20px;
-  border-radius: 20px;
-  max-width: 390px;
+  background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
+  padding: 32px 24px;
+  border-radius: 24px;
+  max-width: 480px;
   margin: 0 auto;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* Header */
+/* Enhanced header styling */
 .mining-header {
-  margin-bottom: 30px;
+  margin-bottom: 40px;
 }
 
 .header-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #FFFFFF;
-  margin-bottom: 8px;
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .header-subtitle {
-  font-size: 16px;
-  font-weight: 400;
-  color: #A5A5A5;
+  font-size: 15px;
+  font-weight: 500;
+  color: #a5a5a5;
+  margin: 0;
 }
 
-/* Central Circle with Progress */
+/* Improved central circle with better sizing */
 .mining-circle-container {
   display: flex;
   justify-content: center;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
   position: relative;
 }
 
 .mining-circle {
-  width: 140px;
-  height: 140px;
-  border-radius: 70px;
-  background-color: #2A2A2A;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #2a2a2a 0%, #1a1a1a 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0
+    rgba(255, 255, 255, 0.05);
 }
 
+/* Enhanced progress ring */
 .progress-ring {
   position: absolute;
-  top: 0;
-  left: 0;
-  transform: rotate(-90deg);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  filter: drop-shadow(0 0 8px rgba(0, 255, 128, 0.3));
 }
 
 .progress-ring-circle {
   transition: stroke-dashoffset 0.5s ease;
 }
 
+/* Improved circle content */
 .circle-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   z-index: 2;
+  gap: 4px;
 }
 
-.zp-text {
-  font-size: 18px;
+.zp-label {
+  font-size: 12px;
   font-weight: 600;
-  color: #00FF80;
+  color: #00ff80;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   margin-bottom: 4px;
 }
 
 .zp-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: #FFFFFF;
+  font-size: 32px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
+/* Enhanced mining progress display */
 .mining-progress {
-  font-size: 12px;
-  font-weight: 500;
-  color: #00FF80;
-  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
 }
 
-/* Action Button */
-.mining-action-button {
-  width: 200px;
-  height: 50px;
-  background: linear-gradient(135deg, #00FF80 0%, #00CC66 100%);
-  color: #FFFFFF;
-  border: none;
-  border-radius: 25px;
+.progress-indicator {
   font-size: 16px;
   font-weight: 700;
+  color: #00ff80;
+  text-shadow: 0 0 8px rgba(0, 255, 128, 0.5);
+}
+
+.progress-percentage {
+  font-size: 12px;
+  font-weight: 600;
+  color: #a5a5a5;
+}
+
+/* Enhanced action button */
+.mining-action-button {
+  width: 100%;
+  max-width: 280px;
+  height: 56px;
+  background: linear-gradient(135deg, #00ff80 0%, #00cc66 100%);
+  color: #1a1a1a;
+  border: none;
+  border-radius: 16px;
+  font-size: 17px;
+  font-weight: 800;
   cursor: pointer;
   margin: 0 auto;
   display: block;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 255, 128, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 255, 128, 0.3), 0 0 0 1px rgba(0, 255, 128, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.mining-action-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
 }
 
 .mining-action-button:hover:not(.disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 255, 128, 0.4);
+  box-shadow: 0 6px 24px rgba(0, 255, 128, 0.4), 0 0 0 1px rgba(0, 255, 128, 0.2);
+}
+
+.mining-action-button:hover:not(.disabled)::before {
+  left: 100%;
 }
 
 .mining-action-button:active:not(.disabled) {
   transform: translateY(0);
 }
 
+.mining-action-button.claim {
+  animation: claimPulse 2s ease-in-out infinite;
+}
+
+@keyframes claimPulse {
+  0%,
+  100% {
+    box-shadow: 0 4px 16px rgba(0, 255, 128, 0.3), 0 0 0 1px rgba(0, 255, 128, 0.1);
+  }
+  50% {
+    box-shadow: 0 6px 24px rgba(0, 255, 128, 0.5), 0 0 0 2px rgba(0, 255, 128, 0.3);
+  }
+}
+
 .mining-action-button.disabled {
-  background: linear-gradient(135deg, #4A4A4A 0%, #5A5A5A 100%);
-  color: #A5A5A5;
+  background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%);
+  color: #a5a5a5;
   cursor: not-allowed;
-  opacity: 0.8;
   box-shadow: none;
 }
 
-/* Error Message */
-.error-message {
-  color: #FF4D4D;
-  text-align: center;
-  margin-top: 16px;
-  font-size: 14px;
-  font-weight: 500;
+/* Loading state */
+.button-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
-/* Responsive Design */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(26, 26, 26, 0.3);
+  border-top-color: #1a1a1a;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Enhanced error message */
+.error-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #ff6b6b;
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 16px;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: 12px;
+}
+
+.error-icon {
+  font-size: 16px;
+}
+
+/* Responsive Design - Mobile First */
 @media (max-width: 480px) {
   .mining-display {
-    padding: 16px;
-    margin: 0 10px;
+    padding: 24px 20px;
+    border-radius: 20px;
+  }
+
+  .mining-header {
+    margin-bottom: 32px;
+  }
+
+  .header-title {
+    font-size: 24px;
+  }
+
+  .header-subtitle {
+    font-size: 14px;
   }
 
   .mining-circle {
+    width: 160px;
+    height: 160px;
+  }
+
+  .progress-ring {
+    width: 140px;
+    height: 140px;
+  }
+
+  .zp-label {
+    font-size: 11px;
+  }
+
+  .zp-value {
+    font-size: 28px;
+  }
+
+  .progress-indicator {
+    font-size: 14px;
+  }
+
+  .mining-action-button {
+    max-width: 100%;
+    height: 52px;
+    font-size: 16px;
+  }
+
+  .error-message {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+}
+
+/* Desktop/Tablet optimizations */
+@media (min-width: 768px) {
+  .mining-display {
+    padding: 40px 32px;
+  }
+
+  .mining-header {
+    margin-bottom: 48px;
+  }
+
+  .header-title {
+    font-size: 32px;
+  }
+
+  .header-subtitle {
+    font-size: 16px;
+  }
+
+  .mining-circle {
+    width: 200px;
+    height: 200px;
+  }
+
+  .progress-ring {
+    width: 180px;
+    height: 180px;
+  }
+
+  .zp-value {
+    font-size: 36px;
+  }
+
+  .mining-action-button {
+    max-width: 320px;
+    height: 60px;
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 320px) {
+  .mining-display {
+    padding: 20px 16px;
+  }
+
+  .header-title {
+    font-size: 22px;
+  }
+
+  .mining-circle {
+    width: 140px;
+    height: 140px;
+  }
+
+  .progress-ring {
     width: 120px;
     height: 120px;
   }
 
-  .zp-text {
-    font-size: 16px;
-  }
-
   .zp-value {
-    font-size: 20px;
+    font-size: 24px;
   }
 
   .mining-action-button {
-    width: 180px;
-    height: 45px;
+    height: 48px;
     font-size: 15px;
   }
 }
-
-/* Font Import */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
