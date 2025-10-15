@@ -37,17 +37,26 @@
   margin: 0;
 }
 
-/* Improved central circle with better sizing */
-.mining-circle-container {
+/* Clock container replacing circle container */
+.mining-clock-container {
   display: flex;
   justify-content: center;
   margin-bottom: 40px;
   position: relative;
 }
 
-.mining-circle {
-  width: 180px;
-  height: 180px;
+.mining-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+}
+
+/* Clock face design */
+.clock-face {
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
   background: radial-gradient(circle, #2a2a2a 0%, #1a1a1a 100%);
   display: flex;
@@ -58,26 +67,206 @@
     rgba(255, 255, 255, 0.05);
 }
 
-/* Enhanced progress ring */
+/* Clock markers (12 dots around the clock) */
+.clock-markers {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.clock-marker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 2px;
+  transform-origin: 0 0;
+}
+
+.marker-dot {
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Clock icon in center */
+.clock-icon-wrapper {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clock-icon {
+  color: #a5a5a5;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+}
+
+.clock-icon.mining {
+  color: #00ff80;
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+.clock-icon.ready {
+  color: #00ff80;
+  animation: iconBounce 0.6s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px rgba(0, 255, 128, 0.4));
+  }
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 16px rgba(0, 255, 128, 0.6));
+  }
+}
+
+@keyframes iconBounce {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+/* Clock hand showing progress */
+.clock-hand {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 70px;
+  transform-origin: 2px 2px;
+  transition: transform 1s linear;
+  z-index: 2;
+}
+
+.hand-line {
+  width: 4px;
+  height: 60px;
+  background: linear-gradient(180deg, #00ff80 0%, rgba(0, 255, 128, 0.3) 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(0, 255, 128, 0.5);
+}
+
+.hand-tip {
+  width: 10px;
+  height: 10px;
+  background: #00ff80;
+  border-radius: 50%;
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 0 12px rgba(0, 255, 128, 0.8);
+}
+
+/* Progress ring around clock */
 .progress-ring {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) rotate(-90deg);
   filter: drop-shadow(0 0 8px rgba(0, 255, 128, 0.3));
+  pointer-events: none;
 }
 
 .progress-ring-circle {
   transition: stroke-dashoffset 0.5s ease;
 }
 
-/* Improved circle content */
-.circle-content {
+.progress-ring-circle.complete {
+  animation: ringGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes ringGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px rgba(0, 255, 128, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px rgba(0, 255, 128, 0.8));
+  }
+}
+
+/* Ringing animation with green light pulses */
+.ring-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 2px solid #00ff80;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mining-clock.ringing .ring-pulse {
+  animation: ringPulse 2s ease-out infinite;
+}
+
+.ring-pulse-1 {
+  animation-delay: 0s !important;
+}
+
+.ring-pulse-2 {
+  animation-delay: 0.4s !important;
+}
+
+.ring-pulse-3 {
+  animation-delay: 0.8s !important;
+}
+
+@keyframes ringPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
+    border-width: 3px;
+  }
+  50% {
+    opacity: 0.4;
+    border-width: 2px;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+/* Shake animation for ringing clock */
+.mining-clock.ringing .clock-face {
+  animation: clockRing 0.5s ease-in-out infinite;
+}
+
+@keyframes clockRing {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+}
+
+/* ZP Display below clock */
+.zp-display {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  z-index: 2;
   gap: 4px;
 }
 
@@ -87,7 +276,6 @@
   color: #00ff80;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  margin-bottom: 4px;
 }
 
 .zp-value {
@@ -98,7 +286,6 @@
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Enhanced mining progress display */
 .mining-progress {
   display: flex;
   flex-direction: column;
@@ -248,14 +435,32 @@
     font-size: 14px;
   }
 
-  .mining-circle {
-    width: 160px;
-    height: 160px;
+  .clock-face {
+    width: 170px;
+    height: 170px;
   }
 
   .progress-ring {
-    width: 140px;
-    height: 140px;
+    width: 150px;
+    height: 150px;
+  }
+
+  .clock-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .clock-hand {
+    height: 60px;
+  }
+
+  .hand-line {
+    height: 50px;
+  }
+
+  .ring-pulse {
+    width: 170px;
+    height: 170px;
   }
 
   .zp-label {
@@ -300,14 +505,32 @@
     font-size: 16px;
   }
 
-  .mining-circle {
+  .clock-face {
+    width: 220px;
+    height: 220px;
+  }
+
+  .progress-ring {
     width: 200px;
     height: 200px;
   }
 
-  .progress-ring {
-    width: 180px;
-    height: 180px;
+  .clock-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .clock-hand {
+    height: 80px;
+  }
+
+  .hand-line {
+    height: 70px;
+  }
+
+  .ring-pulse {
+    width: 220px;
+    height: 220px;
   }
 
   .zp-value {
@@ -330,14 +553,24 @@
     font-size: 22px;
   }
 
-  .mining-circle {
-    width: 140px;
-    height: 140px;
+  .clock-face {
+    width: 150px;
+    height: 150px;
   }
 
   .progress-ring {
-    width: 120px;
-    height: 120px;
+    width: 130px;
+    height: 130px;
+  }
+
+  .clock-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .ring-pulse {
+    width: 150px;
+    height: 150px;
   }
 
   .zp-value {
