@@ -1,223 +1,279 @@
-/* Mining Hub Styles - Clean & Modern */
+/* Mining Hub Styles - Enhanced & Professional */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
 .mining-hub-container {
-  background-color: #1A1A1A;
+  background-color: #1a1a1a;
   min-height: 100vh;
-  color: #FFFFFF;
-  font-family: 'Inter', sans-serif;
-  max-width: 390px;
+  color: #ffffff;
+  font-family: "Inter", sans-serif;
+  width: 100%;
   margin: 0 auto;
   position: relative;
 }
 
 /* Main Content */
 .mining-content {
-  padding: 20px;
-  padding-top: 15px; /* Reduced top padding since status bar is removed */
+  padding: 24px 20px;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
-.mining-hub-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.hub-title {
-  font-size: 22px;
+/* New section title styling */
+.section-title {
+  font-size: 18px;
   font-weight: 700;
-  color: #FFFFFF;
-  margin: 0;
+  color: #ffffff;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.02em;
 }
 
-.logout-button {
-  background: none;
-  border: 1px solid #00FF80;
-  color: #00FF80;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+/* Improved stats section with better spacing */
+.user-stats-section {
+  margin-bottom: 32px;
 }
 
-.logout-button:hover {
-  background-color: rgba(0, 255, 128, 0.1);
-}
-
-/* User Stats Grid - Reduced Size */
+/* Enhanced stats grid with better responsive design */
 .user-stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
 }
 
+/* Redesigned stat cards with icon and better layout */
 .user-stat-card {
-  background-color: #2A2A2A;
-  padding: 12px;
-  border-radius: 10px;
-  text-align: center;
-  min-height: 60px;
+  background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
+  padding: 16px;
+  border-radius: 16px;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  min-height: 80px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.user-stat-card h2 {
+.user-stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 128, 0.5), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.user-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 255, 128, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.user-stat-card:hover::before {
+  opacity: 1;
+}
+
+/* Stat icon styling */
+.stat-icon {
+  font-size: 32px;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Stat info container */
+.stat-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-label {
   font-size: 12px;
-  font-weight: 500;
-  color: #A5A5A5;
-  margin: 0 0 6px 0;
+  font-weight: 600;
+  color: #a5a5a5;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .stat-value {
-  font-size: 16px;
-  font-weight: 700;
-  color: #FFFFFF;
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
   margin: 0;
+  letter-spacing: -0.02em;
+}
+
+/* Special styling for different card types */
+.zp-card:hover::before {
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 128, 0.5), transparent);
+}
+
+.seb-card:hover::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.5), transparent);
+}
+
+.streak-card:hover::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 107, 53, 0.5), transparent);
+}
+
+/* Mining section with better spacing */
+.mining-section {
+  margin-top: 24px;
 }
 
 /* Compact Admin Lockdown Indicator */
 .mining-lockdown-indicator {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .lockdown-alert {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   background: linear-gradient(135deg, #ff4444, #ff6b35);
   color: white;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1px solid #ff4444;
-  font-size: 0.8rem;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  font-size: 0.85rem;
+  box-shadow: 0 4px 12px rgba(255, 68, 68, 0.2);
 }
 
 .lockdown-icon {
-  font-size: 1rem;
+  font-size: 1.2rem;
   flex-shrink: 0;
 }
 
 .lockdown-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   flex: 1;
 }
 
 .lockdown-info strong {
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .lockdown-info span {
-  font-size: 0.7rem;
-  opacity: 0.9;
+  font-size: 0.75rem;
+  opacity: 0.95;
 }
 
-/* Remove animations to reduce distraction */
-/* Responsive Design */
+/* Responsive Design - Mobile First */
 @media (max-width: 480px) {
   .mining-content {
-    padding: 15px;
-    padding-top: 12px;
+    padding: 20px 16px;
   }
 
-  .hub-title {
-    font-size: 20px;
+  .section-title {
+    font-size: 16px;
+    margin-bottom: 12px;
   }
 
   .user-stats-grid {
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 10px;
   }
 
   .user-stat-card {
-    padding: 10px;
-    min-height: 55px;
+    padding: 14px;
+    min-height: 72px;
   }
 
-  .user-stat-card h2 {
+  .stat-icon {
+    font-size: 28px;
+  }
+
+  .stat-label {
     font-size: 11px;
   }
 
   .stat-value {
-    font-size: 15px;
-  }
-
-  .lockdown-alert {
-    padding: 8px 12px;
-    gap: 8px;
-  }
-
-  .lockdown-info strong {
-    font-size: 0.75rem;
-  }
-
-  .lockdown-info span {
-    font-size: 0.65rem;
-  }
-}
-
-@media (max-width: 320px) {
-  .mining-content {
-    padding: 12px;
-    padding-top: 10px;
-  }
-
-  .hub-title {
     font-size: 18px;
   }
 
-  .logout-button {
-    padding: 5px 10px;
-    font-size: 11px;
+  .lockdown-alert {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+}
+
+/* Desktop/Tablet optimizations */
+@media (min-width: 768px) {
+  .mining-content {
+    padding: 32px 24px;
+    max-width: 600px;
   }
 
-  .user-stat-card h2 {
+  .section-title {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .user-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .user-stat-card {
+    padding: 20px;
+    min-height: 100px;
+  }
+
+  .stat-icon {
+    font-size: 36px;
+  }
+
+  .stat-label {
+    font-size: 13px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .mining-section {
+    margin-top: 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mining-content {
+    max-width: 720px;
+    padding: 40px 32px;
+  }
+
+  .user-stats-grid {
+    gap: 20px;
+  }
+
+  .user-stat-card {
+    padding: 24px;
+    min-height: 110px;
+  }
+}
+
+/* Small screens */
+@media (max-width: 320px) {
+  .mining-content {
+    padding: 16px 12px;
+  }
+
+  .stat-icon {
+    font-size: 24px;
+  }
+
+  .stat-label {
     font-size: 10px;
   }
 
   .stat-value {
-    font-size: 14px;
+    font-size: 16px;
   }
 }
-
-/* Profile Dropdown in Mining Hub */
-.header-actions {
-  position: relative;
-}
-
-.profile-dropdown-button {
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 1.25rem;
-}
-
-.profile-dropdown-button:hover {
-  background: #333;
-  border-color: #00ff00;
-}
-
-.profile-dropdown-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 8px;
-  padding: 0.5rem;
-  min-width: 180px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
-}
-
-/* Font Import */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
