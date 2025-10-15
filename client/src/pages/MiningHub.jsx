@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Clock, Zap, CheckCircle } from "lucide-react"
-import "./MiningDisplay.css"
+import "./MiningHub.css"
+import "import "../components/MiningDisplay.jsx"
 
 const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, error, currentState = 1 }) => {
   const [timeLeft, setTimeLeft] = useState(0)
