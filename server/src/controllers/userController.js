@@ -96,7 +96,7 @@ const updateProfile = asyncHandler(async (req, res) => {
 // NEW: Upload avatar with file handling
 const uploadAvatar = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-  
+
   if (!req.file) {
     res.status(400);
     throw new Error('Please upload an image file');
@@ -106,7 +106,7 @@ const uploadAvatar = asyncHandler(async (req, res) => {
     // Convert buffer to base64 for storage in database
     const base64Image = req.file.buffer.toString('base64');
     const dataUrl = `data:${req.file.mimetype};base64,${base64Image}`;
-    
+
     const updatedUser = await User.updateProfile(userId, { avatar_url: dataUrl });
 
     res.json({
@@ -117,22 +117,6 @@ const uploadAvatar = asyncHandler(async (req, res) => {
   } catch (error) {
     console.error('Avatar upload error:', error);
     throw new Error('Failed to upload avatar');
-  }
-});
-
-// Add this to your userController.js or similar
-const updateUserActivity = asyncHandler(async (req, res) => {
-  const userId = req.user.id;
-  
-  try {
-    await db.query(
-      'UPDATE users SET last_activity = NOW() WHERE id = $1',
-      [userId]
-    );
-    res.json({ success: true, message: 'Activity updated' });
-  } catch (error) {
-    console.error('Error updating user activity:', error);
-    res.status(500).json({ success: false, message: 'Error updating activity' });
   }
 });
 
@@ -194,7 +178,9 @@ const updateUserActivity = asyncHandler(async (req, res) => {
 
   const query = `
     UPDATE users 
-    SET social_capital_score = social_capital_score + $1, zp_balance = zp_balance + $2
+    SET social_capital_score = social_capital_score + $1, 
+        zp_balance = zp_balance + $2,
+        last_activity = NOW()
     WHERE id = $3
     RETURNING id, username, email, zp_balance, social_capital_score
   `;
