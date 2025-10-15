@@ -1,79 +1,115 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Gem, Flame, Zap } from "lucide-react"
+import { useAuth } from "../context/AuthContext"
+import { Gem, Flame, Zap, Star } from "lucide-react"
 import "./MiningHub.css"
 import MiningDisplay from "../components/MiningDisplay.jsx"
 import miningService from "../services/miningService.js"
 
 const MiningHub = () => {
-  const [user, setUser] = useState(null)
-  const [appSettings, setAppSettings] = useState({})
+  const { user, appSettings, updateUser } = useAuth()
   const [miningStatus, setMiningStatus] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState("")
   const [currentState, setCurrentState] = useState(1)
 
-  // Fetch user data and mining config
+  // Load mining status on component mount and user change
   useEffect(() => {
-    fetchMiningData()
-  }, [])
+    const loadMiningStatus = async () => {
+      if (user) {
+        try {
+          setLoading(true)
+          const [status, config] = await Promise.all([
+            miningService.getMiningStatus(),
+            miningService.getMiningConfig()
+          ])
+          
+          setMiningStatus(status)
+          updateUser(status.userData)
 
-  const fetchMiningData = async () => {
-    try {
-      setLoading(true)
-      const [config, status] = await Promise.all([
-        miningService.getMiningConfig(),
-        miningService.getMiningStatus()
-      ])
-      
-      setAppSettings(config)
-      setMiningStatus(status)
-      setUser(status.userData)
-      
-      // Determine current state based on mining status
-      if (status.canClaim) {
-        setCurrentState(3)
-      } else if (status.progress > 0 && status.progress < 1) {
-        setCurrentState(2)
-      } else {
-        setCurrentState(1)
+          // Determine current state based on mining status
+          if (status.canClaim) {
+            setCurrentState(3) // Ready to claim
+          } else if (status.progress > 0) {
+            setCurrentState(2) // Mining in progress
+          } else {
+            setCurrentState(1) // Ready to start
+          }
+        } catch (err) {
+          console.error("Failed to load mining status:", err)
+          setError("Failed to load mining data")
+        } finally {
+          setLoading(false)
+        }
       }
+    }
+
+    loadMiningStatus()
+  }, [user, updateUser])
+
+  const handleClaim = async () => {
+    setLoading(true)
+    setError("")
+    try {
+      const result = await miningService.claimReward()
+      updateUser(result.userData)
+      const status = await miningService.getMiningStatus()
+      setMiningStatus(status)
+      setCurrentState(1) // Return to ready state after claim
     } catch (err) {
-      setError(err.message)
+      setError(err.message || "An error occurred during claim.")
     } finally {
       setLoading(false)
     }
   }
 
-  // Handle claim/mining start
-  const handleClaim = async () => {
+  const handleStartMining = async () => {
     setLoading(true)
-    setError(null)
-    
+    setError("")
     try {
-      let response
-      
-      if (currentState === 1) {
-        // Start mining
-        response = await miningService.startMining()
-        setUser(response.userData)
-        setCurrentState(2)
-      } else if (currentState === 3) {
-        // Claim reward
-        response = await miningService.claimReward()
-        setUser(response.userData)
-        setCurrentState(1)
+      const result = await miningService.startMining()
+
+      if (result.userData) {
+        updateUser(result.userData)
+      } else {
+        const status = await miningService.getMiningStatus()
+        updateUser(status.userData)
       }
-      
-      // Refresh mining status
-      const status = await miningService.getMiningStatus()
-      setMiningStatus(status)
-      
+
+      setCurrentState(2)
+
+      // Start polling for mining progress
+      const pollInterval = setInterval(async () => {
+        try {
+          const status = await miningService.getMiningStatus()
+          setMiningStatus(status)
+          if (status.canClaim) {
+            clearInterval(pollInterval)
+            setCurrentState(3) // Ready to claim
+          }
+        } catch (error) {
+          console.error("Polling error:", error)
+          clearInterval(pollInterval)
+        }
+      }, 5000)
+
+      // Cleanup interval on unmount
+      return () => clearInterval(pollInterval)
     } catch (err) {
-      setError(err.message)
+      const errorMessage = err.message || "Failed to start mining."
+      setError(errorMessage)
+      console.error("Start mining error:", err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAction = () => {
+    if (currentState === 1) {
+      handleStartMining()
+    } else if (currentState === 3) {
+      handleClaim()
     }
   }
 
@@ -97,31 +133,31 @@ const MiningHub = () => {
           <div className="user-stats-grid">
             <div className="user-stat-card zp-card">
               <div className="stat-icon">
-                <Gem size={24} />
+                <Gem size={20} />
               </div>
               <div className="stat-info">
                 <div className="stat-label">ZP Balance</div>
                 <div className="stat-value">{user?.zp_balance || 0}</div>
               </div>
             </div>
-            
+
             <div className="user-stat-card seb-card">
               <div className="stat-icon">
-                <Flame size={24} />
+                <Star size={20} />
               </div>
               <div className="stat-info">
-                <div className="stat-label">Streak</div>
-                <div className="stat-value">{user?.daily_streak_count || 0} days</div>
+                <div className="stat-label">SEB Score</div>
+                <div className="stat-value">{user?.social_capital_score || 0}</div>
               </div>
             </div>
-            
+
             <div className="user-stat-card streak-card">
               <div className="stat-icon">
-                <Zap size={24} />
+                <Flame size={20} />
               </div>
               <div className="stat-info">
-                <div className="stat-label">Mining Power</div>
-                <div className="stat-value">100%</div>
+                <div className="stat-label">Daily Streak</div>
+                <div className="stat-value">{user?.daily_streak_count || 0} days</div>
               </div>
             </div>
           </div>
@@ -129,29 +165,16 @@ const MiningHub = () => {
 
         {/* Mining Display Component */}
         <div className="mining-section">
-          <MiningDisplay 
+          <MiningDisplay
             user={user}
             appSettings={appSettings}
             miningStatus={miningStatus}
-            onClaim={handleClaim}
+            onClaim={handleAction}
             loading={loading}
             error={error}
             currentState={currentState}
           />
         </div>
-
-        {/* Admin Lockdown Indicator (if needed) */}
-        {false && (
-          <div className="mining-lockdown-indicator">
-            <div className="lockdown-alert">
-              <div className="lockdown-icon">🚫</div>
-              <div className="lockdown-info">
-                <strong>Mining Lockdown Active</strong>
-                <span>Mining is temporarily disabled by administrators</span>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
