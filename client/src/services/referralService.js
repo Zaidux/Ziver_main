@@ -26,6 +26,20 @@ const getReferrerInfo = async (referralCode) => {
   }
 };
 
+// NEW: Get smart referrer suggestion (for when no referral is provided)
+const getSmartReferrerSuggestion = async () => {
+  try {
+    const response = await api.get('/referrals/smart-suggestion');
+    return response.data;
+  } catch (error) {
+    console.error('Error getting smart referrer suggestion:', error);
+    return {
+      success: false,
+      message: 'Unable to find community match at this time'
+    };
+  }
+};
+
 // Apply referral to user
 const applyReferral = async (referralCode, userId) => {
   try {
@@ -145,20 +159,9 @@ const createPendingReferral = async (referralData) => {
   }
 };
 
-// NEW: Get smart referrer suggestion (for when no referral is provided)
-const getSmartReferrerSuggestion = async () => {
-  try {
-    // This would call a new endpoint that implements the smart referral logic
-    const response = await api.get('/referrals/smart-suggestion');
-    return response.data;
-  } catch (error) {
-    console.error('Error getting smart referrer suggestion:', error);
-    return null;
-  }
-};
-
 const referralService = {
   getReferrerInfo,
+  getSmartReferrerSuggestion, // NEW: Added smart referral function
   applyReferral,
   getReferralData,
   removeReferral,
@@ -167,8 +170,7 @@ const referralService = {
   generateWebReferralLink,
   shareReferral,
   createPendingReferral,
-  clearPendingReferral,
-  getSmartReferrerSuggestion
+  clearPendingReferral
 };
 
 export default referralService;
