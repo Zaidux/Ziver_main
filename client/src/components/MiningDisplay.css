@@ -1,489 +1,584 @@
-/* Mining Display Styles - Compact & Clean */
+/* Mining Display Styles - Enhanced & Professional */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 .mining-display {
   background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
-  padding: 20px 16px;
-  border-radius: 16px;
-  max-width: 380px;
+  padding: 32px 24px;
+  border-radius: 24px;
+  max-width: 480px;
   margin: 0 auto;
   font-family: "Inter", sans-serif;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* Header styling */
+/* Enhanced header styling */
 .mining-header {
-  margin-bottom: 0;
-  width: 100%;
+  margin-bottom: 40px;
 }
 
 .header-title {
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 800;
   color: #ffffff;
-  margin: 0 0 6px 0;
+  margin: 0 0 8px 0;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #00FF80 0%, #00CC66 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  line-height: 1.2;
 }
 
 .header-subtitle {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   color: #a5a5a5;
   margin: 0;
-  line-height: 1.4;
 }
 
-/* Clock container - Smaller */
+/* Clock container replacing circle container */
 .mining-clock-container {
   display: flex;
   justify-content: center;
-  margin-bottom: 0;
+  margin-bottom: 40px;
   position: relative;
-  width: 100%;
 }
 
 .mining-clock {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   position: relative;
-  width: 160px;
-  height: 160px;
 }
 
-/* Progress Ring Container */
-.progress-ring-container {
+/* Clock face design */
+.clock-face {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #2a2a2a 0%, #1a1a1a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0
+    rgba(255, 255, 255, 0.05);
+}
+
+/* Clock markers (12 dots around the clock) */
+.clock-markers {
+  position: absolute;
   width: 100%;
   height: 100%;
+}
+
+.clock-marker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 2px;
+  transform-origin: 0 0;
+}
+
+.marker-dot {
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Clock icon in center */
+.clock-icon-wrapper {
+  position: relative;
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.progress-ring {
-  transform: rotate(0deg);
+.clock-icon {
+  color: #a5a5a5;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
 }
 
-.progress-ring-bg {
-  transition: stroke 0.3s ease;
+.clock-icon.mining {
+  color: #00ff80;
+  animation: iconPulse 2s ease-in-out infinite;
 }
 
-.progress-ring-fill {
+.clock-icon.ready {
+  color: #00ff80;
+  animation: iconBounce 0.6s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px rgba(0, 255, 128, 0.4));
+  }
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 16px rgba(0, 255, 128, 0.6));
+  }
+}
+
+@keyframes iconBounce {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+/* Clock hand showing progress */
+.clock-hand {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 70px;
+  transform-origin: 2px 2px;
+  transition: transform 1s linear;
+  z-index: 2;
+}
+
+.hand-line {
+  width: 4px;
+  height: 60px;
+  background: linear-gradient(180deg, #00ff80 0%, rgba(0, 255, 128, 0.3) 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(0, 255, 128, 0.5);
+}
+
+.hand-tip {
+  width: 10px;
+  height: 10px;
+  background: #00ff80;
+  border-radius: 50%;
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 0 12px rgba(0, 255, 128, 0.8);
+}
+
+/* Progress ring around clock */
+.progress-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  filter: drop-shadow(0 0 8px rgba(0, 255, 128, 0.3));
+  pointer-events: none;
+}
+
+.progress-ring-circle {
   transition: stroke-dashoffset 0.5s ease;
-  transform: rotate(-90deg);
-  transform-origin: center;
 }
 
-.progress-ring-fill.ready {
-  stroke: rgba(0, 255, 128, 0.3);
+.progress-ring-circle.complete {
+  animation: ringGlow 1.5s ease-in-out infinite;
 }
 
-.progress-ring-fill.mining {
-  stroke: url(#progressGradient);
-  animation: pulse-glow 2s ease-in-out infinite;
+@keyframes ringGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px rgba(0, 255, 128, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px rgba(0, 255, 128, 0.8));
+  }
 }
 
-.progress-ring-fill.complete {
-  stroke: #00FF80;
-  animation: complete-glow 1.5s ease-in-out infinite;
-}
-
-/* Clock Center Content - Smaller */
-.clock-center {
+/* Ringing animation with green light pulses */
+.ring-pulse {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 2px solid #00ff80;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mining-clock.ringing .ring-pulse {
+  animation: ringPulse 2s ease-out infinite;
+}
+
+.ring-pulse-1 {
+  animation-delay: 0s !important;
+}
+
+.ring-pulse-2 {
+  animation-delay: 0.4s !important;
+}
+
+.ring-pulse-3 {
+  animation-delay: 0.8s !important;
+}
+
+@keyframes ringPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
+    border-width: 3px;
+  }
+  50% {
+    opacity: 0.4;
+    border-width: 2px;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+/* Shake animation for ringing clock */
+.mining-clock.ringing .clock-face {
+  animation: clockRing 0.5s ease-in-out infinite;
+}
+
+@keyframes clockRing {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+}
+
+/* ZP Display below clock */
+.zp-display {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  width: 100px;
-  height: 100px;
+  gap: 4px;
 }
 
-.clock-icon-wrapper {
+.zp-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #00ff80;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.zp-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mining-progress {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: rgba(30, 30, 30, 0.9);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  gap: 4px;
+  margin-top: 8px;
 }
 
-.clock-icon {
-  transition: all 0.3s ease;
+.progress-indicator {
+  font-size: 16px;
+  font-weight: 700;
+  color: #00ff80;
+  text-shadow: 0 0 8px rgba(0, 255, 128, 0.5);
+}
+
+.progress-percentage {
+  font-size: 12px;
+  font-weight: 600;
   color: #a5a5a5;
 }
 
-.clock-icon.ready {
-  color: #666;
-}
-
-.clock-icon.mining {
-  color: #00FF80;
-  animation: mining-pulse 1s ease-in-out infinite;
-}
-
-.clock-icon.complete {
-  color: #00FF80;
-}
-
-.time-display,
-.reward-display {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.1rem;
-  margin-top: 0.25rem;
-}
-
-.time-text {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #00FF80;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-
-.time-label {
-  font-size: 0.65rem;
-  color: #a0a0a0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 500;
-}
-
-.reward-amount {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #00FF80;
-  line-height: 1;
-}
-
-.reward-label {
-  font-size: 0.65rem;
-  color: #a0a0a0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 500;
-}
-
-/* Progress hand */
-.progress-hand {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transform-origin: center;
-  transition: transform 0.5s ease;
-  pointer-events: none;
-}
-
-.hand-line {
-  position: absolute;
-  top: 20%;
-  left: 50%;
-  width: 1px;
-  height: 35%;
-  background: #00FF80;
-  transform: translateX(-50%);
-  border-radius: 1px;
-  box-shadow: 0 0 6px rgba(0, 255, 128, 0.5);
-}
-
-.hand-tip {
-  position: absolute;
-  top: 20%;
-  left: 50%;
-  width: 4px;
-  height: 4px;
-  background: #00FF80;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 0 8px rgba(0, 255, 128, 0.8);
-}
-
-/* Pulsing rings */
-.pulse-ring {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: 1px solid #00FF80;
-  border-radius: 50%;
-  opacity: 0;
-  animation: pulse-ring 2s ease-out infinite;
-  pointer-events: none;
-}
-
-/* Balance Display - More Compact */
-.balance-display {
-  text-align: center;
-  margin-top: 0;
-  padding: 1rem;
-  background: rgba(30, 30, 30, 0.8);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  width: 100%;
-  max-width: 220px;
-}
-
-.balance-label {
-  font-size: 0.75rem;
-  color: #a0a0a0;
-  margin-bottom: 0.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-}
-
-.balance-amount {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 0.25rem;
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-
-.mining-progress-text {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  font-size: 0.75rem;
-  margin-top: 0.25rem;
-}
-
-.progress-percent {
-  color: #00FF80;
-  font-weight: 600;
-}
-
-.progress-earning {
-  color: #a0a0a0;
-  font-weight: 500;
-}
-
-/* Action Section */
-.action-section {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-}
-
+/* Enhanced action button */
 .mining-action-button {
   width: 100%;
-  max-width: 220px;
-  padding: 0.875rem 1.5rem;
+  max-width: 280px;
+  height: 56px;
+  background: linear-gradient(135deg, #00ff80 0%, #00cc66 100%);
+  color: #1a1a1a;
   border: none;
-  border-radius: 12px;
-  font-size: 0.95rem;
-  font-weight: 600;
+  border-radius: 16px;
+  font-size: 17px;
+  font-weight: 800;
   cursor: pointer;
+  margin: 0 auto;
+  display: block;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 255, 128, 0.3), 0 0 0 1px rgba(0, 255, 128, 0.1);
   position: relative;
   overflow: hidden;
-  font-family: inherit;
-  letter-spacing: -0.02em;
 }
 
-.mining-action-button.ready {
-  background: linear-gradient(135deg, #00FF80 0%, #00CC66 100%);
-  color: #1a1a1a;
+.mining-action-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
 }
 
-.mining-action-button.mining {
-  background: rgba(255, 255, 255, 0.1);
-  color: #a0a0a0;
+.mining-action-button:hover:not(.disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 255, 128, 0.4), 0 0 0 1px rgba(0, 255, 128, 0.2);
+}
+
+.mining-action-button:hover:not(.disabled)::before {
+  left: 100%;
+}
+
+.mining-action-button:active:not(.disabled) {
+  transform: translateY(0);
+}
+
+.mining-action-button.claim {
+  animation: claimPulse 2s ease-in-out infinite;
+}
+
+@keyframes claimPulse {
+  0%,
+  100% {
+    box-shadow: 0 4px 16px rgba(0, 255, 128, 0.3), 0 0 0 1px rgba(0, 255, 128, 0.1);
+  }
+  50% {
+    box-shadow: 0 6px 24px rgba(0, 255, 128, 0.5), 0 0 0 2px rgba(0, 255, 128, 0.3);
+  }
+}
+
+.mining-action-button.disabled {
+  background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%);
+  color: #a5a5a5;
   cursor: not-allowed;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
 }
 
-.mining-action-button.complete {
-  background: linear-gradient(135deg, #00FF80 0%, #00CC66 100%);
-  color: #1a1a1a;
-  animation: claim-pulse 2s ease-in-out infinite;
-}
-
-.mining-action-button:hover:not(.disabled):not(.mining) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(0, 255, 128, 0.3);
-}
-
+/* Loading state */
 .button-loading {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 10px;
 }
 
 .spinner {
-  width: 1rem;
-  height: 1rem;
+  width: 16px;
+  height: 16px;
   border: 2px solid rgba(26, 26, 26, 0.3);
-  border-top: 2px solid #1a1a1a;
+  border-top-color: #1a1a1a;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.error-message {
-  background: rgba(255, 77, 77, 0.15);
-  border: 1px solid rgba(255, 77, 77, 0.3);
-  color: #ff4d4d;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  max-width: 220px;
-  backdrop-filter: blur(10px);
-}
-
-.error-icon {
-  font-size: 0.9rem;
-  flex-shrink: 0;
-}
-
-/* Animations */
-@keyframes pulse-glow {
-  0%, 100% {
-    filter: drop-shadow(0 0 3px rgba(0, 255, 128, 0.3));
-  }
-  50% {
-    filter: drop-shadow(0 0 10px rgba(0, 255, 128, 0.6));
-  }
-}
-
-@keyframes complete-glow {
-  0%, 100% {
-    filter: drop-shadow(0 0 5px rgba(0, 255, 128, 0.5));
-  }
-  50% {
-    filter: drop-shadow(0 0 12px rgba(0, 255, 128, 0.8));
-  }
-}
-
-@keyframes mining-pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.05);
-  }
-}
-
-@keyframes pulse-ring {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.15);
-    opacity: 0;
-  }
-}
-
-@keyframes claim-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(0, 255, 128, 0.3);
-  }
-  70% {
-    box-shadow: 0 0 0 6px rgba(0, 255, 128, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(0, 255, 128, 0);
-  }
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-/* Responsive Design */
+/* Enhanced error message */
+.error-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #ff6b6b;
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 16px;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: 12px;
+}
+
+.error-icon {
+  font-size: 16px;
+}
+
+/* Responsive Design - Mobile First */
 @media (max-width: 480px) {
   .mining-display {
-    padding: 16px 12px;
-    gap: 1.25rem;
+    padding: 24px 20px;
+    border-radius: 20px;
   }
 
-  .mining-clock {
-    width: 140px;
-    height: 140px;
-  }
-
-  .clock-center {
-    width: 90px;
-    height: 90px;
-  }
-
-  .clock-icon-wrapper {
-    width: 48px;
-    height: 48px;
-  }
-
-  .clock-icon {
-    width: 20px;
-    height: 20px;
+  .mining-header {
+    margin-bottom: 32px;
   }
 
   .header-title {
-    font-size: 18px;
+    font-size: 24px;
   }
 
   .header-subtitle {
-    font-size: 12px;
+    font-size: 14px;
   }
 
-  .time-text,
-  .reward-amount {
-    font-size: 0.9rem;
+  .clock-face {
+    width: 170px;
+    height: 170px;
   }
 
-  .balance-amount {
-    font-size: 1.25rem;
+  .progress-ring {
+    width: 150px;
+    height: 150px;
+  }
+
+  .clock-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .clock-hand {
+    height: 60px;
+  }
+
+  .hand-line {
+    height: 50px;
+  }
+
+  .ring-pulse {
+    width: 170px;
+    height: 170px;
+  }
+
+  .zp-label {
+    font-size: 11px;
+  }
+
+  .zp-value {
+    font-size: 28px;
+  }
+
+  .progress-indicator {
+    font-size: 14px;
   }
 
   .mining-action-button {
-    padding: 0.75rem 1.25rem;
-    font-size: 0.9rem;
-    max-width: 200px;
+    max-width: 100%;
+    height: 52px;
+    font-size: 16px;
   }
 
-  .balance-display {
-    padding: 0.875rem;
-    max-width: 200px;
+  .error-message {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+}
+
+/* Desktop/Tablet optimizations */
+@media (min-width: 768px) {
+  .mining-display {
+    padding: 40px 32px;
+  }
+
+  .mining-header {
+    margin-bottom: 48px;
+  }
+
+  .header-title {
+    font-size: 32px;
+  }
+
+  .header-subtitle {
+    font-size: 16px;
+  }
+
+  .clock-face {
+    width: 220px;
+    height: 220px;
+  }
+
+  .progress-ring {
+    width: 200px;
+    height: 200px;
+  }
+
+  .clock-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .clock-hand {
+    height: 80px;
+  }
+
+  .hand-line {
+    height: 70px;
+  }
+
+  .ring-pulse {
+    width: 220px;
+    height: 220px;
+  }
+
+  .zp-value {
+    font-size: 36px;
+  }
+
+  .mining-action-button {
+    max-width: 320px;
+    height: 60px;
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 320px) {
+  .mining-display {
+    padding: 20px 16px;
+  }
+
+  .header-title {
+    font-size: 22px;
+  }
+
+  .clock-face {
+    width: 150px;
+    height: 150px;
+  }
+
+  .progress-ring {
+    width: 130px;
+    height: 130px;
+  }
+
+  .clock-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .ring-pulse {
+    width: 150px;
+    height: 150px;
+  }
+
+  .zp-value {
+    font-size: 24px;
+  }
+
+  .mining-action-button {
+    height: 48px;
+    font-size: 15px;
   }
 }
