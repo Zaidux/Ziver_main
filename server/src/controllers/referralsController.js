@@ -56,18 +56,16 @@ const getReferrerInfo = asyncHandler(async (req, res) => {
 // @route   GET /api/referrals/smart-suggestion
 const getSmartReferrerSuggestion = asyncHandler(async (req, res) => {
   try {
-    // Smart referral algorithm:
-    // 1. Find active users with less than max referrals
-    // 2. Prioritize by: social capital score, recent activity, referral success rate
-    // 3. Return a suitable referrer
-    
+    console.log('Getting smart referrer suggestion using last_activity column...');
+
+    // Smart referral algorithm using the existing last_activity column
     const smartReferrerResult = await db.query(
       `SELECT id, username, referral_code, referral_count, social_capital_score,
-              daily_streak_count, last_active_at
+              daily_streak_count, last_activity
        FROM users 
        WHERE referral_count < 50 
          AND social_capital_score > 0
-         AND last_active_at > NOW() - INTERVAL '7 days'
+         AND last_activity > NOW() - INTERVAL '7 days'
        ORDER BY 
          social_capital_score DESC,
          daily_streak_count DESC,
@@ -78,6 +76,7 @@ const getSmartReferrerSuggestion = asyncHandler(async (req, res) => {
 
     if (smartReferrerResult.rows.length > 0) {
       const referrer = smartReferrerResult.rows[0];
+      console.log('Smart referrer found using last_activity:', referrer.username);
       
       return res.json({
         success: true,
@@ -93,18 +92,21 @@ const getSmartReferrerSuggestion = asyncHandler(async (req, res) => {
       });
     }
 
-    // Fallback: any active user with referral capacity
+    console.log('No recent active referrer found, trying wider time window...');
+
+    // Fallback: any active user with referral capacity (wider time window)
     const fallbackResult = await db.query(
       `SELECT id, username, referral_code, referral_count
        FROM users 
        WHERE referral_count < 50 
-         AND last_active_at > NOW() - INTERVAL '30 days'
+         AND last_activity > NOW() - INTERVAL '30 days'
        ORDER BY RANDOM() 
        LIMIT 1`
     );
 
     if (fallbackResult.rows.length > 0) {
       const referrer = fallbackResult.rows[0];
+      console.log('Fallback referrer found:', referrer.username);
       
       return res.json({
         success: true,
@@ -119,6 +121,36 @@ const getSmartReferrerSuggestion = asyncHandler(async (req, res) => {
       });
     }
 
+    console.log('No active referrers found, trying any user with referral capacity...');
+
+    // Final fallback: any user with referral capacity (no activity requirement)
+    const finalFallbackResult = await db.query(
+      `SELECT id, username, referral_code, referral_count
+       FROM users 
+       WHERE referral_count < 50 
+       ORDER BY RANDOM() 
+       LIMIT 1`
+    );
+
+    if (finalFallbackResult.rows.length > 0) {
+      const referrer = finalFallbackResult.rows[0];
+      console.log('Final fallback referrer found:', referrer.username);
+      
+      return res.json({
+        success: true,
+        referrer: {
+          id: referrer.id,
+          username: referrer.username,
+          referral_code: referrer.referral_code,
+          referral_count: referrer.referral_count
+        },
+        message: 'Basic referrer suggestion found',
+        isSmartMatch: true
+      });
+    }
+
+    console.log('No suitable referrer found at all');
+    
     res.json({
       success: false,
       message: 'No suitable referrer found at this time',
@@ -127,6 +159,37 @@ const getSmartReferrerSuggestion = asyncHandler(async (req, res) => {
 
   } catch (error) {
     console.error('Error getting smart referrer suggestion:', error);
+    
+    // If there's still an error, try the most basic query possible
+    try {
+      console.log('Trying emergency fallback query...');
+      const emergencyResult = await db.query(
+        `SELECT id, username, referral_code 
+         FROM users 
+         WHERE referral_count < 50 
+         LIMIT 1`
+      );
+
+      if (emergencyResult.rows.length > 0) {
+        const referrer = emergencyResult.rows[0];
+        console.log('Emergency fallback referrer found:', referrer.username);
+        
+        return res.json({
+          success: true,
+          referrer: {
+            id: referrer.id,
+            username: referrer.username,
+            referral_code: referrer.referral_code,
+            referral_count: 0
+          },
+          message: 'Emergency referrer suggestion found',
+          isSmartMatch: true
+        });
+      }
+    } catch (emergencyError) {
+      console.error('Even emergency fallback failed:', emergencyError);
+    }
+
     res.status(500).json({
       success: false,
       message: 'Error finding smart referrer suggestion'
@@ -349,7 +412,7 @@ const clearPendingReferral = asyncHandler(async (req, res) => {
 
 module.exports = {
   getReferrerInfo,
-  getSmartReferrerSuggestion, // NEW: Added smart referral function
+  getSmartReferrerSuggestion,
   applyReferral,
   getReferralData,
   removeReferral,
