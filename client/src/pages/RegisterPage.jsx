@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate, Link, useLocation } from "react-router-dom"
-import { Zap, Gift, Shield, Eye, EyeOff, User, Mail, Lock, Sparkles } from "lucide-react"
+import { Zap, Gift, Shield, Eye, EyeOff, Sparkles } from "lucide-react"
 import authService from "../services/authService"
 import referralService from "../services/referralService"
 import { useTelegramReferral } from "../hooks/useTelegramReferral"
@@ -35,6 +35,9 @@ function RegisterPage() {
   const { login, loginWithGoogle } = useAuth()
 
   const { username, email, password, confirmPassword } = formData
+
+  // Calculate effectiveReferralCode here so it can be used in dependencies
+  const effectiveReferralCode = referralCode || urlReferralCode
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search)
@@ -71,7 +74,7 @@ function RegisterPage() {
     }
 
     getSmartReferral()
-  }, [effectiveReferralCode])
+  }, [effectiveReferralCode, checkingSmartReferral])
 
   const validateReferralCode = async (code) => {
     if (!code) return
@@ -90,8 +93,6 @@ function RegisterPage() {
       setCheckingReferral(false)
     }
   }
-
-  const effectiveReferralCode = referralCode || urlReferralCode
 
   // Determine which referral info to display
   const displayReferralInfo = effectiveReferralCode ? {
@@ -234,7 +235,6 @@ function RegisterPage() {
 
       let successMessage = "Account created successfully!"
       if (response.referralApplied && response.referrer) {
-        const referrerType = smartReferrer ? "system-matched" : "referral";
         successMessage += ` You received 100 ZP bonus from ${response.referrer.username}!`
       }
 
