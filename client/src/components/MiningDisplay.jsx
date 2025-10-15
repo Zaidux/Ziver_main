@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Clock, Zap, CheckCircle } from "lucide-react"
 import "./MiningDisplay.css"
 
 const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, error, currentState = 1 }) => {
@@ -25,10 +26,14 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
     return `${minutes}m ${seconds}s`
   }
 
-  // Get state data based on currentState prop (1-3)
+  const getClockRotation = () => {
+    const degrees = progress * 360
+    return degrees
+  }
+
   const getStateData = () => {
     switch (currentState) {
-      case 1: // Idle - Ready to start
+      case 1:
         return {
           title: "Ready to Mine",
           subtitle: "Start earning ZP rewards",
@@ -38,7 +43,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
           buttonText: "Start Mining",
           buttonEnabled: true,
         }
-      case 2: // Mining in progress
+      case 2:
         return {
           title: "Mining in Progress",
           subtitle: "Earning rewards...",
@@ -48,7 +53,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
           buttonText: formatTime(timeLeft),
           buttonEnabled: false,
         }
-      case 3: // Ready to claim
+      case 3:
         return {
           title: "Reward Ready!",
           subtitle: "Claim your earnings",
@@ -116,10 +121,6 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
     return () => clearInterval(interval)
   }, [user, MINING_CYCLE_MS, miningStatus, miningReward])
 
-  const calculateCircleProgress = () => {
-    return progress * 283 // 2πr where r=45
-  }
-
   return (
     <div className="mining-display">
       <div className="mining-header">
@@ -127,41 +128,75 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
         <p className="header-subtitle">{stateData.subtitle}</p>
       </div>
 
-      <div className="mining-circle-container">
-        <div className="mining-circle">
-          {/* Progress ring */}
-          <svg className="progress-ring" width="160" height="160">
-            <circle
-              className="progress-ring-bg"
-              stroke="rgba(255, 255, 255, 0.05)"
-              strokeWidth="4"
-              fill="transparent"
-              r="70"
-              cx="80"
-              cy="80"
-            />
-            <circle
-              className="progress-ring-circle"
-              stroke="url(#gradient)"
-              strokeWidth="4"
-              fill="transparent"
-              r="70"
-              cx="80"
-              cy="80"
-              strokeDasharray="440"
-              strokeDashoffset={440 - progress * 440}
-              strokeLinecap="round"
-            />
-            <defs>
-              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#00FF80" />
-                <stop offset="100%" stopColor="#00CC66" />
-              </linearGradient>
-            </defs>
-          </svg>
+      <div className="mining-clock-container">
+        <div className={`mining-clock ${currentState === 3 ? "ringing" : ""}`}>
+          {/* Clock face background */}
+          <div className="clock-face">
+            {/* Clock markers */}
+            <div className="clock-markers">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="clock-marker" style={{ transform: `rotate(${i * 30}deg) translateY(-60px)` }}>
+                  <div className="marker-dot"></div>
+                </div>
+              ))}
+            </div>
 
-          {/* Circle content */}
-          <div className="circle-content">
+            {/* Clock icon in center */}
+            <div className="clock-icon-wrapper">
+              {currentState === 1 && <Clock className="clock-icon" size={40} />}
+              {currentState === 2 && <Zap className="clock-icon mining" size={40} />}
+              {currentState === 3 && <CheckCircle className="clock-icon ready" size={40} />}
+            </div>
+
+            {currentState === 2 && (
+              <div className="clock-hand" style={{ transform: `rotate(${getClockRotation()}deg)` }}>
+                <div className="hand-line"></div>
+                <div className="hand-tip"></div>
+              </div>
+            )}
+
+            {/* Progress ring */}
+            <svg className="progress-ring" width="180" height="180">
+              <circle
+                className="progress-ring-bg"
+                stroke="rgba(255, 255, 255, 0.05)"
+                strokeWidth="3"
+                fill="transparent"
+                r="85"
+                cx="90"
+                cy="90"
+              />
+              <circle
+                className={`progress-ring-circle ${currentState === 3 ? "complete" : ""}`}
+                stroke="url(#gradient)"
+                strokeWidth="3"
+                fill="transparent"
+                r="85"
+                cx="90"
+                cy="90"
+                strokeDasharray="534"
+                strokeDashoffset={534 - progress * 534}
+                strokeLinecap="round"
+              />
+              <defs>
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#00FF80" />
+                  <stop offset="100%" stopColor="#00CC66" />
+                </linearGradient>
+              </defs>
+            </svg>
+
+            {currentState === 3 && (
+              <>
+                <div className="ring-pulse ring-pulse-1"></div>
+                <div className="ring-pulse ring-pulse-2"></div>
+                <div className="ring-pulse ring-pulse-3"></div>
+              </>
+            )}
+          </div>
+
+          {/* ZP Display below clock */}
+          <div className="zp-display">
             <div className="zp-label">ZP Balance</div>
             <div className="zp-value">{stateData.zpValue}</div>
             {stateData.isMining && (
