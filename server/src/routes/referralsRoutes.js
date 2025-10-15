@@ -7,6 +7,7 @@ const {
   removeReferral,
   getLeaderboard,
   getReferrerInfo,
+  getSmartReferrerSuggestion, // NEW: Import the smart referral function
   clearPendingReferral
 } = require('../controllers/referralsController');
 
@@ -14,6 +15,11 @@ const {
 // @desc    Get referrer information by referral code (for registration)
 // @access  Public (needed for registration page)
 router.get('/referrer-info/:referralCode', getReferrerInfo);
+
+// @route   GET /api/referrals/smart-suggestion
+// @desc    Get smart referrer suggestion for new users (when no referral code provided)
+// @access  Public (needed for registration page)
+router.get('/smart-suggestion', getSmartReferrerSuggestion);
 
 // @route   POST /api/referrals/apply
 // @desc    Apply a referral code to a user
