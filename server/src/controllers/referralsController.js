@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const db = require('../config/db');
+const Transaction = require('../models/Transaction');
 
 // @desc    Get referrer info by referral code
 // @route   GET /api/referrals/referrer-info/:referralCode
@@ -77,7 +78,7 @@ const getSmartReferrerSuggestion = asyncHandler(async (req, res) => {
     if (smartReferrerResult.rows.length > 0) {
       const referrer = smartReferrerResult.rows[0];
       console.log('Smart referrer found using last_activity:', referrer.username);
-      
+
       return res.json({
         success: true,
         referrer: {
@@ -107,7 +108,7 @@ const getSmartReferrerSuggestion = asyncHandler(async (req, res) => {
     if (fallbackResult.rows.length > 0) {
       const referrer = fallbackResult.rows[0];
       console.log('Fallback referrer found:', referrer.username);
-      
+
       return res.json({
         success: true,
         referrer: {
@@ -135,7 +136,7 @@ const getSmartReferrerSuggestion = asyncHandler(async (req, res) => {
     if (finalFallbackResult.rows.length > 0) {
       const referrer = finalFallbackResult.rows[0];
       console.log('Final fallback referrer found:', referrer.username);
-      
+
       return res.json({
         success: true,
         referrer: {
@@ -150,7 +151,7 @@ const getSmartReferrerSuggestion = asyncHandler(async (req, res) => {
     }
 
     console.log('No suitable referrer found at all');
-    
+
     res.json({
       success: false,
       message: 'No suitable referrer found at this time',
@@ -159,7 +160,7 @@ const getSmartReferrerSuggestion = asyncHandler(async (req, res) => {
 
   } catch (error) {
     console.error('Error getting smart referrer suggestion:', error);
-    
+
     // If there's still an error, try the most basic query possible
     try {
       console.log('Trying emergency fallback query...');
@@ -173,7 +174,7 @@ const getSmartReferrerSuggestion = asyncHandler(async (req, res) => {
       if (emergencyResult.rows.length > 0) {
         const referrer = emergencyResult.rows[0];
         console.log('Emergency fallback referrer found:', referrer.username);
-        
+
         return res.json({
           success: true,
           referrer: {
@@ -197,19 +198,23 @@ const getSmartReferrerSuggestion = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Apply referral to a new user - ENHANCED WITH SEB POINTS
+// @desc    Apply referral to a new user - ENHANCED WITH SEB POINTS AND TRANSACTIONS
 // @route   POST /api/referrals/apply
 const applyReferral = asyncHandler(async (req, res) => {
   const { referralCode, userId } = req.body;
 
+  const client = await db.getClient();
   try {
+    await client.query('BEGIN');
+
     // Find the referrer by their referral code
-    const referrerResult = await db.query(
+    const referrerResult = await client.query(
       'SELECT id, username, referral_count FROM users WHERE referral_code = $1', 
       [referralCode]
     );
 
     if (referrerResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ 
         success: false,
         message: 'Invalid referral code' 
@@ -220,6 +225,7 @@ const applyReferral = asyncHandler(async (req, res) => {
 
     // Check max referrals
     if (referrer.referral_count >= 50) {
+      await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
         message: 'This referrer has reached the maximum number of referrals (50)'
@@ -230,13 +236,13 @@ const applyReferral = asyncHandler(async (req, res) => {
     const sebPointsReward = Math.floor(Math.random() * 6) + 5;
 
     // Update the referred user's record and add bonus (100 ZP)
-    await db.query(
+    await client.query(
       'UPDATE users SET referred_by = $1, zp_balance = zp_balance + 100 WHERE id = $2',
       [referrer.id, userId]
     );
 
     // Award bonus to the referrer (150 ZP + SEB points) and increment count
-    await db.query(
+    await client.query(
       `UPDATE users 
        SET zp_balance = zp_balance + 150, 
            referral_count = referral_count + 1,
@@ -244,6 +250,40 @@ const applyReferral = asyncHandler(async (req, res) => {
        WHERE id = $2`,
       [sebPointsReward, referrer.id]
     );
+
+    // ✅ NEW: Create transactions for both users
+    // Transaction for referred user (100 ZP bonus)
+    await Transaction.create({
+      userId: userId,
+      type: 'referral_bonus',
+      amount: 100,
+      currency: 'ZP',
+      description: `Referral bonus from ${referrer.username}`,
+      referenceId: referrer.id,
+      referenceType: 'referral',
+      metadata: {
+        referrerUsername: referrer.username,
+        bonusType: 'referred_user'
+      }
+    });
+
+    // Transaction for referrer (150 ZP + SEB bonus)
+    await Transaction.create({
+      userId: referrer.id,
+      type: 'referral_reward',
+      amount: 150,
+      currency: 'ZP',
+      description: `Referral reward for inviting new user`,
+      referenceId: userId,
+      referenceType: 'referral',
+      metadata: {
+        referredUserId: userId,
+        sebPoints: sebPointsReward,
+        bonusType: 'referrer'
+      }
+    });
+
+    await client.query('COMMIT');
 
     res.status(200).json({ 
       success: true,
@@ -259,11 +299,14 @@ const applyReferral = asyncHandler(async (req, res) => {
       }
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error applying referral:', error);
     res.status(500).json({ 
       success: false,
       message: 'Error applying referral' 
     });
+  } finally {
+    client.release();
   }
 });
 
