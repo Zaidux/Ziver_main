@@ -3,6 +3,7 @@ const db = require('../config/db');
 const TaskValidation = require('../models/TaskValidation');
 const TaskValidators = require('../utils/taskValidators');
 const TelegramUtils = require('../utils/telegramUtils');
+const Transaction = require('../models/Transaction');
 
 // @desc    Get all available tasks for the logged-in user with progress
 // @route   GET /api/tasks
@@ -107,11 +108,11 @@ const completeTask = asyncHandler(async (req, res) => {
       if (task.verification_required) {
         // Use the TelegramUtils for verification (FIXED VERSION)
         const verificationResult = await TelegramUtils.verifyLinkTask(userId, task.link_url);
-        
+
         if (!verificationResult.verified) {
           throw new Error(`Link verification failed: ${verificationResult.error || 'Please complete the required action first'}`);
         }
-        
+
         console.log('Link task verification passed:', verificationResult);
       } else {
         console.log('Link task completed without verification (trust-based)');
@@ -148,6 +149,22 @@ const completeTask = asyncHandler(async (req, res) => {
       userId
     ]);
 
+    // ✅ NEW: Create task completion transaction
+    await Transaction.create({
+      userId: userId,
+      type: 'task_reward',
+      amount: task.zp_reward,
+      currency: 'ZP',
+      description: `Task completed: ${task.title}`,
+      referenceId: taskId,
+      referenceType: 'task',
+      metadata: {
+        taskTitle: task.title,
+        sebPoints: task.seb_reward,
+        taskType: task.task_type
+      }
+    });
+
     await client.query('COMMIT');
 
     console.log(`Task ${taskId} completed successfully for user ${userId}`);
@@ -179,7 +196,7 @@ const getTaskValidationRules = asyncHandler(async (req, res) => {
 
   try {
     const rules = await TaskValidation.getTaskValidationRules(taskId);
-    
+
     res.json({
       taskId,
       rulesCount: rules.length,
@@ -202,7 +219,7 @@ const validateTask = asyncHandler(async (req, res) => {
 
   try {
     const validationResult = await TaskValidation.validateTaskCompletion(userId, taskId);
-    
+
     res.json({
       taskId,
       userId,
