@@ -329,6 +329,7 @@
   }
 
   .main-content {
+    margin-left: 240px;
     padding-bottom: 32px;
     min-height: calc(100vh - 64px);
   }
@@ -366,19 +367,21 @@
   }
 
   .profile-dropdown-button {
-    padding: 6px 10px;
-    gap: 8px;
+    padding: 8px 12px;
+    gap: 10px;
+    min-width: 120px;
   }
 
   .profile-avatar {
-    width: 28px;
-    height: 28px;
-    font-size: 0.75rem;
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
   }
 
   .profile-name {
-    max-width: 80px;
+    max-width: 60px;
     font-size: 0.85rem;
+    display: block;
   }
 
   .theme-toggle-button {
@@ -387,7 +390,8 @@
   }
 
   .profile-dropdown-menu {
-    min-width: 260px;
+    min-width: 280px;
+    left: 0;
   }
 
   .main-content {
@@ -398,24 +402,26 @@
 
 @media (max-width: 480px) {
   .global-header {
-    padding: 0 0.5rem;
+    padding: 0 0.75rem;
   }
 
   .header-right {
-    gap: 8px;
+    gap: 10px;
   }
 
   .profile-dropdown-button {
-    padding: 6px 8px;
+    padding: 8px 12px;
+    min-width: 110px;
   }
 
   .profile-name {
-    display: none;
+    display: block;
+    max-width: 50px;
   }
 
   .profile-dropdown-menu {
-    min-width: 240px;
-    left: -8px;
+    min-width: 260px;
+    left: 0;
   }
 
   .user-avatar-large {
