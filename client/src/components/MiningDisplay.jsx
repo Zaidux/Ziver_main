@@ -7,6 +7,7 @@ import "./MiningDisplay.css"
 const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, error, currentState = 1 }) => {
   const [timeLeft, setTimeLeft] = useState(0)
   const [progress, setProgress] = useState(0)
+  const [currentZP, setCurrentZP] = useState(user?.zp_balance || 0)
 
   const miningCycleHours = Number.parseFloat(appSettings?.MINING_CYCLE_HOURS || "4")
   const MINING_CYCLE_MS = miningCycleHours * 60 * 60 * 1000
@@ -25,7 +26,8 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
   }
 
   const getClockRotation = () => {
-    return progress * 360
+    const degrees = progress * 360
+    return degrees
   }
 
   const getStateData = () => {
@@ -34,34 +36,31 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
         return {
           title: "Ready to Mine",
           subtitle: "Start earning ZP rewards",
+          zpValue: user?.zp_balance || 0,
           isMining: false,
           progress: 0,
           buttonText: "Start Mining",
           buttonEnabled: true,
-          icon: Clock,
-          iconClass: "ready"
         }
       case 2:
         return {
           title: "Mining in Progress",
           subtitle: "Earning rewards...",
+          zpValue: currentZP,
           isMining: true,
           progress: progress,
           buttonText: formatTime(timeLeft),
           buttonEnabled: false,
-          icon: Zap,
-          iconClass: "mining"
         }
       case 3:
         return {
           title: "Reward Ready!",
           subtitle: "Claim your earnings",
+          zpValue: (user?.zp_balance || 0) + miningReward,
           isMining: false,
           progress: 1,
-          buttonText: `Claim ${miningReward} ZP`,
+          buttonText: "Claim Reward",
           buttonEnabled: true,
-          icon: CheckCircle,
-          iconClass: "complete"
         }
       default:
         return getStateData(1)
@@ -69,18 +68,27 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
   }
 
   const stateData = getStateData()
-  const StateIcon = stateData.icon
+
+  useEffect(() => {
+    setCurrentZP(user?.zp_balance || 0)
+  }, [user?.zp_balance])
 
   useEffect(() => {
     if (miningStatus) {
       setTimeLeft(miningStatus.timeRemaining)
       setProgress(miningStatus.progress || 0)
+
+      if (miningStatus.progress > 0 && miningStatus.progress < 1) {
+        const earnedZP = Math.floor(miningReward * miningStatus.progress)
+        setCurrentZP((user?.zp_balance || 0) + earnedZP)
+      }
       return
     }
 
     if (!user?.mining_session_start_time) {
       setTimeLeft(0)
       setProgress(0)
+      setCurrentZP(user?.zp_balance || 0)
       return
     }
 
@@ -91,9 +99,13 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
       const remaining = MINING_CYCLE_MS - timePassed
       const currentProgress = timePassed / MINING_CYCLE_MS
 
+      const earnedZP = Math.floor(miningReward * currentProgress)
+      setCurrentZP((user?.zp_balance || 0) + earnedZP)
+
       if (remaining <= 0) {
         setTimeLeft(0)
         setProgress(1)
+        setCurrentZP((user?.zp_balance || 0) + miningReward)
         clearInterval(interval)
       } else {
         setTimeLeft(remaining)
@@ -102,7 +114,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [user, MINING_CYCLE_MS, miningStatus])
+  }, [user, MINING_CYCLE_MS, miningStatus, miningReward])
 
   return (
     <div className="mining-display">
@@ -113,125 +125,106 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
 
       <div className="mining-clock-container">
         <div className={`mining-clock ${currentState === 3 ? "ringing" : ""}`}>
-          {/* Progress Ring */}
-          <div className="progress-ring-container">
-            <svg className="progress-ring" width="160" height="160" viewBox="0 0 200 200">
-              {/* Background circle */}
+          {/* Clock face background */}
+          <div className="clock-face">
+            {/* Clock markers */}
+            <div className="clock-markers">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="clock-marker" style={{ transform: `rotate(${i * 30}deg) translateY(-50px)` }}>
+                  <div className="marker-dot"></div>
+                </div>
+              ))}
+            </div>
+
+            {/* Clock icon in center */}
+            <div className="clock-icon-wrapper">
+              {currentState === 1 && <Clock className="clock-icon" size={32} />}
+              {currentState === 2 && <Zap className="clock-icon mining" size={32} />}
+              {currentState === 3 && <CheckCircle className="clock-icon ready" size={32} />}
+            </div>
+
+            {currentState === 2 && (
+              <div className="clock-hand" style={{ transform: `rotate(${getClockRotation()}deg)` }}>
+                <div className="hand-line"></div>
+                <div className="hand-tip"></div>
+              </div>
+            )}
+
+            {/* Progress ring */}
+            <svg className="progress-ring" width="140" height="140">
               <circle
                 className="progress-ring-bg"
-                cx="100"
-                cy="100"
-                r="90"
-                stroke="rgba(255, 255, 255, 0.1)"
-                strokeWidth="8"
+                stroke="rgba(255, 255, 255, 0.05)"
+                strokeWidth="3"
                 fill="transparent"
+                r="65"
+                cx="70"
+                cy="70"
               />
-
-              {/* Progress circle */}
               <circle
-                className={`progress-ring-fill ${stateData.iconClass}`}
-                cx="100"
-                cy="100"
-                r="90"
-                stroke="url(#progressGradient)"
-                strokeWidth="8"
+                className={`progress-ring-circle ${currentState === 3 ? "complete" : ""}`}
+                stroke="url(#gradient)"
+                strokeWidth="3"
                 fill="transparent"
-                strokeDasharray="565.48"
-                strokeDashoffset={565.48 - (progress * 565.48)}
+                r="65"
+                cx="70"
+                cy="70"
+                strokeDasharray="408"
+                strokeDashoffset={408 - progress * 408}
                 strokeLinecap="round"
-                transform="rotate(-90 100 100)"
               />
-
               <defs>
-                <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#00FF80" />
                   <stop offset="100%" stopColor="#00CC66" />
                 </linearGradient>
               </defs>
             </svg>
 
-            {/* Clock Center Content */}
-            <div className="clock-center">
-              <div className="clock-icon-wrapper">
-                <StateIcon className={`clock-icon ${stateData.iconClass}`} size={28} />
-              </div>
-
-              {/* Time display for mining state */}
-              {currentState === 2 && (
-                <div className="time-display">
-                  <span className="time-text">{formatTime(timeLeft)}</span>
-                  <span className="time-label">remaining</span>
-                </div>
-              )}
-
-              {/* Reward display for ready state */}
-              {currentState === 3 && (
-                <div className="reward-display">
-                  <span className="reward-amount">+{miningReward}</span>
-                  <span className="reward-label">ZP Ready</span>
-                </div>
-              )}
-            </div>
-
-            {/* Progress hand for mining state */}
-            {currentState === 2 && (
-              <div 
-                className="progress-hand" 
-                style={{ transform: `rotate(${getClockRotation()}deg)` }}
-              >
-                <div className="hand-line"></div>
-                <div className="hand-tip"></div>
-              </div>
-            )}
-
-            {/* Pulsing rings for complete state */}
             {currentState === 3 && (
               <>
-                <div className="pulse-ring pulse-1"></div>
-                <div className="pulse-ring pulse-2"></div>
-                <div className="pulse-ring pulse-3"></div>
+                <div className="ring-pulse ring-pulse-1"></div>
+                <div className="ring-pulse ring-pulse-2"></div>
+                <div className="ring-pulse ring-pulse-3"></div>
               </>
+            )}
+          </div>
+
+          {/* ZP Display below clock */}
+          <div className="zp-display">
+            <div className="zp-label">ZP Balance</div>
+            <div className="zp-value">{stateData.zpValue}</div>
+            {stateData.isMining && (
+              <div className="mining-progress">
+                <span className="progress-indicator">+{Math.floor(miningReward * progress)}</span>
+                <span className="progress-percentage">{Math.floor(progress * 100)}%</span>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Current Balance Display */}
-      <div className="balance-display">
-        <div className="balance-label">Current Balance</div>
-        <div className="balance-amount">{user?.zp_balance || 0} ZP</div>
-        {currentState === 2 && (
-          <div className="mining-progress-text">
-            <span className="progress-percent">{Math.floor(progress * 100)}%</span>
-            <span className="progress-earning">+{Math.floor(miningReward * progress)} ZP</span>
-          </div>
+      <button
+        className={`mining-action-button ${!stateData.buttonEnabled ? "disabled" : ""} ${currentState === 3 ? "claim" : ""}`}
+        onClick={onClaim}
+        disabled={!stateData.buttonEnabled || loading}
+      >
+        {loading ? (
+          <span className="button-loading">
+            <span className="spinner"></span>
+            Processing...
+          </span>
+        ) : (
+          stateData.buttonText
         )}
-      </div>
+      </button>
 
-      {/* Action Button */}
-      <div className="action-section">
-        <button
-          className={`mining-action-button ${stateData.iconClass} ${!stateData.buttonEnabled ? "disabled" : ""}`}
-          onClick={onClaim}
-          disabled={!stateData.buttonEnabled || loading}
-        >
-          {loading ? (
-            <span className="button-loading">
-              <span className="spinner"></span>
-              Processing...
-            </span>
-          ) : (
-            stateData.buttonText
-          )}
-        </button>
-
-        {error && (
-          <div className="error-message">
-            <span className="error-icon">⚠️</span>
-            {error}
-          </div>
-        )}
-      </div>
+      {error && (
+        <div className="error-message">
+          <span className="error-icon">⚠️</span>
+          {error}
+        </div>
+      )}
     </div>
   )
 }
