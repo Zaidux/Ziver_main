@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
 import miningService from "../services/miningService"
 import MiningDisplay from "../components/MiningDisplay"
+import { Diamond, Star, Flame } from "lucide-react"
 import "./MiningHub.css"
 
 const MiningHub = () => {
@@ -104,11 +105,13 @@ const MiningHub = () => {
   return (
     <div className="mining-hub-container">
       <div className="mining-content">
-        <div className="user-stats-section">
-          <h2 className="section-title">Your Stats</h2>
+        {/* Compact User Stats Section */}
+        <div className="user-stats-section compact">
           <div className="user-stats-grid">
             <div className="user-stat-card zp-card">
-              <div className="stat-icon">💎</div>
+              <div className="stat-icon">
+                <Diamond size={20} />
+              </div>
               <div className="stat-info">
                 <h3 className="stat-label">ZP Balance</h3>
                 <p className="stat-value">{user?.zp_balance || 0}</p>
@@ -116,7 +119,9 @@ const MiningHub = () => {
             </div>
 
             <div className="user-stat-card seb-card">
-              <div className="stat-icon">⭐</div>
+              <div className="stat-icon">
+                <Star size={20} />
+              </div>
               <div className="stat-info">
                 <h3 className="stat-label">SEB Score</h3>
                 <p className="stat-value">{user?.social_capital_score || 0}</p>
@@ -124,16 +129,19 @@ const MiningHub = () => {
             </div>
 
             <div className="user-stat-card streak-card">
-              <div className="stat-icon">🔥</div>
+              <div className="stat-icon">
+                <Flame size={20} />
+              </div>
               <div className="stat-info">
-                <h3 className="stat-label">Daily Streak</h3>
-                <p className="stat-value">{user?.daily_streak_count || 0} days</p>
+                <h3 className="stat-label">Streak</h3>
+                <p className="stat-value">{user?.daily_streak_count || 0}d</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mining-section">
+        {/* Mining Section - Made more compact */}
+        <div className="mining-section compact">
           <MiningDisplay
             user={user}
             appSettings={appSettings}
