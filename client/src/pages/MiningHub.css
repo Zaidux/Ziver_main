@@ -1,4 +1,4 @@
-/* Mining Hub Styles - Enhanced & Professional */
+/* Mining Hub Styles - Compact & Professional */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 .mining-hub-container {
@@ -11,46 +11,45 @@
   position: relative;
 }
 
-/* Main Content */
+/* Main Content - More Compact */
 .mining-content {
-  padding: 24px 20px;
-  max-width: 480px;
+  padding: 16px 16px;
+  max-width: 420px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
-/* New section title styling */
+/* Section title */
 .section-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #ffffff;
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 0;
   letter-spacing: -0.02em;
 }
 
-/* Improved stats section with better spacing */
+/* Stats section */
 .user-stats-section {
   margin-bottom: 0;
 }
 
-/* Enhanced stats grid with better responsive design */
 .user-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 
-/* Redesigned stat cards with icon and better layout */
+/* More compact stat cards */
 .user-stat-card {
   background: rgba(30, 30, 30, 0.8);
-  padding: 16px;
-  border-radius: 16px;
+  padding: 12px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 80px;
+  gap: 8px;
+  min-height: 60px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
   position: relative;
@@ -58,60 +57,36 @@
   backdrop-filter: blur(10px);
 }
 
-.user-stat-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(0, 255, 128, 0.5), transparent);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.user-stat-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(0, 255, 128, 0.2);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-}
-
-.user-stat-card:hover::before {
-  opacity: 1;
-}
-
-/* Stat icon styling */
 .stat-icon {
-  font-size: 32px;
+  font-size: 20px;
   line-height: 1;
   flex-shrink: 0;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* Stat info container */
 .stat-info {
   flex: 1;
   min-width: 0;
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
   color: #a5a5a5;
-  margin: 0 0 4px 0;
+  margin: 0 0 2px 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .stat-value {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 800;
   color: #ffffff;
   margin: 0;
@@ -134,184 +109,9 @@
   color: #FF6B35;
 }
 
-.zp-card:hover::before {
-  background: linear-gradient(90deg, transparent, rgba(0, 255, 128, 0.5), transparent);
-}
-
-.seb-card:hover::before {
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.5), transparent);
-}
-
-.streak-card:hover::before {
-  background: linear-gradient(90deg, transparent, rgba(255, 107, 53, 0.5), transparent);
-}
-
-/* Mining section with better spacing */
+/* Mining section */
 .mining-section {
   margin-top: 0;
-}
-
-/* Compact Admin Lockdown Indicator */
-.mining-lockdown-indicator {
-  margin-bottom: 20px;
-}
-
-.lockdown-alert {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: linear-gradient(135deg, #ff4444, #ff6b35);
-  color: white;
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 68, 68, 0.3);
-  font-size: 0.85rem;
-  box-shadow: 0 4px 12px rgba(255, 68, 68, 0.2);
-}
-
-.lockdown-icon {
-  font-size: 1.2rem;
-  flex-shrink: 0;
-}
-
-.lockdown-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-}
-
-.lockdown-info strong {
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
-.lockdown-info span {
-  font-size: 0.75rem;
-  opacity: 0.95;
-}
-
-/* Responsive Design - Mobile First */
-@media (max-width: 480px) {
-  .mining-content {
-    padding: 20px 16px;
-    gap: 1.5rem;
-  }
-
-  .section-title {
-    font-size: 16px;
-    margin-bottom: 12px;
-  }
-
-  .user-stats-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .user-stat-card {
-    padding: 14px;
-    min-height: 72px;
-  }
-
-  .stat-icon {
-    font-size: 28px;
-    width: 44px;
-    height: 44px;
-  }
-
-  .stat-label {
-    font-size: 11px;
-  }
-
-  .stat-value {
-    font-size: 18px;
-  }
-
-  .lockdown-alert {
-    padding: 10px 14px;
-    gap: 10px;
-  }
-}
-
-/* Desktop/Tablet optimizations */
-@media (min-width: 768px) {
-  .mining-content {
-    padding: 32px 24px;
-    max-width: 600px;
-    gap: 2.5rem;
-  }
-
-  .section-title {
-    font-size: 20px;
-    margin-bottom: 20px;
-  }
-
-  .user-stats-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-  }
-
-  .user-stat-card {
-    padding: 20px;
-    min-height: 100px;
-  }
-
-  .stat-icon {
-    font-size: 36px;
-    width: 56px;
-    height: 56px;
-  }
-
-  .stat-label {
-    font-size: 13px;
-  }
-
-  .stat-value {
-    font-size: 24px;
-  }
-
-  .mining-section {
-    margin-top: 0;
-  }
-}
-
-@media (min-width: 1024px) {
-  .mining-content {
-    max-width: 720px;
-    padding: 40px 32px;
-    gap: 3rem;
-  }
-
-  .user-stats-grid {
-    gap: 20px;
-  }
-
-  .user-stat-card {
-    padding: 24px;
-    min-height: 110px;
-  }
-}
-
-/* Small screens */
-@media (max-width: 320px) {
-  .mining-content {
-    padding: 16px 12px;
-    gap: 1rem;
-  }
-
-  .stat-icon {
-    font-size: 24px;
-    width: 40px;
-    height: 40px;
-  }
-
-  .stat-label {
-    font-size: 10px;
-  }
-
-  .stat-value {
-    font-size: 16px;
-  }
 }
 
 /* Loading states */
@@ -320,25 +120,55 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem 2rem;
+  padding: 2rem 1rem;
   gap: 1rem;
 }
 
 .loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top: 3px solid #00FF80;
+  width: 32px;
+  height: 32px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top: 2px solid #00FF80;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 .loading-text {
   color: #a0a0a0;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .mining-content {
+    padding: 12px 12px;
+    gap: 1rem;
+  }
+
+  .user-stats-grid {
+    gap: 6px;
+  }
+
+  .user-stat-card {
+    padding: 10px;
+    min-height: 56px;
+  }
+
+  .stat-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .stat-label {
+    font-size: 9px;
+  }
+
+  .stat-value {
+    font-size: 14px;
+  }
 }
