@@ -2,7 +2,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 .mining-hub-container {
-  background-color: #1a1a1a;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   min-height: 100vh;
   color: #ffffff;
   font-family: "Inter", sans-serif;
@@ -16,6 +16,9 @@
   padding: 24px 20px;
   max-width: 480px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 /* New section title styling */
@@ -29,7 +32,7 @@
 
 /* Improved stats section with better spacing */
 .user-stats-section {
-  margin-bottom: 32px;
+  margin-bottom: 0;
 }
 
 /* Enhanced stats grid with better responsive design */
@@ -41,17 +44,18 @@
 
 /* Redesigned stat cards with icon and better layout */
 .user-stat-card {
-  background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
+  background: rgba(30, 30, 30, 0.8);
   padding: 16px;
   border-radius: 16px;
   display: flex;
   align-items: center;
   gap: 12px;
   min-height: 80px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(10px);
 }
 
 .user-stat-card::before {
@@ -69,7 +73,7 @@
 .user-stat-card:hover {
   transform: translateY(-2px);
   border-color: rgba(0, 255, 128, 0.2);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .user-stat-card:hover::before {
@@ -82,6 +86,13 @@
   line-height: 1;
   flex-shrink: 0;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 /* Stat info container */
@@ -108,6 +119,21 @@
 }
 
 /* Special styling for different card types */
+.zp-card .stat-icon {
+  background: rgba(0, 255, 128, 0.1);
+  color: #00FF80;
+}
+
+.seb-card .stat-icon {
+  background: rgba(255, 215, 0, 0.1);
+  color: #FFD700;
+}
+
+.streak-card .stat-icon {
+  background: rgba(255, 107, 53, 0.1);
+  color: #FF6B35;
+}
+
 .zp-card:hover::before {
   background: linear-gradient(90deg, transparent, rgba(0, 255, 128, 0.5), transparent);
 }
@@ -122,7 +148,7 @@
 
 /* Mining section with better spacing */
 .mining-section {
-  margin-top: 24px;
+  margin-top: 0;
 }
 
 /* Compact Admin Lockdown Indicator */
@@ -169,6 +195,7 @@
 @media (max-width: 480px) {
   .mining-content {
     padding: 20px 16px;
+    gap: 1.5rem;
   }
 
   .section-title {
@@ -188,6 +215,8 @@
 
   .stat-icon {
     font-size: 28px;
+    width: 44px;
+    height: 44px;
   }
 
   .stat-label {
@@ -209,6 +238,7 @@
   .mining-content {
     padding: 32px 24px;
     max-width: 600px;
+    gap: 2.5rem;
   }
 
   .section-title {
@@ -228,6 +258,8 @@
 
   .stat-icon {
     font-size: 36px;
+    width: 56px;
+    height: 56px;
   }
 
   .stat-label {
@@ -239,7 +271,7 @@
   }
 
   .mining-section {
-    margin-top: 32px;
+    margin-top: 0;
   }
 }
 
@@ -247,6 +279,7 @@
   .mining-content {
     max-width: 720px;
     padding: 40px 32px;
+    gap: 3rem;
   }
 
   .user-stats-grid {
@@ -263,10 +296,13 @@
 @media (max-width: 320px) {
   .mining-content {
     padding: 16px 12px;
+    gap: 1rem;
   }
 
   .stat-icon {
     font-size: 24px;
+    width: 40px;
+    height: 40px;
   }
 
   .stat-label {
@@ -276,4 +312,33 @@
   .stat-value {
     font-size: 16px;
   }
+}
+
+/* Loading states */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid #00FF80;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  color: #a0a0a0;
+  font-size: 0.9rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
