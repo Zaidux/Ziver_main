@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Clock, Zap, CheckCircle } from "lucide-react"
+import { Clock, Zap, CheckCircle, Coins } from "lucide-react"
 import "./MiningDisplay.css"
 
 const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, error, currentState = 1 }) => {
@@ -21,7 +21,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
     const seconds = totalSeconds % 60
 
     if (hours > 0) {
-      return `${hours}h ${minutes}m ${seconds}s`
+      return `${hours}h ${minutes}m`
     }
     return `${minutes}m ${seconds}s`
   }
@@ -46,7 +46,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
       case 2:
         return {
           title: "Mining in Progress",
-          subtitle: "Earning rewards...",
+          subtitle: "Earning ZP rewards...",
           zpValue: currentZP,
           isMining: true,
           progress: progress,
@@ -56,7 +56,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
       case 3:
         return {
           title: "Reward Ready!",
-          subtitle: "Claim your earnings",
+          subtitle: "Claim your ZP + SEB points",
           zpValue: (user?.zp_balance || 0) + miningReward,
           isMining: false,
           progress: 1,
@@ -80,6 +80,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
       setTimeLeft(miningStatus.timeRemaining)
       setProgress(miningStatus.progress || 0)
 
+      // Only show ZP increasing during mining, not SEB
       if (miningStatus.progress > 0 && miningStatus.progress < 1) {
         const earnedZP = Math.floor(miningReward * miningStatus.progress)
         setCurrentZP((user?.zp_balance || 0) + earnedZP)
@@ -102,6 +103,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
       const remaining = MINING_CYCLE_MS - timePassed
       const currentProgress = timePassed / MINING_CYCLE_MS
 
+      // Only calculate ZP progress, SEB is added only on claim
       const earnedZP = Math.floor(miningReward * currentProgress)
       setCurrentZP((user?.zp_balance || 0) + earnedZP)
 
@@ -122,7 +124,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
   }, [user, MINING_CYCLE_MS, miningStatus, miningReward])
 
   return (
-    <div className="mining-display">
+    <div className="mining-display compact">
       <div className="mining-header">
         <h2 className="header-title">{stateData.title}</h2>
         <p className="header-subtitle">{stateData.subtitle}</p>
@@ -143,9 +145,9 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
 
             {/* Clock icon in center */}
             <div className="clock-icon-wrapper">
-              {currentState === 1 && <Clock className="clock-icon" size={40} />}
-              {currentState === 2 && <Zap className="clock-icon mining" size={40} />}
-              {currentState === 3 && <CheckCircle className="clock-icon ready" size={40} />}
+              {currentState === 1 && <Clock className="clock-icon" size={32} />}
+              {currentState === 2 && <Zap className="clock-icon mining" size={32} />}
+              {currentState === 3 && <CheckCircle className="clock-icon ready" size={32} />}
             </div>
 
             {currentState === 2 && (
@@ -156,26 +158,26 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
             )}
 
             {/* Progress ring */}
-            <svg className="progress-ring" width="180" height="180">
+            <svg className="progress-ring" width="160" height="160">
               <circle
                 className="progress-ring-bg"
                 stroke="rgba(255, 255, 255, 0.05)"
                 strokeWidth="3"
                 fill="transparent"
-                r="85"
-                cx="90"
-                cy="90"
+                r="75"
+                cx="80"
+                cy="80"
               />
               <circle
                 className={`progress-ring-circle ${currentState === 3 ? "complete" : ""}`}
                 stroke="url(#gradient)"
                 strokeWidth="3"
                 fill="transparent"
-                r="85"
-                cx="90"
-                cy="90"
-                strokeDasharray="534"
-                strokeDashoffset={534 - progress * 534}
+                r="75"
+                cx="80"
+                cy="80"
+                strokeDasharray="471"
+                strokeDashoffset={471 - progress * 471}
                 strokeLinecap="round"
               />
               <defs>
@@ -197,12 +199,20 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
 
           {/* ZP Display below clock */}
           <div className="zp-display">
-            <div className="zp-label">ZP Balance</div>
+            <div className="zp-label">
+              <Coins size={16} />
+              ZP Balance
+            </div>
             <div className="zp-value">{stateData.zpValue}</div>
             {stateData.isMining && (
               <div className="mining-progress">
-                <span className="progress-indicator">+{Math.floor(miningReward * progress)}</span>
+                <span className="progress-indicator">+{Math.floor(miningReward * progress)} ZP</span>
                 <span className="progress-percentage">{Math.floor(progress * 100)}%</span>
+              </div>
+            )}
+            {currentState === 3 && (
+              <div className="seb-notification">
+                +{miningReward} ZP + SEB points on claim!
               </div>
             )}
           </div>
