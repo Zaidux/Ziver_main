@@ -6,6 +6,7 @@ import "./MiningDisplay.css"
 
 const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, error, currentState = 1 }) => {
   const [timeLeft, setTimeLeft] = useState(0)
+  const [isClaimable, setIsClaimable] = useState(false)
   const [progress, setProgress] = useState(0)
   const [currentZP, setCurrentZP] = useState(user?.zp_balance || 0)
 
@@ -75,6 +76,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
 
   useEffect(() => {
     if (miningStatus) {
+      setIsClaimable(miningStatus.canClaim)
       setTimeLeft(miningStatus.timeRemaining)
       setProgress(miningStatus.progress || 0)
 
@@ -86,6 +88,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
     }
 
     if (!user?.mining_session_start_time) {
+      setIsClaimable(true)
       setTimeLeft(0)
       setProgress(0)
       setCurrentZP(user?.zp_balance || 0)
@@ -104,11 +107,13 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
 
       if (remaining <= 0) {
         setTimeLeft(0)
+        setIsClaimable(true)
         setProgress(1)
         setCurrentZP((user?.zp_balance || 0) + miningReward)
         clearInterval(interval)
       } else {
         setTimeLeft(remaining)
+        setIsClaimable(false)
         setProgress(currentProgress)
       }
     }, 1000)
@@ -130,7 +135,7 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
             {/* Clock markers */}
             <div className="clock-markers">
               {[...Array(12)].map((_, i) => (
-                <div key={i} className="clock-marker" style={{ transform: `rotate(${i * 30}deg) translateY(-50px)` }}>
+                <div key={i} className="clock-marker" style={{ transform: `rotate(${i * 30}deg) translateY(-60px)` }}>
                   <div className="marker-dot"></div>
                 </div>
               ))}
@@ -138,9 +143,9 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
 
             {/* Clock icon in center */}
             <div className="clock-icon-wrapper">
-              {currentState === 1 && <Clock className="clock-icon" size={32} />}
-              {currentState === 2 && <Zap className="clock-icon mining" size={32} />}
-              {currentState === 3 && <CheckCircle className="clock-icon ready" size={32} />}
+              {currentState === 1 && <Clock className="clock-icon" size={40} />}
+              {currentState === 2 && <Zap className="clock-icon mining" size={40} />}
+              {currentState === 3 && <CheckCircle className="clock-icon ready" size={40} />}
             </div>
 
             {currentState === 2 && (
@@ -151,26 +156,26 @@ const MiningDisplay = ({ user, appSettings, miningStatus, onClaim, loading, erro
             )}
 
             {/* Progress ring */}
-            <svg className="progress-ring" width="140" height="140">
+            <svg className="progress-ring" width="180" height="180">
               <circle
                 className="progress-ring-bg"
                 stroke="rgba(255, 255, 255, 0.05)"
                 strokeWidth="3"
                 fill="transparent"
-                r="65"
-                cx="70"
-                cy="70"
+                r="85"
+                cx="90"
+                cy="90"
               />
               <circle
                 className={`progress-ring-circle ${currentState === 3 ? "complete" : ""}`}
                 stroke="url(#gradient)"
                 strokeWidth="3"
                 fill="transparent"
-                r="65"
-                cx="70"
-                cy="70"
-                strokeDasharray="408"
-                strokeDashoffset={408 - progress * 408}
+                r="85"
+                cx="90"
+                cy="90"
+                strokeDasharray="534"
+                strokeDashoffset={534 - progress * 534}
                 strokeLinecap="round"
               />
               <defs>
