@@ -120,6 +120,22 @@ const uploadAvatar = asyncHandler(async (req, res) => {
   }
 });
 
+// Add this to your userController.js or similar
+const updateUserActivity = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  
+  try {
+    await db.query(
+      'UPDATE users SET last_activity = NOW() WHERE id = $1',
+      [userId]
+    );
+    res.json({ success: true, message: 'Activity updated' });
+  } catch (error) {
+    console.error('Error updating user activity:', error);
+    res.status(500).json({ success: false, message: 'Error updating activity' });
+  }
+});
+
 // NEW: Auto-save Telegram username
 const autoSaveTelegramUsername = asyncHandler(async (req, res) => {
   const userId = req.user.id;
