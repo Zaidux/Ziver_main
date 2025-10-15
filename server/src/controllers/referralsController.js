@@ -15,7 +15,7 @@ const getReferrerInfo = asyncHandler(async (req, res) => {
 
     if (userResult.rows.length > 0) {
       const referrer = userResult.rows[0];
-      
+
       // Check max referrals (50)
       if (referrer.referral_count >= 50) {
         return res.json({
@@ -30,7 +30,8 @@ const getReferrerInfo = asyncHandler(async (req, res) => {
         referrer: {
           id: referrer.id,
           username: referrer.username,
-          email: referrer.email
+          email: referrer.email,
+          referral_code: referralCode
         },
         isValid: true
       });
@@ -47,6 +48,88 @@ const getReferrerInfo = asyncHandler(async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error checking referral code'
+    });
+  }
+});
+
+// @desc    Get smart referrer suggestion for new users
+// @route   GET /api/referrals/smart-suggestion
+const getSmartReferrerSuggestion = asyncHandler(async (req, res) => {
+  try {
+    // Smart referral algorithm:
+    // 1. Find active users with less than max referrals
+    // 2. Prioritize by: social capital score, recent activity, referral success rate
+    // 3. Return a suitable referrer
+    
+    const smartReferrerResult = await db.query(
+      `SELECT id, username, referral_code, referral_count, social_capital_score,
+              daily_streak_count, last_active_at
+       FROM users 
+       WHERE referral_count < 50 
+         AND social_capital_score > 0
+         AND last_active_at > NOW() - INTERVAL '7 days'
+       ORDER BY 
+         social_capital_score DESC,
+         daily_streak_count DESC,
+         referral_count ASC, -- Prefer users with fewer referrals to distribute opportunities
+         RANDOM() -- Add some randomness
+       LIMIT 1`
+    );
+
+    if (smartReferrerResult.rows.length > 0) {
+      const referrer = smartReferrerResult.rows[0];
+      
+      return res.json({
+        success: true,
+        referrer: {
+          id: referrer.id,
+          username: referrer.username,
+          referral_code: referrer.referral_code,
+          social_capital_score: referrer.social_capital_score,
+          referral_count: referrer.referral_count
+        },
+        message: 'Smart referrer suggestion found',
+        isSmartMatch: true
+      });
+    }
+
+    // Fallback: any active user with referral capacity
+    const fallbackResult = await db.query(
+      `SELECT id, username, referral_code, referral_count
+       FROM users 
+       WHERE referral_count < 50 
+         AND last_active_at > NOW() - INTERVAL '30 days'
+       ORDER BY RANDOM() 
+       LIMIT 1`
+    );
+
+    if (fallbackResult.rows.length > 0) {
+      const referrer = fallbackResult.rows[0];
+      
+      return res.json({
+        success: true,
+        referrer: {
+          id: referrer.id,
+          username: referrer.username,
+          referral_code: referrer.referral_code,
+          referral_count: referrer.referral_count
+        },
+        message: 'Fallback referrer suggestion found',
+        isSmartMatch: true
+      });
+    }
+
+    res.json({
+      success: false,
+      message: 'No suitable referrer found at this time',
+      isSmartMatch: false
+    });
+
+  } catch (error) {
+    console.error('Error getting smart referrer suggestion:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error finding smart referrer suggestion'
     });
   }
 });
@@ -265,10 +348,11 @@ const clearPendingReferral = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  getReferrerInfo,
+  getSmartReferrerSuggestion, // NEW: Added smart referral function
   applyReferral,
   getReferralData,
   removeReferral,
   getLeaderboard,
-  getReferrerInfo,
   clearPendingReferral
 };
