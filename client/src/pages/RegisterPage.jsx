@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate, Link, useLocation } from "react-router-dom"
+import { Zap, Gift, Shield, Eye, EyeOff, User, Mail, Lock, Sparkles } from "lucide-react"
 import authService from "../services/authService"
 import referralService from "../services/referralService"
 import { useTelegramReferral } from "../hooks/useTelegramReferral"
@@ -26,10 +27,12 @@ function RegisterPage() {
   const [referrerInfo, setReferrerInfo] = useState(null)
   const [checkingReferral, setCheckingReferral] = useState(false)
   const [registrationSuccess, setRegistrationSuccess] = useState(false)
+  const [smartReferrer, setSmartReferrer] = useState(null)
+  const [checkingSmartReferral, setCheckingSmartReferral] = useState(false)
 
   const navigate = useNavigate()
   const location = useLocation()
-  const { login, loginWithGoogle } = useAuth() // Added loginWithGoogle
+  const { login, loginWithGoogle } = useAuth()
 
   const { username, email, password, confirmPassword } = formData
 
@@ -48,6 +51,27 @@ function RegisterPage() {
       validateReferralCode(referralCode)
     }
   }, [referralCode, urlReferralCode])
+
+  // Get smart referral when no referral code exists
+  useEffect(() => {
+    const getSmartReferral = async () => {
+      if (!effectiveReferralCode && !checkingSmartReferral) {
+        setCheckingSmartReferral(true)
+        try {
+          const suggestion = await referralService.getSmartReferrerSuggestion()
+          if (suggestion && suggestion.success) {
+            setSmartReferrer(suggestion.referrer)
+          }
+        } catch (error) {
+          console.log("No smart referrer suggestion available:", error.message)
+        } finally {
+          setCheckingSmartReferral(false)
+        }
+      }
+    }
+
+    getSmartReferral()
+  }, [effectiveReferralCode])
 
   const validateReferralCode = async (code) => {
     if (!code) return
@@ -69,6 +93,19 @@ function RegisterPage() {
 
   const effectiveReferralCode = referralCode || urlReferralCode
 
+  // Determine which referral info to display
+  const displayReferralInfo = effectiveReferralCode ? {
+    type: 'manual',
+    info: referrerInfo,
+    code: effectiveReferralCode,
+    checking: checkingReferral
+  } : smartReferrer ? {
+    type: 'smart',
+    info: smartReferrer,
+    code: smartReferrer.referral_code,
+    checking: false
+  } : null
+
   const handleChange = (e) => {
     setFormData((prevState) => ({
       ...prevState,
@@ -76,7 +113,6 @@ function RegisterPage() {
     }))
   }
 
-  // Helper function to load Google script
   const loadGoogleScript = () => {
     return new Promise((resolve, reject) => {
       if (window.google) {
@@ -100,7 +136,6 @@ function RegisterPage() {
     setError("");
 
     try {
-      // Debug: Check if client ID is available
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
       if (!clientId) {
@@ -109,10 +144,8 @@ function RegisterPage() {
 
       console.log('Initializing Google Auth with Client ID:', clientId);
 
-      // Load Google API script
       await loadGoogleScript();
 
-      // Wait a bit for Google script to fully initialize
       await new Promise(resolve => setTimeout(resolve, 100));
 
       if (!window.google) {
@@ -123,7 +156,6 @@ function RegisterPage() {
         throw new Error('Google accounts API not available');
       }
 
-      // Initialize Google Auth2
       const googleAuth = window.google.accounts.oauth2.initTokenClient({
         client_id: clientId,
         scope: 'email profile openid',
@@ -132,11 +164,10 @@ function RegisterPage() {
             try {
               console.log('Google auth successful, sending to backend...');
 
-              // Send the access token to your backend via POST
-              const result = await authService.googleAuth(response.access_token, effectiveReferralCode);
-              
+              const finalReferralCode = effectiveReferralCode || (smartReferrer ? smartReferrer.referral_code : null);
+              const result = await authService.googleAuth(response.access_token, finalReferralCode);
+
               if (result.token && result.user) {
-                // Use the new Google-specific login function
                 await loginWithGoogle(result);
               }
             } catch (err) {
@@ -153,7 +184,6 @@ function RegisterPage() {
         },
       });
 
-      // Request access token
       googleAuth.requestAccessToken();
     } catch (error) {
       console.error("Google signup initialization error:", error);
@@ -186,14 +216,15 @@ function RegisterPage() {
 
     setLoading(true)
     try {
-      const response = await authService.register(username, email, password, effectiveReferralCode)
+      const finalReferralCode = effectiveReferralCode || (smartReferrer ? smartReferrer.referral_code : null);
+      const response = await authService.register(username, email, password, finalReferralCode)
 
       sessionStorage.removeItem("referralCode")
       localStorage.removeItem("ziver_referral_code")
 
-      if (effectiveReferralCode) {
+      if (finalReferralCode) {
         try {
-          await referralService.clearPendingReferral(effectiveReferralCode)
+          await referralService.clearPendingReferral(finalReferralCode)
         } catch (clearError) {
           console.log("Note: Could not clear pending referral:", clearError)
         }
@@ -203,6 +234,7 @@ function RegisterPage() {
 
       let successMessage = "Account created successfully!"
       if (response.referralApplied && response.referrer) {
+        const referrerType = smartReferrer ? "system-matched" : "referral";
         successMessage += ` You received 100 ZP bonus from ${response.referrer.username}!`
       }
 
@@ -237,26 +269,48 @@ function RegisterPage() {
     <div className="register-container">
       <div className="register-card">
         <div className="register-header">
-          <div className="logo">⚡ ZIVER</div>
+          <div className="logo">
+            <Zap size={32} className="logo-icon" />
+            ZIVER
+          </div>
           <h1>Join the Revolution</h1>
           <p>Start earning ZP tokens today</p>
         </div>
 
-        {effectiveReferralCode && (
-          <div className={`referral-banner ${referrerInfo ? "valid" : checkingReferral ? "checking" : "invalid"}`}>
-            <span className="referral-icon">🎁</span>
-            {checkingReferral ? (
+        {displayReferralInfo && (
+          <div className={`referral-banner ${displayReferralInfo.type} ${displayReferralInfo.info ? "valid" : displayReferralInfo.checking ? "checking" : "invalid"}`}>
+            <Gift size={20} className="referral-icon" />
+            {displayReferralInfo.checking ? (
               <span>Checking referral code...</span>
-            ) : referrerInfo ? (
+            ) : displayReferralInfo.info ? (
               <div className="referral-info">
                 <span>
-                  Referred by: <strong>@{referrerInfo.username}</strong>
+                  {displayReferralInfo.type === 'smart' ? (
+                    <>System matched you with: <strong>@{displayReferralInfo.info.username}</strong></>
+                  ) : (
+                    <>Referred by: <strong>@{displayReferralInfo.info.username}</strong></>
+                  )}
                 </span>
                 <span className="bonus-badge">+100 ZP Bonus</span>
+                {displayReferralInfo.type === 'smart' && (
+                  <span className="smart-badge">
+                    <Sparkles size={12} />
+                    Smart Match
+                  </span>
+                )}
               </div>
             ) : (
-              <span>Referral code: {effectiveReferralCode}</span>
+              <span>Referral code: {displayReferralInfo.code}</span>
             )}
+          </div>
+        )}
+
+        {checkingSmartReferral && !displayReferralInfo && (
+          <div className="referral-banner checking">
+            <div className="button-loading">
+              <div className="spinner"></div>
+              Finding best community match...
+            </div>
           </div>
         )}
 
@@ -330,7 +384,16 @@ function RegisterPage() {
               disabled={loading || googleLoading}
             />
             {referrerInfo && (
-              <div className="referral-note">✨ Welcome! You were referred by @{referrerInfo.username}</div>
+              <div className="referral-note">
+                <Sparkles size={14} />
+                Welcome! You were referred by @{referrerInfo.username}
+              </div>
+            )}
+            {smartReferrer && !referrerInfo && (
+              <div className="referral-note smart">
+                <Sparkles size={14} />
+                Welcome! The system matched you with @{smartReferrer.username} from our community
+              </div>
             )}
           </div>
 
@@ -371,7 +434,7 @@ function RegisterPage() {
                 tabIndex="-1"
                 disabled={loading || googleLoading}
               >
-                {showPassword ? "🙈" : "👁️"}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
@@ -398,7 +461,7 @@ function RegisterPage() {
                 tabIndex="-1"
                 disabled={loading || googleLoading}
               >
-                {showConfirmPassword ? "🙈" : "👁️"}
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
@@ -413,6 +476,8 @@ function RegisterPage() {
               "Checking Referral..."
             ) : referrerInfo ? (
               `Join & Get 100 ZP from @${referrerInfo.username}`
+            ) : smartReferrer ? (
+              `Join with ${smartReferrer.username}'s Community`
             ) : effectiveReferralCode ? (
               "Join with Referral Bonus"
             ) : (
@@ -429,7 +494,7 @@ function RegisterPage() {
             </Link>
           </p>
           <div className="security-note">
-            <span className="shield-icon">🛡️</span>
+            <Shield size={16} />
             Your data is securely encrypted
           </div>
         </div>
