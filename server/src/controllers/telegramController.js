@@ -659,7 +659,7 @@ const sendReferralNotification = async (referrerId, newUserUsername) => {
   }
 };
 
-// Send mining notification
+// Send mining notification when mining is READY to claim (not after claiming)
 const sendMiningNotification = async (userId, reward) => {
   try {
     const result = await db.query(
@@ -675,13 +675,13 @@ const sendMiningNotification = async (userId, reward) => {
     }
 
     const telegramId = result.rows[0].telegram_id;
-    const message = `⛏️ *Mining Complete!*\n\nYour mining session is ready!\n\n` +
-                   `💎 Claim your reward: *${reward} ZP*\n` +
-                   `🚀 Keep mining to earn more!`;
+    const message = `⛏️ *Mining Complete!*\n\nYour mining session is ready to claim!\n\n` +
+                   `💎 Available reward: *${reward} ZP*\n` +
+                   `🚀 Open the Ziver app to claim your reward!`;
 
     await sendMessage(telegramId, message);
 
-    console.log(`Mining notification sent to Telegram user: ${telegramId}`);
+    console.log(`Mining ready-to-claim notification sent to Telegram user: ${telegramId}`);
   } catch (error) {
     console.error('Error sending mining notification:', error);
   }
