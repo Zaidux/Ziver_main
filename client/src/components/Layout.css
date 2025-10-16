@@ -26,13 +26,14 @@
 .header-left {
   display: flex;
   align-items: center;
-  position: relative;
+  gap: 16px;
 }
 
 .header-right {
   display: flex;
   align-items: center;
   gap: 12px;
+  position: relative;
 }
 
 /* Enhanced logo styling */
