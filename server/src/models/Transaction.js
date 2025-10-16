@@ -94,6 +94,28 @@ class Transaction {
     };
   }
 
+  // Add this to your Transaction model (models/Transaction.js)
+static async removeReferralTransactions(referredUserId, referrerId) {
+  try {
+    // Remove referral bonus transaction for referred user
+    await db.query(
+      'DELETE FROM transactions WHERE user_id = $1 AND type = $2 AND reference_id = $3',
+      [referredUserId, 'referral_bonus', referrerId]
+    );
+    
+    // Remove referral reward transaction for referrer
+    await db.query(
+      'DELETE FROM transactions WHERE user_id = $1 AND type = $2 AND reference_id = $3',
+      [referrerId, 'referral_reward', referredUserId]
+    );
+    
+    return true;
+  } catch (error) {
+    console.error('Error removing referral transactions:', error);
+    return false;
+  }
+}
+
   // Get transaction by ID
   static async findById(id) {
     const query = 'SELECT * FROM transactions WHERE id = $1';
