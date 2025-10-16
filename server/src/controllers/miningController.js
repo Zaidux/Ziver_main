@@ -1,6 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const db = require('../config/db');
-const { sendMiningNotification } = require('./telegramController');
+const { sendMiningNotification, sendMiningClaimedNotification } = require('./telegramController');
 const Transaction = require('../models/Transaction');
 
 function getRandomPoints(min, max) {
@@ -44,7 +44,7 @@ const checkMiningCompletion = asyncHandler(async (req, res) => {
     if (elapsed >= MINING_CYCLE_DURATION) {
       miningCompleted = true;
       rewardAmount = parseInt(appSettings.MINING_REWARD || '50', 10);
-      
+
       // Send Telegram notification that mining is READY to claim
       try {
         await sendMiningNotification(userId, rewardAmount);
@@ -169,8 +169,15 @@ const claimReward = asyncHandler(async (req, res) => {
 
     await client.query('COMMIT');
 
-    // REMOVED: Telegram notification from here (it's now sent when mining completes)
-    
+    // 🔥 NEW: Send Telegram notification that reward was CLAIMED
+    try {
+      await sendMiningClaimedNotification(userId, zpToAdd);
+      console.log(`Telegram mining claimed notification sent to user: ${userId}`);
+    } catch (notificationError) {
+      console.error('Error sending Telegram mining claimed notification:', notificationError);
+      // Don't fail the claim if notification fails
+    }
+
     res.json({
       success: true,
       message: 'Reward claimed successfully',
@@ -228,7 +235,7 @@ const getMiningStatus = asyncHandler(async (req, res) => {
     if (elapsed >= MINING_CYCLE_DURATION) {
       miningStatus.canClaim = true;
       miningStatus.progress = 1;
-      
+
       // Send Telegram notification when mining completes (only if not already sent)
       try {
         const rewardAmount = parseInt(appSettings.MINING_REWARD || '50', 10);
