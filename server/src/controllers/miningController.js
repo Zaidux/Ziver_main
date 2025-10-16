@@ -7,6 +7,62 @@ function getRandomPoints(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+// NEW FUNCTION: Check and send mining completion notifications
+const checkMiningCompletion = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const now = new Date();
+
+  const userResult = await db.query(`
+    SELECT mining_session_start_time, last_claim_time, daily_streak_count,
+           zp_balance, social_capital_score
+    FROM users WHERE id = $1
+  `, [userId]);
+
+  const user = userResult.rows[0];
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  const settingsResult = await db.query('SELECT * FROM app_settings');
+  const appSettings = settingsResult.rows.reduce((acc, setting) => {
+    acc[setting.setting_key] = setting.setting_value;
+    return acc;
+  }, {});
+
+  const miningCycleHours = parseFloat(appSettings.MINING_CYCLE_HOURS || '4');
+  const MINING_CYCLE_DURATION = miningCycleHours * 60 * 60 * 1000;
+
+  let miningCompleted = false;
+  let rewardAmount = 0;
+
+  // Check if mining session is complete and ready to claim
+  if (user.mining_session_start_time) {
+    const startTime = new Date(user.mining_session_start_time);
+    const elapsed = now.getTime() - startTime.getTime();
+
+    if (elapsed >= MINING_CYCLE_DURATION) {
+      miningCompleted = true;
+      rewardAmount = parseInt(appSettings.MINING_REWARD || '50', 10);
+      
+      // Send Telegram notification that mining is READY to claim
+      try {
+        await sendMiningNotification(userId, rewardAmount);
+        console.log(`Telegram mining completion notification sent to user: ${userId}`);
+      } catch (notificationError) {
+        console.error('Error sending Telegram mining notification:', notificationError);
+        // Don't fail the check if notification fails
+      }
+    }
+  }
+
+  res.json({
+    miningCompleted,
+    rewardAmount: miningCompleted ? rewardAmount : 0,
+    message: miningCompleted ? 'Mining completed! Ready to claim.' : 'Mining in progress'
+  });
+});
+
 const claimReward = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const now = new Date();
@@ -113,15 +169,8 @@ const claimReward = asyncHandler(async (req, res) => {
 
     await client.query('COMMIT');
 
-    // 🔥 Send Telegram notification for mining completion
-    try {
-      await sendMiningNotification(userId, zpToAdd, sebPointsToAdd);
-      console.log(`Telegram mining notification sent to user: ${userId}`);
-    } catch (notificationError) {
-      console.error('Error sending Telegram mining notification:', notificationError);
-      // Don't fail the claim if notification fails
-    }
-
+    // REMOVED: Telegram notification from here (it's now sent when mining completes)
+    
     res.json({
       success: true,
       message: 'Reward claimed successfully',
@@ -179,6 +228,15 @@ const getMiningStatus = asyncHandler(async (req, res) => {
     if (elapsed >= MINING_CYCLE_DURATION) {
       miningStatus.canClaim = true;
       miningStatus.progress = 1;
+      
+      // Send Telegram notification when mining completes (only if not already sent)
+      try {
+        const rewardAmount = parseInt(appSettings.MINING_REWARD || '50', 10);
+        await sendMiningNotification(userId, rewardAmount);
+        console.log(`Telegram mining completion notification sent via status check to user: ${userId}`);
+      } catch (notificationError) {
+        console.error('Error sending Telegram mining notification:', notificationError);
+      }
     } else {
       miningStatus.timeRemaining = MINING_CYCLE_DURATION - elapsed;
       miningStatus.progress = progress;
@@ -191,7 +249,7 @@ const getMiningStatus = asyncHandler(async (req, res) => {
   res.json(miningStatus);
 });
 
-// Start a mining session
+// Rest of the code remains exactly the same...
 const startMining = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
@@ -252,7 +310,6 @@ const startMining = asyncHandler(async (req, res) => {
   });
 });
 
-// Get mining configuration
 const getMiningConfig = asyncHandler(async (req, res) => {
   // Get mining configuration from app_settings
   const settingsResult = await db.query(`
@@ -269,7 +326,6 @@ const getMiningConfig = asyncHandler(async (req, res) => {
   res.json(config);
 });
 
-// Update mining settings (Admin only)
 const updateMiningSettings = asyncHandler(async (req, res) => {
   // Check if user is admin
   if (req.user.role !== 'ADMIN') {
@@ -313,5 +369,6 @@ module.exports = {
   getMiningStatus,
   startMining,
   getMiningConfig,
-  updateMiningSettings
+  updateMiningSettings,
+  checkMiningCompletion // NEW: Export the new function
 };
