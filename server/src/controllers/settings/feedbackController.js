@@ -1,6 +1,8 @@
 const Feedback = require('../../models/Feedback');
 const UploadHandler = require('../../utils/uploadHandler');
 const { uploadToS3, deleteFromS3 } = require('../../utils/fileUpload');
+const Transaction = require('../../models/Transaction'); // ADD THIS IMPORT
+const db = require('../../config/db'); // ADD THIS IMPORT
 
 // Cleanup function
 async function cleanupAttachments(attachments) {
@@ -172,7 +174,6 @@ const submitFeedback = async (req, res) => {
   }
 };
 
-// ... rest of your functions remain the same
 // Get user feedback
 const getUserFeedback = async (req, res) => {
   try {
@@ -265,30 +266,130 @@ const updateFeedbackStatus = async (req, res) => {
   }
 };
 
-// Reward user
+// Reward user - UPDATED WITH TRANSACTION RECORDING
 const rewardUser = async (req, res) => {
+  const client = await db.getClient(); // ADD TRANSACTION SUPPORT
+  
   try {
+    await client.query('BEGIN'); // START TRANSACTION
+
     const { id } = req.params;
     const { zpReward = 0, sebReward = 0, adminNotes } = req.body;
 
     if (zpReward < 0 || sebReward < 0) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ success: false, message: 'Rewards cannot be negative.' });
     }
     if (zpReward === 0 && sebReward === 0) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ success: false, message: 'At least one reward is required.' });
     }
 
-    const feedback = await Feedback.rewardUser(id, {
-      zpReward: parseInt(zpReward),
-      sebReward: parseInt(sebReward),
-      adminNotes
+    // Get feedback details first
+    const feedbackResult = await client.query(
+      'SELECT * FROM feedback WHERE id = $1',
+      [id]
+    );
+
+    if (feedbackResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Feedback not found.' });
+    }
+
+    const feedback = feedbackResult.rows[0];
+
+    // Update user balances
+    if (zpReward > 0) {
+      await client.query(
+        'UPDATE users SET zp_balance = zp_balance + $1 WHERE id = $2',
+        [zpReward, feedback.user_id]
+      );
+    }
+
+    if (sebReward > 0) {
+      await client.query(
+        'UPDATE users SET social_capital_score = social_capital_score + $1 WHERE id = $2',
+        [sebReward, feedback.user_id]
+      );
+    }
+
+    // Update feedback status and rewards
+    const updateQuery = `
+      UPDATE feedback 
+      SET status = 'rewarded', 
+          zp_reward = $1, 
+          seb_reward = $2, 
+          admin_notes = $3,
+          rewarded_at = NOW(),
+          updated_at = NOW()
+      WHERE id = $4
+      RETURNING *
+    `;
+
+    const updateResult = await client.query(updateQuery, [
+      zpReward, 
+      sebReward, 
+      adminNotes, 
+      id
+    ]);
+
+    const updatedFeedback = updateResult.rows[0];
+
+    // ✅ RECORD TRANSACTIONS FOR REWARDS
+    if (zpReward > 0) {
+      await Transaction.createWithClient(client, {
+        userId: feedback.user_id,
+        type: 'feedback_reward',
+        amount: zpReward,
+        currency: 'ZP',
+        description: `Feedback reward: ${feedback.title}`,
+        referenceId: feedback.id,
+        referenceType: 'feedback',
+        metadata: {
+          feedbackTitle: feedback.title,
+          feedbackType: feedback.type,
+          adminNotes: adminNotes || ''
+        }
+      });
+    }
+
+    if (sebReward > 0) {
+      await Transaction.createWithClient(client, {
+        userId: feedback.user_id,
+        type: 'feedback_reward',
+        amount: sebReward,
+        currency: 'SEB',
+        description: `Feedback reward: ${feedback.title}`,
+        referenceId: feedback.id,
+        referenceType: 'feedback',
+        metadata: {
+          feedbackTitle: feedback.title,
+          feedbackType: feedback.type,
+          adminNotes: adminNotes || ''
+        }
+      });
+    }
+
+    await client.query('COMMIT'); // COMMIT TRANSACTION
+
+    console.log(`✅ User ${feedback.user_id} rewarded for feedback ${id}: ${zpReward} ZP + ${sebReward} SEB`);
+
+    return res.json({ 
+      success: true, 
+      message: 'User rewarded successfully.', 
+      feedback: updatedFeedback 
     });
 
-    return res.json({ success: true, message: 'User rewarded successfully.', feedback });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('❌ rewardUser error:', error.message);
     const message = error.message === 'Feedback not found' ? 'Feedback not found.' : 'Failed to reward user.';
-    return res.status(error.message === 'Feedback not found' ? 404 : 500).json({ success: false, message });
+    return res.status(error.message === 'Feedback not found' ? 404 : 500).json({ 
+      success: false, 
+      message 
+    });
+  } finally {
+    client.release();
   }
 };
 
