@@ -124,25 +124,27 @@ static async removeReferralTransactions(referredUserId, referrerId) {
   }
 
   // Get user's balance summary
-  static async getUserBalanceSummary(userId) {
-    const query = `
-      SELECT 
-        currency,
-        SUM(CASE WHEN type LIKE '%earn%' OR type LIKE '%deposit%' THEN amount ELSE 0 END) as total_earned,
-        SUM(CASE WHEN type LIKE '%spend%' OR type LIKE '%withdraw%' THEN amount ELSE 0 END) as total_spent,
-        SUM(CASE 
-          WHEN type LIKE '%earn%' OR type LIKE '%deposit%' THEN amount 
-          WHEN type LIKE '%spend%' OR type LIKE '%withdraw%' THEN -amount 
+  static async     getUserBalanceSummary(userId) {
+  const query = `
+    SELECT 
+      currency,
+      SUM(CASE WHEN type IN ('mining_reward', 'task_reward', 'referral_bonus', 'referral_reward', 'feedback_reward', 'daily_login') THEN amount ELSE 0 END) as total_earned,
+      SUM(CASE WHEN type IN ('withdrawal', 'purchase', 'spend') THEN amount ELSE 0 END) as total_spent,
+      SUM(
+        CASE 
+          WHEN type IN ('mining_reward', 'task_reward', 'referral_bonus', 'referral_reward', 'feedback_reward', 'daily_login') THEN amount 
+          WHEN type IN ('withdrawal', 'purchase', 'spend') THEN -amount 
           ELSE 0 
-        END) as current_balance
-      FROM transactions 
-      WHERE user_id = $1 
-      GROUP BY currency
-    `;
+        END
+      ) as current_balance
+    FROM transactions 
+    WHERE user_id = $1 
+    GROUP BY currency
+  `;
 
-    const result = await db.query(query, [userId]);
-    return result.rows;
-  }
+  const result = await db.query(query, [userId]);
+  return result.rows;
+}
 
   // Get recent transactions for dashboard
   static async getRecentTransactions(userId, limit = 10) {
