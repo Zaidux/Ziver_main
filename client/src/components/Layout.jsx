@@ -104,7 +104,14 @@ const Layout = () => {
     <div className={`app-container ${navbarCollapsed ? "navbar-collapsed" : ""}`}>
       <header className="global-header">
         <div className="header-content">
-          <div className="header-left" ref={dropdownRef}>
+          <div className="header-left">
+            <div className="header-logo">
+              <Zap className="logo-icon" size={22} />
+              <span className="logo-text">ZIVER</span>
+            </div>
+          </div>
+
+          <div className="header-right" ref={dropdownRef}>
             {user && (
               <div className="profile-section">
                 <button onClick={handleProfileClick} className="profile-dropdown-button" aria-label="Open profile menu">
@@ -154,13 +161,6 @@ const Layout = () => {
                 )}
               </div>
             )}
-          </div>
-
-          <div className="header-right">
-            <div className="header-logo">
-              <Zap className="logo-icon" size={22} />
-              <span className="logo-text">ZIVER</span>
-            </div>
 
             <button
               onClick={handleThemeToggle}
