@@ -310,7 +310,7 @@ const applyReferral = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Get referral data for the logged-in user
+// @desc    Get referral data for the logged-in user - UPDATED WITH STREAK AND MINING DATA
 // @route   GET /api/referrals
 const getReferralData = asyncHandler(async (req, res) => {
   const userId = req.user.id;
@@ -328,10 +328,22 @@ const getReferralData = asyncHandler(async (req, res) => {
 
     const userData = userResult.rows[0];
 
-    // 2. Get the list of users they have referred
+    // 2. Get the list of users they have referred - UPDATED TO INCLUDE STREAK AND MINING DATA
     const referralsResult = await db.query(
-      `SELECT id, username, email, created_at, zp_balance, social_capital_score 
-       FROM users WHERE referred_by = $1 ORDER BY created_at DESC`,
+      `SELECT 
+        id, 
+        username, 
+        email, 
+        created_at, 
+        zp_balance, 
+        social_capital_score,
+        daily_streak_count,
+        last_seen,
+        last_activity,
+        mining_session_start_time
+       FROM users 
+       WHERE referred_by = $1 
+       ORDER BY created_at DESC`,
       [userId]
     );
 
@@ -366,7 +378,7 @@ const getReferralData = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Remove a referred user
+// @desc    Remove a referred user - ENHANCED WITH TRANSACTION CLEANUP
 // @route   DELETE /api/referrals/:userId
 const removeReferral = asyncHandler(async (req, res) => {
   const referrerId = req.user.id;
@@ -378,13 +390,19 @@ const removeReferral = asyncHandler(async (req, res) => {
 
     // 1. Verify the user was actually referred by the current user
     const referredUser = await client.query(
-      'SELECT * FROM users WHERE id = $1 AND referred_by = $2', 
+      'SELECT username, referred_by FROM users WHERE id = $1 AND referred_by = $2', 
       [referredUserId, referrerId]
     );
 
     if (referredUser.rows.length === 0) {
-      throw new Error('This user was not referred by you.');
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        success: false,
+        message: 'This user was not referred by you.' 
+      });
     }
+
+    const referredUsername = referredUser.rows[0].username;
 
     // 2. Decrement the referrer's count and remove bonus ZP
     await client.query(
@@ -398,11 +416,22 @@ const removeReferral = asyncHandler(async (req, res) => {
       [referredUserId]
     );
 
+    // 4. Remove related transactions
+    await Transaction.removeReferralTransactions(referredUserId, referrerId);
+
     await client.query('COMMIT');
-    res.json({ message: 'Referral removed successfully' });
+    
+    res.json({ 
+      success: true,
+      message: `Successfully removed ${referredUsername} from your referrals` 
+    });
   } catch (error) {
     await client.query('ROLLBACK');
-    res.status(400).json({ message: error.message });
+    console.error('Error removing referral:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message || 'Failed to remove referral' 
+    });
   } finally {
     client.release();
   }
@@ -413,19 +442,33 @@ const removeReferral = asyncHandler(async (req, res) => {
 const getLeaderboard = asyncHandler(async (req, res) => {
   try {
     const leaderboardResult = await db.query(
-      `SELECT username, referral_count, zp_balance, social_capital_score, daily_streak_count
+      `SELECT 
+        username, 
+        referral_count, 
+        zp_balance, 
+        social_capital_score, 
+        daily_streak_count,
+        last_activity
        FROM users 
        WHERE referral_count > 0 
-       ORDER BY referral_count DESC, zp_balance DESC, social_capital_score DESC, daily_streak_count DESC
+       ORDER BY 
+         referral_count DESC, 
+         zp_balance DESC, 
+         social_capital_score DESC, 
+         daily_streak_count DESC
        LIMIT 20`
     );
 
     res.json({
+      success: true,
       leaderboard: leaderboardResult.rows
     });
   } catch (error) {
     console.error('Error fetching leaderboard:', error);
-    res.status(500).json({ message: 'Error fetching leaderboard' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Error fetching leaderboard' 
+    });
   }
 });
 
@@ -453,6 +496,68 @@ const clearPendingReferral = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get detailed referral analytics
+// @route   GET /api/referrals/analytics
+const getReferralAnalytics = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    // Get basic referral stats
+    const referralStats = await db.query(
+      `SELECT 
+        COUNT(*) as total_referrals,
+        COUNT(CASE WHEN last_activity > NOW() - INTERVAL '7 days' THEN 1 END) as active_referrals,
+        COUNT(CASE WHEN mining_session_start_time IS NOT NULL THEN 1 END) as currently_mining,
+        AVG(daily_streak_count) as avg_streak,
+        MAX(daily_streak_count) as max_streak
+       FROM users 
+       WHERE referred_by = $1`,
+      [userId]
+    );
+
+    // Get referral earnings over time
+    const earningsStats = await db.query(
+      `SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as referrals_added,
+        COUNT(*) * 150 as daily_earnings
+       FROM users 
+       WHERE referred_by = $1 
+         AND created_at > NOW() - INTERVAL '30 days'
+       GROUP BY DATE(created_at)
+       ORDER BY date DESC`,
+      [userId]
+    );
+
+    const stats = referralStats.rows[0] || {
+      total_referrals: 0,
+      active_referrals: 0,
+      currently_mining: 0,
+      avg_streak: 0,
+      max_streak: 0
+    };
+
+    res.json({
+      success: true,
+      analytics: {
+        totalReferrals: parseInt(stats.total_referrals),
+        activeReferrals: parseInt(stats.active_referrals),
+        currentlyMining: parseInt(stats.currently_mining),
+        averageStreak: parseFloat(stats.avg_streak) || 0,
+        maxStreak: parseInt(stats.max_streak) || 0,
+        inactiveReferrals: parseInt(stats.total_referrals) - parseInt(stats.active_referrals)
+      },
+      earningsHistory: earningsStats.rows
+    });
+  } catch (error) {
+    console.error('Error fetching referral analytics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching referral analytics'
+    });
+  }
+});
+
 module.exports = {
   getReferrerInfo,
   getSmartReferrerSuggestion,
@@ -460,5 +565,6 @@ module.exports = {
   getReferralData,
   removeReferral,
   getLeaderboard,
-  clearPendingReferral
+  clearPendingReferral,
+  getReferralAnalytics
 };
