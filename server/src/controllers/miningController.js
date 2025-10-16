@@ -73,17 +73,18 @@ const claimReward = asyncHandler(async (req, res) => {
   const zpToAdd = parseInt(appSettings.MINING_REWARD || '50', 10);
   const minSebPoints = parseInt(appSettings.SEB_MINING_MIN || '5', 10);
   const maxSebPoints = parseInt(appSettings.SEB_MINING_MAX || '15', 10);
-  const pointsToAdd = getRandomPoints(minSebPoints, maxSebPoints);
+  const sebPointsToAdd = getRandomPoints(minSebPoints, maxSebPoints);
 
   const client = await db.getClient();
   try {
     await client.query('BEGIN');
 
+    // CORRECTED QUERY: Add both ZP and SEB points ONLY on claim
     const query = `
       UPDATE users
       SET
         zp_balance = zp_balance + $1,
-        social_capital_score = social_capital_score + $2,
+        social_capital_score = social_capital_score + $2,  // SEB added on claim
         daily_streak_count = $3,
         mining_session_start_time = NULL, -- Reset mining session after claim
         last_claim_time = NOW(),
@@ -93,19 +94,19 @@ const claimReward = asyncHandler(async (req, res) => {
                 daily_streak_count, mining_session_start_time, last_claim_time;
     `;
 
-    const { rows } = await client.query(query, [zpToAdd, pointsToAdd, newStreak, userId]);
+    const { rows } = await client.query(query, [zpToAdd, sebPointsToAdd, newStreak, userId]);
 
     const updatedUser = rows[0];
 
-    // ✅ NEW: Create mining transaction
+    // Create mining transaction with both ZP and SEB
     await Transaction.create({
       userId: userId,
       type: 'mining_reward',
       amount: zpToAdd,
       currency: 'ZP',
-      description: `Mining reward (${pointsToAdd} SEB points earned)`,
+      description: `Mining reward + ${sebPointsToAdd} SEB points`,
       metadata: {
-        sebPoints: pointsToAdd,
+        sebPoints: sebPointsToAdd,
         streak: newStreak,
         miningCycle: miningCycleHours
       }
@@ -113,9 +114,9 @@ const claimReward = asyncHandler(async (req, res) => {
 
     await client.query('COMMIT');
 
-    // 🔥 NEW: Send Telegram notification for mining completion
+    // Send Telegram notification for mining completion
     try {
-      await sendMiningNotification(userId, zpToAdd);
+      await sendMiningNotification(userId, zpToAdd, sebPointsToAdd);
       console.log(`Telegram mining notification sent to user: ${userId}`);
     } catch (notificationError) {
       console.error('Error sending Telegram mining notification:', notificationError);
@@ -125,7 +126,11 @@ const claimReward = asyncHandler(async (req, res) => {
     res.json({
       success: true,
       message: 'Reward claimed successfully',
-      userData: updatedUser
+      userData: updatedUser,
+      rewards: {
+        zp: zpToAdd,
+        seb: sebPointsToAdd
+      }
     });
   } catch (error) {
     await client.query('ROLLBACK');
@@ -223,7 +228,7 @@ const startMining = asyncHandler(async (req, res) => {
     }
   }
 
-  // Start new mining session
+  // Start new mining session - NO SEB POINTS ADDED HERE
   const query = `
     UPDATE users 
     SET mining_session_start_time = NOW(),
