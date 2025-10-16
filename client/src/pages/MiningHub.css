@@ -32,22 +32,26 @@
   margin-bottom: 32px;
 }
 
+.user-stats-section.compact {
+  margin-bottom: 20px;
+}
+
 /* Enhanced stats grid with better responsive design */
 .user-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
 }
 
 /* Redesigned stat cards with icon and better layout */
 .user-stat-card {
   background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
-  padding: 16px;
-  border-radius: 16px;
+  padding: 12px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 80px;
+  gap: 10px;
+  min-height: 70px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
   position: relative;
@@ -76,35 +80,16 @@
   opacity: 1;
 }
 
-/* Lucide React Icon Colors - ADDED */
-.user-stat-card .stat-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-/* ZP Card - Diamond Icon (Green) */
-.zp-card .stat-icon {
-  color: #00FF80;
-}
-
-/* SEB Card - Star Icon (Gold) */
-.seb-card .stat-icon {
-  color: #FFD700;
-}
-
-/* Streak Card - Flame Icon (Orange) */
-.streak-card .stat-icon {
-  color: #FF6B35;
-}
-
 /* Stat icon styling */
 .stat-icon {
-  font-size: 32px;
+  font-size: 20px;
   line-height: 1;
   flex-shrink: 0;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00ff80;
 }
 
 /* Stat info container */
@@ -114,16 +99,16 @@
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #a5a5a5;
-  margin: 0 0 4px 0;
+  margin: 0 0 2px 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .stat-value {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 800;
   color: #ffffff;
   margin: 0;
@@ -146,6 +131,10 @@
 /* Mining section with better spacing */
 .mining-section {
   margin-top: 24px;
+}
+
+.mining-section.compact {
+  margin-top: 16px;
 }
 
 /* Compact Admin Lockdown Indicator */
@@ -191,7 +180,7 @@
 /* Responsive Design - Mobile First */
 @media (max-width: 480px) {
   .mining-content {
-    padding: 20px 16px;
+    padding: 16px 12px;
   }
 
   .section-title {
@@ -201,29 +190,24 @@
 
   .user-stats-grid {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 8px;
   }
 
   .user-stat-card {
-    padding: 14px;
-    min-height: 72px;
+    padding: 12px;
+    min-height: 65px;
   }
 
   .stat-icon {
-    font-size: 28px;
-  }
-
-  .stat-label {
-    font-size: 11px;
-  }
-
-  .stat-value {
     font-size: 18px;
   }
 
-  .lockdown-alert {
-    padding: 10px 14px;
-    gap: 10px;
+  .stat-label {
+    font-size: 10px;
+  }
+
+  .stat-value {
+    font-size: 15px;
   }
 }
 
