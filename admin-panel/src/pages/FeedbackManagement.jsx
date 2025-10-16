@@ -532,21 +532,32 @@ const FeedbackManagement = () => {
       {selectedFeedback.attachments.map((attachment, index) => (
         <div key={index} className="attachment-item">
           <a 
-            href={attachment.url} 
+            href={attachment.url} // This is the S3 URL
             target="_blank" 
             rel="noopener noreferrer"
             className="attachment-link"
           >
-            <img 
-              src={attachment.url} 
-              alt={attachment.filename}
-              className="attachment-image"
-              onError={(e) => {
-                // Fallback for non-image files
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'block';
-              }}
-            />
+            {/* Check if it's an image */}
+            {attachment.mimetype?.startsWith('image/') ? (
+              <img 
+                src={attachment.url} // Direct S3 URL
+                alt={attachment.filename}
+                className="attachment-image"
+                onError={(e) => {
+                  // Fallback for broken images
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'block';
+                }}
+              />
+            ) : (
+              <div className="file-placeholder">
+                <div className="file-icon">
+                  {getFileIcon(attachment.mimetype)}
+                </div>
+                <span className="file-name">{attachment.filename}</span>
+              </div>
+            )}
+            {/* Error fallback */}
             <div className="file-placeholder" style={{display: 'none'}}>
               <div className="file-icon">📄</div>
               <span className="file-name">{attachment.filename}</span>
@@ -558,10 +569,11 @@ const FeedbackManagement = () => {
               {(attachment.size / 1024 / 1024).toFixed(2)} MB
             </span>
             <a 
-              href={attachment.url} 
+              href={attachment.url} // Direct S3 URL for download
               target="_blank" 
               rel="noopener noreferrer"
               className="download-link"
+              download={attachment.filename}
             >
               Download
             </a>
