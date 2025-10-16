@@ -20,6 +20,9 @@ import {
   UserPlus,
   Gift,
   Info,
+  Trash2,
+  Clock,
+  Activity,
 } from "lucide-react"
 import "./ReferralsPage.css"
 
@@ -29,6 +32,7 @@ const ReferralsPage = () => {
   const [error, setError] = useState("")
   const [copySuccess, setCopySuccess] = useState("")
   const [activeTab, setActiveTab] = useState("referrals")
+  const [removingUserId, setRemovingUserId] = useState(null)
 
   // Telegram connection states
   const [telegramConnected, setTelegramConnected] = useState(false)
@@ -63,6 +67,25 @@ const ReferralsPage = () => {
       console.error("Error checking Telegram status:", error)
     } finally {
       setTelegramLoading(false)
+    }
+  }
+
+  // NEW: Remove referral function
+  const removeReferral = async (userId, username) => {
+    if (!window.confirm(`Are you sure you want to remove ${username} from your referrals? This will remove their bonus ZP and your referral reward.`)) {
+      return
+    }
+
+    setRemovingUserId(userId)
+    try {
+      await api.delete(`/referrals/${userId}`)
+      setCopySuccess(`Successfully removed ${username} from referrals`)
+      await refreshReferralData() // Refresh the list
+    } catch (error) {
+      console.error("Error removing referral:", error)
+      setError(error.response?.data?.message || "Failed to remove referral")
+    } finally {
+      setRemovingUserId(null)
     }
   }
 
@@ -151,6 +174,26 @@ const ReferralsPage = () => {
     if (diffDays < 7) return `${diffDays} days ago`
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
     return `${Math.floor(diffDays / 30)} months ago`
+  }
+
+  // NEW: Check if user is currently mining
+  const isUserMining = (miningSessionStartTime) => {
+    if (!miningSessionStartTime) return false
+    const startTime = new Date(miningSessionStartTime)
+    const now = new Date()
+    const fourHours = 4 * 60 * 60 * 1000 // 4 hours in milliseconds
+    return (now - startTime) < fourHours
+  }
+
+  // NEW: Get mining status text
+  const getMiningStatus = (referral) => {
+    if (isUserMining(referral.mining_session_start_time)) {
+      return "⛏️ Mining now"
+    }
+    if (referral.daily_streak_count > 0) {
+      return `🔥 ${referral.daily_streak_count} day streak`
+    }
+    return "💤 Not mining"
   }
 
   if (loading) {
@@ -351,7 +394,12 @@ const ReferralsPage = () => {
                 <div className="referral-info">
                   <h4>{ref.username}</h4>
                   <p>Joined {new Date(ref.created_at).toLocaleDateString()}</p>
-                  <span className="last-seen">Last active: {formatLastSeen(ref.last_seen)}</span>
+                  <div className="referral-status">
+                    <span className={`mining-status ${isUserMining(ref.mining_session_start_time) ? 'mining' : 'idle'}`}>
+                      {getMiningStatus(ref)}
+                    </span>
+                    <span className="last-seen">Last active: {formatLastSeen(ref.last_seen || ref.last_activity)}</span>
+                  </div>
                 </div>
                 <div className="referral-stats">
                   <div className="zp-badge">
@@ -360,8 +408,21 @@ const ReferralsPage = () => {
                   </div>
                   <div className="streak">
                     <Flame size={14} />
-                    {ref.daily_streak_count || 0}
+                    {ref.daily_streak_count || 0}d
                   </div>
+                  {/* NEW: Remove button */}
+                  <button 
+                    onClick={() => removeReferral(ref.id, ref.username)}
+                    disabled={removingUserId === ref.id}
+                    className="remove-btn"
+                    title="Remove this referral"
+                  >
+                    {removingUserId === ref.id ? (
+                      <div className="button-spinner-small"></div>
+                    ) : (
+                      <Trash2 size={16} />
+                    )}
+                  </button>
                 </div>
               </div>
             ))
