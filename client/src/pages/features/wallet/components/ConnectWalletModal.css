@@ -1,0 +1,202 @@
+.connect-wallet-modal {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  background: #1a1a1a;
+  border: 1px solid rgba(0, 255, 128, 0.2);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 32px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.close-btn:hover {
+  color: #ffffff;
+}
+
+.modal-header {
+  margin-bottom: 24px;
+}
+
+.modal-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.dapp-name {
+  color: #00ff80;
+  font-size: 14px;
+  margin: 0;
+}
+
+.wallet-info {
+  margin-bottom: 24px;
+}
+
+.wallet-address-box {
+  background: rgba(0, 255, 128, 0.05);
+  border: 1px solid rgba(0, 255, 128, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.wallet-address-box .label {
+  display: block;
+  color: #888;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.address-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.address-display code {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #00ff80;
+  font-size: 12px;
+  font-family: "Courier New", monospace;
+  word-break: break-all;
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  color: #00ff80;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 4px;
+}
+
+.copy-btn:hover {
+  transform: scale(1.1);
+}
+
+.copy-btn.copied {
+  color: #00ff80;
+}
+
+.permissions-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.permissions-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 12px 0;
+}
+
+.permission-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  color: #a0a0a0;
+  font-size: 14px;
+}
+
+.permission-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #00ff80;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.cancel-btn,
+.connect-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.connect-btn {
+  background: linear-gradient(135deg, #00ff80 0%, #00cc66 100%);
+  color: #000;
+}
+
+.connect-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 255, 128, 0.3);
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    border-radius: 20px 20px 0 0;
+    padding: 24px;
+  }
+}
