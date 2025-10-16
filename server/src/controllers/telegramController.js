@@ -687,6 +687,34 @@ const sendMiningNotification = async (userId, reward) => {
   }
 };
 
+// Send notification when reward is claimed (optional)
+const sendMiningClaimedNotification = async (userId, reward) => {
+  try {
+    const result = await db.query(
+      `SELECT tum.telegram_id, tn.mining_alerts 
+       FROM telegram_user_map tum
+       JOIN telegram_notifications tn ON tum.user_id = tn.user_id
+       WHERE tum.user_id = $1 AND tn.mining_alerts = true`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return;
+    }
+
+    const telegramId = result.rows[0].telegram_id;
+    const message = `💰 *Reward Claimed!*\n\nYou successfully claimed your mining reward!\n\n` +
+                   `💎 Claimed amount: *${reward} ZP*\n` +
+                   `⛏️ Start a new mining session to earn more!`;
+
+    await sendMessage(telegramId, message);
+
+    console.log(`Mining claimed notification sent to Telegram user: ${telegramId}`);
+  } catch (error) {
+    console.error('Error sending mining claimed notification:', error);
+  }
+};
+
 // Debug endpoint to manually set webhook
 const setWebhookManual = asyncHandler(async (req, res) => {
   try {
