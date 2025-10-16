@@ -159,6 +159,42 @@ static async removeReferralTransactions(referredUserId, referrerId) {
     return result.rows;
   }
 
+  // In your Transaction.js model, add this method:
+static async createWithClient(client, transactionData) {
+  const {
+    userId,
+    type,
+    amount,
+    currency = 'ZP',
+    description,
+    referenceId = null,
+    referenceType = null,
+    status = 'completed',
+    metadata = {}
+  } = transactionData;
+
+  const query = `
+    INSERT INTO transactions (user_id, type, amount, currency, description, reference_id, reference_type, status, metadata)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    RETURNING *
+  `;
+
+  const values = [
+    userId,
+    type,
+    amount,
+    currency,
+    description,
+    referenceId,
+    referenceType,
+    status,
+    JSON.stringify(metadata)
+  ];
+
+  const result = await client.query(query, values);
+  return result.rows[0];
+}
+
   // Get transaction statistics
   static async getStats(userId, period = 'month') {
     let interval;
