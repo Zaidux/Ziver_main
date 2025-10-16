@@ -160,7 +160,8 @@ const updateUserActivity = asyncHandler(async (req, res) => {
 
   switch (activityType) {
     case 'DAILY_LOGIN':
-      pointsToAdd = getRandomPoints(1, 10);
+      // REMOVED: No more automatic SEB points for daily login
+      pointsToAdd = 0;
       break;
     case 'TASK_PERFORMED':
       pointsToAdd = getRandomPoints(1, 8);
@@ -169,8 +170,7 @@ const updateUserActivity = asyncHandler(async (req, res) => {
       pointsToAdd = getRandomPoints(10, 20);
       break;
     case 'MINING_CLICK':
-      // REMOVED: Mining rewards are now handled exclusively by miningController.js
-      // This prevents SEB points from being added during mining progress
+      // Mining rewards handled by miningController.js
       pointsToAdd = 0;
       zpToAdd = 0;
       break;
