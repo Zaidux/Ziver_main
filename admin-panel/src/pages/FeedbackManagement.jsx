@@ -524,28 +524,53 @@ const FeedbackManagement = () => {
                 </div>
               </div>
 
-              {selectedFeedback.attachments && selectedFeedback.attachments.length > 0 && (
-                <div className="detail-section">
-                  <h3>Attachments ({selectedFeedback.attachments.length})</h3>
-                  <div className="attachments-grid">
-                    {selectedFeedback.attachments.map((attachment, index) => (
-                      <div key={index} className="attachment-item">
-                        <img 
-                          src={attachment.url} 
-                          alt={attachment.filename}
-                          className="attachment-image"
-                        />
-                        <div className="attachment-info">
-                          <span className="attachment-name">{attachment.filename}</span>
-                          <span className="attachment-size">
-                            {(attachment.size / 1024 / 1024).toFixed(2)} MB
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              // In the detail modal section, replace the attachments grid with this:
+{selectedFeedback.attachments && selectedFeedback.attachments.length > 0 && (
+  <div className="detail-section">
+    <h3>Attachments ({selectedFeedback.attachments.length})</h3>
+    <div className="attachments-grid">
+      {selectedFeedback.attachments.map((attachment, index) => (
+        <div key={index} className="attachment-item">
+          <a 
+            href={attachment.url} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="attachment-link"
+          >
+            <img 
+              src={attachment.url} 
+              alt={attachment.filename}
+              className="attachment-image"
+              onError={(e) => {
+                // Fallback for non-image files
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'block';
+              }}
+            />
+            <div className="file-placeholder" style={{display: 'none'}}>
+              <div className="file-icon">📄</div>
+              <span className="file-name">{attachment.filename}</span>
+            </div>
+          </a>
+          <div className="attachment-info">
+            <span className="attachment-name">{attachment.filename}</span>
+            <span className="attachment-size">
+              {(attachment.size / 1024 / 1024).toFixed(2)} MB
+            </span>
+            <a 
+              href={attachment.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="download-link"
+            >
+              Download
+            </a>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
               {selectedFeedback.admin_notes && (
                 <div className="detail-section">
