@@ -105,12 +105,11 @@ const MiningHub = () => {
   return (
     <div className="mining-hub-container">
       <div className="mining-content">
-        {/* Compact User Stats Section */}
         <div className="user-stats-section compact">
           <div className="user-stats-grid">
             <div className="user-stat-card zp-card">
               <div className="stat-icon">
-                <Diamond size={20} />
+                <Diamond size={18} />
               </div>
               <div className="stat-info">
                 <h3 className="stat-label">ZP Balance</h3>
@@ -120,7 +119,7 @@ const MiningHub = () => {
 
             <div className="user-stat-card seb-card">
               <div className="stat-icon">
-                <Star size={20} />
+                <Star size={18} />
               </div>
               <div className="stat-info">
                 <h3 className="stat-label">SEB Score</h3>
@@ -130,7 +129,7 @@ const MiningHub = () => {
 
             <div className="user-stat-card streak-card">
               <div className="stat-icon">
-                <Flame size={20} />
+                <Flame size={18} />
               </div>
               <div className="stat-info">
                 <h3 className="stat-label">Streak</h3>
@@ -140,7 +139,6 @@ const MiningHub = () => {
           </div>
         </div>
 
-        {/* Mining Section - Made more compact */}
         <div className="mining-section compact">
           <MiningDisplay
             user={user}
