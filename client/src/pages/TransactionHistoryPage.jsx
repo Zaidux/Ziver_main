@@ -37,14 +37,18 @@ const TransactionHistoryPage = () => {
     totalCount: 0,
   })
 
+  // UPDATED: Correct transaction types with proper earning/spending classification
   const transactionTypes = [
     { value: "all", label: "All Types", color: "#6B7280" },
-    { value: "zp_earn", label: "ZP Earned", color: "#10B981", icon: TrendingUp },
-    { value: "zp_spend", label: "ZP Spent", color: "#EF4444", icon: TrendingDown },
-    { value: "seb_earn", label: "SEB Earned", color: "#8B5CF6", icon: Sparkles },
-    { value: "mining", label: "Mining", color: "#F59E0B", icon: Zap },
-    { value: "task", label: "Tasks", color: "#3B82F6", icon: Coins },
-    { value: "feedback", label: "Feedback", color: "#EC4899", icon: Users },
+    { value: "mining_reward", label: "Mining Reward", color: "#10B981", icon: Zap, isEarning: true },
+    { value: "task_reward", label: "Task Reward", color: "#10B981", icon: Coins, isEarning: true },
+    { value: "referral_bonus", label: "Referral Bonus", color: "#10B981", icon: Users, isEarning: true },
+    { value: "referral_reward", label: "Referral Reward", color: "#10B981", icon: Users, isEarning: true },
+    { value: "feedback_reward", label: "Feedback Reward", color: "#10B981", icon: Sparkles, isEarning: true },
+    { value: "daily_login", label: "Daily Login", color: "#10B981", icon: TrendingUp, isEarning: true },
+    // Add spending types if you have them
+    { value: "withdrawal", label: "Withdrawal", color: "#EF4444", icon: TrendingDown, isEarning: false },
+    { value: "purchase", label: "Purchase", color: "#EF4444", icon: TrendingDown, isEarning: false },
   ]
 
   const currencyOptions = [
@@ -96,7 +100,12 @@ const TransactionHistoryPage = () => {
   }
 
   const getTransactionType = (type) => {
-    return transactionTypes.find((t) => t.value === type) || transactionTypes[0]
+    return transactionTypes.find((t) => t.value === type) || { 
+      value: type, 
+      label: type.replace(/_/g, ' '), 
+      color: "#6B7280", 
+      isEarning: true // Default to earning if unknown type
+    }
   }
 
   const getCurrencyIcon = (currency) => {
@@ -110,9 +119,17 @@ const TransactionHistoryPage = () => {
     }
   }
 
+  // FIXED: Proper amount formatting based on transaction type
   const formatAmount = (amount, type) => {
-    const sign = type.includes("earn") || type.includes("deposit") ? "+" : "-"
+    const typeInfo = getTransactionType(type)
+    const sign = typeInfo.isEarning ? "+" : "-"
     return `${sign}${Math.abs(amount).toLocaleString()}`
+  }
+
+  // NEW: Determine if transaction is positive (earning) or negative (spending)
+  const isPositiveTransaction = (type) => {
+    const typeInfo = getTransactionType(type)
+    return typeInfo.isEarning
   }
 
   const formatDate = (dateString) => {
@@ -236,6 +253,7 @@ const TransactionHistoryPage = () => {
             const typeInfo = getTransactionType(transaction.type)
             const TypeIcon = typeInfo.icon || TrendingUp
             const CurrencyIcon = getCurrencyIcon(transaction.currency)
+            const isPositive = isPositiveTransaction(transaction.type)
 
             return (
               <div key={transaction.id} className="transaction-item">
@@ -257,7 +275,7 @@ const TransactionHistoryPage = () => {
                   </div>
                   <div className="transaction-amount">
                     <span
-                      className={`amount ${transaction.type.includes("earn") ? "positive" : "negative"}`}
+                      className={`amount ${isPositive ? "positive" : "negative"}`}
                       style={{ color: typeInfo.color }}
                     >
                       {formatAmount(transaction.amount, transaction.type)}
@@ -286,6 +304,18 @@ const TransactionHistoryPage = () => {
                       <span className="metadata-item">
                         <Clock size={10} />
                         {transaction.metadata.duration} min
+                      </span>
+                    )}
+                    {transaction.metadata.sebPoints && (
+                      <span className="metadata-item">
+                        <Sparkles size={10} />
+                        +{transaction.metadata.sebPoints} SEB
+                      </span>
+                    )}
+                    {transaction.metadata.streak && (
+                      <span className="metadata-item">
+                        <TrendingUp size={10} />
+                        {transaction.metadata.streak} day streak
                       </span>
                     )}
                   </div>
