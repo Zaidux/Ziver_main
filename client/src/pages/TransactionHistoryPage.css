@@ -553,3 +553,44 @@
     display: none;
   }
 }
+
+/* Enhanced transaction amount styles */
+.amount.positive {
+  color: #10B981 !important;
+  font-weight: 700;
+}
+
+.amount.negative {
+  color: #EF4444 !important;
+  font-weight: 700;
+}
+
+/* Better visual distinction for earning vs spending */
+.transaction-item.earning {
+  border-left: 3px solid #10B981;
+}
+
+.transaction-item.spending {
+  border-left: 3px solid #EF4444;
+}
+
+/* Enhanced metadata styling */
+.transaction-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.metadata-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #a5a5a5;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
