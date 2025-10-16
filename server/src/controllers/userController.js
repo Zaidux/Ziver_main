@@ -162,15 +162,17 @@ const updateUserActivity = asyncHandler(async (req, res) => {
     case 'DAILY_LOGIN':
       pointsToAdd = getRandomPoints(1, 10);
       break;
-    case 'MINING_CLICK':
-      pointsToAdd = getRandomPoints(5, 15);
-      zpToAdd = pointsToAdd * 10;
-      break;
     case 'TASK_PERFORMED':
       pointsToAdd = getRandomPoints(1, 8);
       break;
     case 'REFERRAL_SUCCESS':
       pointsToAdd = getRandomPoints(10, 20);
+      break;
+    case 'MINING_CLICK':
+      // REMOVED: Mining rewards are now handled exclusively by miningController.js
+      // This prevents SEB points from being added during mining progress
+      pointsToAdd = 0;
+      zpToAdd = 0;
       break;
     default:
       pointsToAdd = 0;
