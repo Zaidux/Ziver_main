@@ -1,11 +1,12 @@
+/* Lockdown Page - Mobile First */
 .lockdown-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  font-family: 'Inter', sans-serif;
+  padding: 1.5rem;
+  font-family: "Inter", sans-serif;
 }
 
 .lockdown-content {
@@ -13,16 +14,19 @@
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 40px 30px;
+  border-radius: 16px;
+  padding: 2rem 1.5rem;
   max-width: 500px;
   width: 100%;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
 
 .lockdown-icon {
-  font-size: 4rem;
-  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  color: #ff9800;
   animation: bounce 2s infinite;
 }
 
@@ -30,43 +34,60 @@
   color: #fff;
   font-size: 2rem;
   font-weight: 700;
-  margin-bottom: 15px;
+  margin-bottom: 1rem;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .lockdown-message {
   color: #ccc;
-  font-size: 1.1rem;
+  font-size: 1rem;
   line-height: 1.6;
-  margin-bottom: 25px;
+  margin-bottom: 1.5rem;
 }
 
 .lockdown-details {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 25px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.lockdown-details p {
+.detail-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   color: #aaa;
-  margin: 8px 0;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+}
+
+.detail-item svg {
+  color: #ff9800;
+  flex-shrink: 0;
 }
 
 .support-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  padding: 12px 30px;
-  border-radius: 12px;
-  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  margin-bottom: 15px;
+  margin: 0 auto 1.25rem;
+  width: 100%;
+  max-width: 250px;
 }
 
 .support-button:hover {
@@ -76,20 +97,44 @@
 
 .support-email {
   color: #aaa;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
 }
 
-.support-email a {
+.email-address {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
   color: #00ff80;
-  text-decoration: none;
+  background: rgba(0, 255, 128, 0.1);
+  border: 1px solid rgba(0, 255, 128, 0.3);
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
 }
 
-.support-email a:hover {
-  text-decoration: underline;
+.email-address:hover {
+  background: rgba(0, 255, 128, 0.2);
+  border-color: rgba(0, 255, 128, 0.5);
+  transform: translateY(-1px);
+}
+
+.email-address svg {
+  flex-shrink: 0;
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
     transform: translateY(0);
   }
   40% {
@@ -100,41 +145,60 @@
   }
 }
 
-/* Mobile responsiveness */
-@media (max-width: 480px) {
+/* Tablet (768px+) */
+@media (min-width: 768px) {
   .lockdown-content {
-    padding: 30px 20px;
+    padding: 2.5rem 2rem;
   }
-  
+
   .lockdown-title {
-    font-size: 1.5rem;
+    font-size: 2.5rem;
   }
-  
+
   .lockdown-message {
-    font-size: 1rem;
+    font-size: 1.1rem;
+  }
+
+  .detail-item {
+    font-size: 0.95rem;
   }
 }
 
-.email-address {
-  color: #00ff80;
-  cursor: pointer;
-  text-decoration: underline;
-  transition: all 0.3s ease;
+/* Desktop (1024px+) */
+@media (min-width: 1024px) {
+  .lockdown-container {
+    padding-left: calc(280px + 1.5rem); /* Account for side navigation */
+  }
+
+  .lockdown-content {
+    max-width: 550px;
+  }
 }
 
-.email-address:hover {
-  color: #00ff99;
-  text-decoration: none;
-}
+/* Small Mobile (< 480px) */
+@media (max-width: 480px) {
+  .lockdown-container {
+    padding: 1rem;
+  }
 
-.copy-hint {
-  font-size: 0.8rem;
-  color: #888;
-  margin-left: 8px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
+  .lockdown-content {
+    padding: 1.5rem 1rem;
+  }
 
-.email-address:hover + .copy-hint {
-  opacity: 1;
+  .lockdown-title {
+    font-size: 1.75rem;
+  }
+
+  .lockdown-message {
+    font-size: 0.9rem;
+  }
+
+  .detail-item {
+    font-size: 0.85rem;
+  }
+
+  .support-email {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 }
