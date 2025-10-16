@@ -1,7 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const db = require('../config/db');
 const { sendMiningNotification } = require('./telegramController');
-const Transaction = require('../models/Transaction');
 
 function getRandomPoints(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -13,7 +12,7 @@ const claimReward = asyncHandler(async (req, res) => {
 
   // Get user data with ALL required fields from database
   const userResult = await db.query(`
-    SELECT mining_session_start_time, last_claim_time, daily_streak_count, 
+    SELECT mining_session_start_time, last_claim_time, daily_streak_count,
            zp_balance, social_capital_score
     FROM users WHERE id = $1
   `, [userId]);
@@ -73,71 +72,40 @@ const claimReward = asyncHandler(async (req, res) => {
   const zpToAdd = parseInt(appSettings.MINING_REWARD || '50', 10);
   const minSebPoints = parseInt(appSettings.SEB_MINING_MIN || '5', 10);
   const maxSebPoints = parseInt(appSettings.SEB_MINING_MAX || '15', 10);
-  const sebPointsToAdd = getRandomPoints(minSebPoints, maxSebPoints);
+  const pointsToAdd = getRandomPoints(minSebPoints, maxSebPoints);
 
-  const client = await db.getClient();
+  const query = `
+    UPDATE users
+    SET
+      zp_balance = zp_balance + $1,
+      social_capital_score = social_capital_score + $2,
+      daily_streak_count = $3,
+      mining_session_start_time = NULL, -- Reset mining session after claim
+      last_claim_time = NOW(),
+      last_activity = NOW()
+    WHERE id = $4
+    RETURNING id, username, email, zp_balance, social_capital_score,
+              daily_streak_count, mining_session_start_time, last_claim_time;
+  `;
+
+  const { rows } = await db.query(query, [zpToAdd, pointsToAdd, newStreak, userId]);
+
+  const updatedUser = rows[0];
+
+  // 🔥 NEW: Send Telegram notification for mining completion
   try {
-    await client.query('BEGIN');
-
-    // CORRECTED QUERY: Add both ZP and SEB points ONLY on claim
-    const query = `
-      UPDATE users
-      SET
-        zp_balance = zp_balance + $1,
-        social_capital_score = social_capital_score + $2,  // SEB added on claim
-        daily_streak_count = $3,
-        mining_session_start_time = NULL, -- Reset mining session after claim
-        last_claim_time = NOW(),
-        last_activity = NOW()
-      WHERE id = $4
-      RETURNING id, username, email, zp_balance, social_capital_score, 
-                daily_streak_count, mining_session_start_time, last_claim_time;
-    `;
-
-    const { rows } = await client.query(query, [zpToAdd, sebPointsToAdd, newStreak, userId]);
-
-    const updatedUser = rows[0];
-
-    // Create mining transaction with both ZP and SEB
-    await Transaction.create({
-      userId: userId,
-      type: 'mining_reward',
-      amount: zpToAdd,
-      currency: 'ZP',
-      description: `Mining reward + ${sebPointsToAdd} SEB points`,
-      metadata: {
-        sebPoints: sebPointsToAdd,
-        streak: newStreak,
-        miningCycle: miningCycleHours
-      }
-    });
-
-    await client.query('COMMIT');
-
-    // Send Telegram notification for mining completion
-    try {
-      await sendMiningNotification(userId, zpToAdd, sebPointsToAdd);
-      console.log(`Telegram mining notification sent to user: ${userId}`);
-    } catch (notificationError) {
-      console.error('Error sending Telegram mining notification:', notificationError);
-      // Don't fail the claim if notification fails
-    }
-
-    res.json({
-      success: true,
-      message: 'Reward claimed successfully',
-      userData: updatedUser,
-      rewards: {
-        zp: zpToAdd,
-        seb: sebPointsToAdd
-      }
-    });
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
+    await sendMiningNotification(userId, zpToAdd);
+    console.log(`Telegram mining notification sent to user: ${userId}`);
+  } catch (notificationError) {
+    console.error('Error sending Telegram mining notification:', notificationError);
+    // Don't fail the claim if notification fails
   }
+
+  res.json({
+    success: true,
+    message: 'Reward claimed successfully',
+    userData: updatedUser
+  });
 });
 
 // Function to get current mining status
@@ -198,7 +166,7 @@ const startMining = asyncHandler(async (req, res) => {
 
   // Check if user already has an active mining session
   const userResult = await db.query(`
-    SELECT mining_session_start_time 
+    SELECT mining_session_start_time
     FROM users WHERE id = $1
   `, [userId]);
 
@@ -228,13 +196,13 @@ const startMining = asyncHandler(async (req, res) => {
     }
   }
 
-  // Start new mining session - NO SEB POINTS ADDED HERE
+  // Start new mining session
   const query = `
-    UPDATE users 
+    UPDATE users
     SET mining_session_start_time = NOW(),
         last_activity = NOW()
-    WHERE id = $1 
-    RETURNING id, username, email, zp_balance, social_capital_score, 
+    WHERE id = $1
+    RETURNING id, username, email, zp_balance, social_capital_score,
               mining_session_start_time, last_claim_time, daily_streak_count
   `;
 
@@ -257,8 +225,8 @@ const startMining = asyncHandler(async (req, res) => {
 const getMiningConfig = asyncHandler(async (req, res) => {
   // Get mining configuration from app_settings
   const settingsResult = await db.query(`
-    SELECT setting_key, setting_value 
-    FROM app_settings 
+    SELECT setting_key, setting_value
+    FROM app_settings
     WHERE setting_key LIKE 'MINING_%' OR setting_key LIKE 'SEB_%'
   `);
 
@@ -291,7 +259,7 @@ const updateMiningSettings = asyncHandler(async (req, res) => {
 
     for (const [key, value] of Object.entries(settings)) {
       await client.query(`
-        UPDATE app_settings 
+        UPDATE app_settings
         SET setting_value = $1,
             updated_at = NOW()
         WHERE setting_key = $2
@@ -315,4 +283,3 @@ module.exports = {
   startMining,
   getMiningConfig,
   updateMiningSettings
-};
