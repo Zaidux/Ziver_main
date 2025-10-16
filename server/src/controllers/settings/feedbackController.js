@@ -1,6 +1,6 @@
 const Feedback = require('../../models/Feedback');
 const UploadHandler = require('../../utils/uploadHandler');
-const { uploadToS3, deleteFromS3 } = require('../../utils/fileUpload');
+const { uploadToS3, deleteFromS3 } = require('../../utils/s3Upload');
 const Transaction = require('../../models/Transaction'); // ADD THIS IMPORT
 const db = require('../../config/db'); // ADD THIS IMPORT
 
