@@ -1,0 +1,283 @@
+.admin-wallet {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.admin-header {
+  margin-bottom: 32px;
+}
+
+.admin-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.admin-header p {
+  color: #888;
+  font-size: 16px;
+  margin: 0;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid rgba(0, 255, 128, 0.2);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab:hover {
+  color: #00ff80;
+}
+
+.tab.active {
+  color: #00ff80;
+  border-bottom-color: #00ff80;
+}
+
+.admin-content {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: rgba(0, 255, 128, 0.05);
+  border: 1px solid rgba(0, 255, 128, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  background: rgba(0, 255, 128, 0.1);
+  border-color: rgba(0, 255, 128, 0.4);
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(0, 255, 128, 0.1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00ff80;
+  flex-shrink: 0;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  color: #888;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.stat-change {
+  color: #00ff80;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.stat-change.negative {
+  color: #ff4444;
+}
+
+.transactions-section {
+  background: rgba(0, 255, 128, 0.05);
+  border: 1px solid rgba(0, 255, 128, 0.2);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.transactions-section h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 16px 0;
+}
+
+.transactions-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  font-weight: 600;
+  color: #888;
+  font-size: 12px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 12px;
+  border-bottom: 1px solid rgba(0, 255, 128, 0.1);
+  align-items: center;
+  font-size: 14px;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.user-id {
+  color: #00ff80;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+}
+
+.amount {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.token {
+  color: #a0a0a0;
+}
+
+.status {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(0, 255, 128, 0.1);
+  color: #00ff80;
+  width: fit-content;
+}
+
+.status.pending {
+  background: rgba(255, 215, 0, 0.1);
+  color: #ffd700;
+}
+
+.status.failed {
+  background: rgba(255, 68, 68, 0.1);
+  color: #ff4444;
+}
+
+.time {
+  color: #888;
+  font-size: 12px;
+}
+
+.users-section,
+.security-section,
+.settings-section {
+  background: rgba(0, 255, 128, 0.05);
+  border: 1px solid rgba(0, 255, 128, 0.2);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.users-section h2,
+.security-section h2,
+.settings-section h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.users-section p,
+.security-section p,
+.settings-section p {
+  color: #888;
+  font-size: 14px;
+  margin: 0 0 24px 0;
+}
+
+.placeholder {
+  padding: 60px 20px;
+  text-align: center;
+  color: #666;
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .admin-wallet {
+    padding: 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .table-header,
+  .table-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .table-header span,
+  .table-row span {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .table-header span::before,
+  .table-row span::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #888;
+  }
+}
