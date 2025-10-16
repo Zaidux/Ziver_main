@@ -132,6 +132,22 @@ const TransactionHistoryPage = () => {
     return typeInfo.isEarning
   }
 
+  // FIXED: Format numbers to maximum 4 decimal places
+  const formatNumber = (number) => {
+    if (number === null || number === undefined) return "0"
+    
+    const num = parseFloat(number)
+    if (isNaN(num)) return "0"
+    
+    // Check if it has decimals
+    if (num % 1 === 0) {
+      return num.toLocaleString() // No decimals needed
+    } else {
+      // Limit to 4 decimal places and remove trailing zeros
+      return parseFloat(num.toFixed(4)).toString()
+    }
+  }
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -181,16 +197,16 @@ const TransactionHistoryPage = () => {
                     <CurrencyIcon size={20} />
                   </div>
                   <div className="balance-info">
-                    <div className="balance-amount">{balance.current_balance?.toLocaleString() || 0}</div>
+                    <div className="balance-amount">{formatNumber(balance.current_balance)}</div>
                     <div className="balance-currency">{balance.currency}</div>
                     <div className="balance-stats">
                       <span className="earned">
                         <TrendingUp size={12} />
-                        {balance.total_earned?.toLocaleString() || 0}
+                        {formatNumber(balance.total_earned)}
                       </span>
                       <span className="spent">
                         <TrendingDown size={12} />
-                        {balance.total_spent?.toLocaleString() || 0}
+                        {formatNumber(balance.total_spent)}
                       </span>
                     </div>
                   </div>
