@@ -21,6 +21,9 @@ const announcementRoutes = require('./routes/announcementRoutes');
 
 const TaskValidation = require('./models/TaskValidation');
 
+// Import database check utility
+const { checkDatabaseTables, checkTelegramBotConfig } = require('./utils/databaseCheck');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -311,6 +314,12 @@ const initializeApp = async () => {
     console.error('❌ Cannot start server without database connection');
     process.exit(1);
   }
+
+  // Database and configuration check - ADDED THIS
+  console.log('🔍 Starting system checks...');
+  await checkDatabaseTables();
+  checkTelegramBotConfig();
+  console.log('✅ System checks completed');
 
   await initializeTaskValidation();
   await initializeSettingsSystem();
