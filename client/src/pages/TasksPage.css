@@ -1,32 +1,7 @@
-/* TasksPage.css - Professional Mobile-First Design */
-:root {
-  --primary: #00e676;
-  --primary-dark: #00c853;
-  --secondary: #2196f3;
-  --background: #121212;
-  --surface: #1e1e1e;
-  --surface-light: #2d2d2d;
-  --text-primary: #ffffff;
-  --text-secondary: #b0b0b0;
-  --text-disabled: #666666;
-  --error: #f44336;
-  --warning: #ff9800;
-  --success: #4caf50;
-  --border: #333333;
-  --border-light: #404040;
-  --shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-}
-
-* {
-  box-sizing: border-box;
-}
-
+/* TasksPage.css - Professional Mobile-First Design with Light/Dark Theme */
 .tasks-container {
   min-height: 100vh;
-  background: var(--background);
+  background: var(--bg-primary);
   color: var(--text-primary);
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -34,9 +9,9 @@
 
 /* Header Styles */
 .tasks-header {
-  background: var(--surface);
+  background: var(--card-bg);
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -50,7 +25,7 @@
   margin: 0 0 0.25rem 0;
   font-size: 1.25rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background: linear-gradient(135deg, var(--primary), var(--info));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -63,8 +38,8 @@
 }
 
 .refresh-button {
-  background: var(--surface-light);
-  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   padding: 0.5rem;
   color: var(--text-secondary);
@@ -76,7 +51,7 @@
 }
 
 .refresh-button:hover {
-  background: var(--border);
+  background: var(--input-border);
   color: var(--primary);
   border-color: var(--primary);
 }
@@ -115,14 +90,14 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: var(--surface);
+  background: var(--card-bg);
 }
 
 .stat-item {
-  background: var(--surface-light);
+  background: var(--bg-tertiary);
   padding: 0.75rem 0.5rem;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -172,10 +147,10 @@
 
 /* Task Card */
 .task-card {
-  background: var(--surface);
+  background: var(--card-bg);
   border-radius: var(--radius-md);
   padding: 1rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-color);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -188,12 +163,12 @@
   left: 0;
   width: 3px;
   height: 100%;
-  background: var(--border);
+  background: var(--border-color);
   transition: background 0.3s ease;
 }
 
 .task-card.link::before {
-  background: var(--secondary);
+  background: var(--info);
 }
 
 .task-card.in-progress::before {
@@ -211,7 +186,7 @@
 .task-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow);
-  border-color: var(--border-light);
+  border-color: var(--primary);
 }
 
 .task-main {
@@ -230,7 +205,7 @@
 }
 
 .task-card.link .task-icon {
-  color: var(--secondary);
+  color: var(--info);
 }
 
 .task-card.ready .task-icon {
@@ -270,7 +245,7 @@
 .task-type {
   font-size: 0.65rem;
   padding: 0.15rem 0.4rem;
-  background: var(--surface-light);
+  background: var(--bg-tertiary);
   color: var(--text-secondary);
   border-radius: 20px;
   text-transform: uppercase;
@@ -325,7 +300,7 @@
 
 .progress-bar {
   height: 5px;
-  background: var(--surface-light);
+  background: var(--bg-tertiary);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -339,11 +314,11 @@
 
 /* Requirements List */
 .requirements-list {
-  background: var(--surface-light);
+  background: var(--bg-tertiary);
   border-radius: var(--radius-sm);
   padding: 0.75rem;
   margin-bottom: 0.75rem;
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-color);
 }
 
 .requirements-header {
@@ -362,7 +337,7 @@
 .requirements-count {
   font-size: 0.75rem;
   color: var(--text-secondary);
-  background: var(--background);
+  background: var(--bg-primary);
   padding: 0.15rem 0.4rem;
   border-radius: 12px;
 }
@@ -426,10 +401,10 @@
 
 /* Link Preview */
 .link-preview {
-  background: var(--surface-light);
+  background: var(--bg-tertiary);
   padding: 0.5rem;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-color);
   margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
@@ -438,13 +413,13 @@
 
 .link-domain {
   font-size: 0.8rem;
-  color: var(--secondary);
+  color: var(--info);
   font-family: monospace;
   flex: 1;
 }
 
 .copy-link-btn {
-  background: var(--secondary);
+  background: var(--info);
   color: white;
   border: none;
   padding: 0.4rem 0.75rem;
@@ -494,9 +469,9 @@
 }
 
 .reward.seb {
-  background: rgba(33, 150, 243, 0.1);
-  color: var(--secondary);
-  border: 1px solid rgba(33, 150, 243, 0.3);
+  background: rgba(42, 42, 42, 0.1);
+  color: var(--info);
+  border: 1px solid rgba(42, 42, 42, 0.3);
 }
 
 /* Action Button */
@@ -528,7 +503,7 @@
 }
 
 .action-button.link {
-  background: var(--secondary);
+  background: var(--info);
   color: white;
 }
 
@@ -549,8 +524,8 @@
 }
 
 .action-button:disabled {
-  background: var(--surface-light);
-  color: var(--text-disabled);
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
   cursor: not-allowed;
   transform: none;
 }
@@ -578,7 +553,7 @@
 }
 
 .empty-icon {
-  color: var(--text-disabled);
+  color: var(--text-muted);
   margin-bottom: 1rem;
   opacity: 0.5;
 }
@@ -600,7 +575,7 @@
 }
 
 .error-icon {
-  color: var(--error);
+  color: var(--danger);
   margin-bottom: 1rem;
 }
 
@@ -640,9 +615,9 @@
 }
 
 .help-accordion {
-  background: var(--surface);
+  background: var(--card-bg);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-color);
   overflow: hidden;
 }
 
@@ -660,7 +635,7 @@
 }
 
 .help-summary:hover {
-  background: var(--surface-light);
+  background: var(--bg-tertiary);
 }
 
 .help-summary::-webkit-details-marker {
@@ -678,7 +653,7 @@
 
 .help-content {
   padding: 0 1rem 0.75rem;
-  border-top: 1px solid var(--border-light);
+  border-top: 1px solid var(--border-color);
 }
 
 .help-item {
