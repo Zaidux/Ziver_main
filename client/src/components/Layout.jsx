@@ -17,6 +17,7 @@ import {
   Monitor,
   Zap,
   History,
+  ChevronDown as ChevronDownIcon,
 } from "lucide-react"
 import "./Layout.css"
 
@@ -118,22 +119,17 @@ const Layout = () => {
                 aria-label="Open profile menu"
               >
                 <span className="profile-avatar">{getUserAvatar()}</span>
-                <span className="profile-name">{user.username}</span>
+                <span className="profile-name">{user?.username || 'User'}</span>
+                <ChevronDownIcon size={16} />
               </button>
-              <button
-                onClick={handleProfileClick}
-                className="profile-toggle-button"
-                aria-label="Toggle profile"
-              >
-                Z
-              </button>
+              
               {showProfileDropdown && (
                 <div className="profile-dropdown-menu">
                   <div className="dropdown-user-info">
                     <div className="user-avatar-large">{getUserAvatar()}</div>
                     <div className="user-details">
-                      <div className="user-name">{user.username}</div>
-                      <div className="user-email">{user.email}</div>
+                      <div className="user-name">{user?.username || 'User'}</div>
+                      <div className="user-email">{user?.email || 'user@example.com'}</div>
                     </div>
                   </div>
                   <div className="dropdown-divider"></div>
@@ -160,6 +156,7 @@ const Layout = () => {
                   </button>
                 </div>
               )}
+              
               <button
                 onClick={handleThemeToggle}
                 className="theme-toggle-button"
