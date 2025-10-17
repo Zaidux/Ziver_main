@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const backgroundMiningChecker = require('../services/backgroundMiningChecker');
 const { protect } = require('../middleware/authMiddleware');
-const { adminOnly } = require('../middleware/adminMiddleware');
+const { admin } = require('../middleware/adminMiddleware');
 
 // @route   POST /api/background-checker/start
 // @desc    Start background mining checker
