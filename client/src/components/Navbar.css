@@ -1,4 +1,53 @@
 /* Professional Bottom Navigation Bar */
+:root {
+  --dark-bg: #0d0d0d;
+  --dark-surface: #1a1a1a;
+  --dark-text: #ffffff;
+  --dark-accent: #00ff80;
+  --light-bg: #f5f5f5;
+  --light-surface: #ffffff;
+  --light-text: #1a1a1a;
+  --light-accent: #00c853;
+}
+
+body.light-mode .bottom-navbar {
+  background: linear-gradient(180deg, #f5f5f5 0%, #f0f0f0 100%);
+  border-top: 1px solid rgba(0, 200, 83, 0.2);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1), 0 -2px 8px rgba(0, 200, 83, 0.1), inset 0 1px 0 rgba(0, 200, 83, 0.1);
+}
+
+body.light-mode .nav-item:hover {
+  background: rgba(0, 200, 83, 0.08);
+}
+
+body.light-mode .nav-item.active {
+  background: linear-gradient(135deg, rgba(0, 200, 83, 0.15), rgba(0, 200, 83, 0.08));
+}
+
+body.light-mode .nav-icon {
+  color: #6b7280;
+}
+
+body.light-mode .nav-item:hover .nav-icon {
+  color: #00a040;
+}
+
+body.light-mode .nav-item.active .nav-icon {
+  color: #00a040;
+}
+
+body.light-mode .nav-label {
+  color: #6b7280;
+}
+
+body.light-mode .nav-item:hover .nav-label {
+  color: #00a040;
+}
+
+body.light-mode .nav-item.active .nav-label {
+  color: #00a040;
+}
+
 .bottom-navbar {
   position: fixed;
   bottom: 0;
@@ -144,6 +193,13 @@
 
 /* Desktop side navigation */
 @media (min-width: 1024px) {
+  body.light-mode .bottom-navbar {
+    background: linear-gradient(90deg, #f5f5f5 0%, #f0f0f0 100%);
+    border-top: none;
+    border-right: 1px solid rgba(0, 200, 83, 0.2);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.1), 2px 0 8px rgba(0, 200, 83, 0.1), inset -1px 0 0 rgba(0, 200, 83, 0.1);
+  }
+
   .bottom-navbar {
     top: 64px;
     left: 0;
