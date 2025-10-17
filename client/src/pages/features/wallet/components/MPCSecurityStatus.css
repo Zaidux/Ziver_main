@@ -1,0 +1,129 @@
+.mpc-security-status {
+  background: rgba(0, 255, 128, 0.05);
+  border: 1px solid rgba(0, 255, 128, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.security-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.security-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 255, 128, 0.1);
+  border: 1px solid rgba(0, 255, 128, 0.3);
+  padding: 8px 16px;
+  border-radius: 20px;
+  color: #00ff80;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.security-message {
+  color: #a0a0a0;
+  font-size: 14px;
+  margin: 0;
+}
+
+.shards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.shard-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 255, 128, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.shard-card:hover {
+  background: rgba(0, 255, 128, 0.1);
+  border-color: rgba(0, 255, 128, 0.4);
+}
+
+.shard-icon {
+  color: #00ff80;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.shard-card h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.shard-location {
+  font-size: 12px;
+  color: #888;
+  margin: 0 0 12px 0;
+}
+
+.shard-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #00ff80;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00ff80;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.security-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(0, 255, 128, 0.05);
+  border-radius: 8px;
+  color: #a0a0a0;
+  font-size: 13px;
+}
+
+.security-info svg {
+  color: #00ff80;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+@media (max-width: 768px) {
+  .shards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .security-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
