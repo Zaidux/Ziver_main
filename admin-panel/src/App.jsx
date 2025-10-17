@@ -10,7 +10,7 @@ import FeedbackManagement from "./pages/FeedbackManagement" // FIXED: Corrected 
 import Layout from "./components/Layout"
 import ProtectedRoute from "./components/ProtectedRoute"
 import { ThemeProvider } from "./context/ThemeContext"
-import TelegramAnnouncements from "./pages/TelegramAnnouncements";
+import TelegramAnnouncement from "./pages/TelegramAnnouncement";
 
 function App() {
   return (
@@ -24,7 +24,7 @@ function App() {
               <Route path="/tasks" element={<TaskManagement />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/users" element={<UserManagement />} />
-              <Route path="/system-status" element={<SystemStatus />} />.        <Route path="/telegram-announcements" element={<TelegramAnnouncements />} />
+              <Route path="/system-status" element={<SystemStatus />} />.        <Route path="/telegram-announcement" element={<TelegramAnnouncement />} />
               <Route path="/feedback" element={<FeedbackManagement />} />
             </Route>
           </Route>
