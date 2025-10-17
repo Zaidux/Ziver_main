@@ -3,11 +3,16 @@ const db = require('../config/db');
 const axios = require('axios');
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
+const TELEGRAM_API_URL = TELEGRAM_BOT_TOKEN ? `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}` : null;
 
-// Helper function to send messages to Telegram
+// ==================== FIXED: MESSAGE SENDING ====================
 const sendMessage = async (chatId, text, replyMarkup = null) => {
   try {
+    if (!TELEGRAM_BOT_TOKEN) {
+      console.warn('❌ Telegram Bot Token not configured - message not sent');
+      return false;
+    }
+
     const payload = {
       chat_id: chatId,
       text: text,
@@ -18,11 +23,263 @@ const sendMessage = async (chatId, text, replyMarkup = null) => {
       payload.reply_markup = replyMarkup;
     }
 
-    await axios.post(`${TELEGRAM_API_URL}/sendMessage`, payload);
+    const response = await axios.post(`${TELEGRAM_API_URL}/sendMessage`, payload, {
+      timeout: 10000
+    });
+    
+    console.log(`✅ Telegram message sent to ${chatId}`);
+    return true;
   } catch (error) {
-    console.error('Error sending Telegram message:', error);
+    console.error('❌ Error sending Telegram message:', {
+      chatId,
+      error: error.response?.data || error.message
+    });
+    return false;
   }
 };
+
+// ==================== FIXED: ANNOUNCEMENT FUNCTIONS ====================
+const sendAnnouncement = asyncHandler(async (req, res) => {
+  const { message, announcementType, targetUsers } = req.body;
+  const adminId = req.user.id;
+
+  if (!message || !announcementType) {
+    res.status(400);
+    throw new Error('Message and announcement type are required');
+  }
+
+  // Validate announcement type
+  const validTypes = ['general', 'security', 'update', 'promotion', 'maintenance'];
+  if (!validTypes.includes(announcementType)) {
+    res.status(400);
+    throw new Error('Invalid announcement type');
+  }
+
+  try {
+    // FIXED: Get all Telegram-connected users with proper query
+    let query = `
+      SELECT tum.telegram_id, u.username, u.id as user_id
+      FROM telegram_user_map tum
+      JOIN users u ON tum.user_id = u.id
+      WHERE tum.telegram_id IS NOT NULL
+    `;
+
+    const queryParams = [];
+
+    // Filter by target if specified
+    if (targetUsers === 'active') {
+      query += ' AND u.last_activity > NOW() - INTERVAL \'7 days\'';
+    } else if (targetUsers === 'mining_enabled') {
+      query += ` AND EXISTS (
+        SELECT 1 FROM telegram_notifications tn 
+        WHERE tn.user_id = u.id AND tn.mining_alerts = true
+      )`;
+    }
+
+    const usersResult = await db.query(query, queryParams);
+    const users = usersResult.rows;
+
+    console.log(`📢 Announcement target: ${users.length} users`);
+
+    if (users.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No Telegram users found to send announcement to',
+        sentCount: 0,
+        failedCount: 0
+      });
+    }
+
+    let sentCount = 0;
+    let failedCount = 0;
+    const failedUsers = [];
+
+    // Format announcement message with type indicator
+    const formattedMessage = `📢 *${announcementType.toUpperCase()} ANNOUNCEMENT*\n\n${message}\n\n_— Ziver Team_`;
+
+    // Send message to each user
+    for (const user of users) {
+      try {
+        const success = await sendMessage(user.telegram_id, formattedMessage);
+        if (success) {
+          sentCount++;
+          console.log(`✅ Announcement sent to user: ${user.username} (${user.telegram_id})`);
+        } else {
+          failedCount++;
+          failedUsers.push({
+            username: user.username,
+            telegramId: user.telegram_id,
+            error: 'Failed to send message'
+          });
+          console.error(`❌ Failed to send to ${user.username}`);
+        }
+      } catch (error) {
+        failedCount++;
+        failedUsers.push({
+          username: user.username,
+          telegramId: user.telegram_id,
+          error: error.message
+        });
+        console.error(`❌ Failed to send to ${user.username}:`, error.message);
+      }
+
+      // Small delay to avoid hitting Telegram rate limits
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Log the announcement in database - FIXED table name
+    try {
+      await db.query(
+        `INSERT INTO telegram_announcements 
+         (admin_id, message, announcement_type, target_users, sent_count, failed_count, created_at) 
+         VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+        [adminId, message, announcementType, targetUsers || 'all', sentCount, failedCount]
+      );
+    } catch (dbError) {
+      console.error('❌ Error logging announcement:', dbError);
+      // Continue even if logging fails
+    }
+
+    res.json({
+      success: true,
+      message: `Announcement sent to ${sentCount} users`,
+      stats: {
+        totalUsers: users.length,
+        sentCount,
+        failedCount,
+        failedUsers: failedCount > 0 ? failedUsers : undefined
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error sending announcement:', error);
+    res.status(500);
+    throw new Error('Failed to send announcement: ' + error.message);
+  }
+});
+
+// ==================== FIXED: TELEGRAM STATS ====================
+const getTelegramStats = asyncHandler(async (req, res) => {
+  try {
+    const statsResult = await db.query(`
+      SELECT 
+        COUNT(DISTINCT tum.user_id) as total_users,
+        COUNT(CASE WHEN tn.system_updates = true THEN 1 END) as system_updates_enabled,
+        COUNT(CASE WHEN tn.mining_alerts = true THEN 1 END) as mining_alerts_enabled,
+        COUNT(CASE WHEN tn.referral_alerts = true THEN 1 END) as referral_alerts_enabled,
+        COUNT(CASE WHEN u.last_activity > NOW() - INTERVAL '7 days' THEN 1 END) as active_users
+      FROM telegram_user_map tum
+      JOIN users u ON tum.user_id = u.id
+      LEFT JOIN telegram_notifications tn ON tum.user_id = tn.user_id
+    `);
+
+    const recentAnnouncementsResult = await db.query(`
+      SELECT COUNT(*) as recent_count
+      FROM telegram_announcements 
+      WHERE created_at > NOW() - INTERVAL '7 days'
+    `);
+
+    const stats = statsResult.rows[0];
+    stats.recent_announcements = parseInt(recentAnnouncementsResult.rows[0]?.recent_count || 0);
+
+    res.json({
+      success: true,
+      stats
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching Telegram stats:', error);
+    res.status(500);
+    throw new Error('Failed to fetch Telegram statistics');
+  }
+});
+
+// ==================== FIXED: MINING NOTIFICATION ====================
+const sendMiningNotification = async (userId, reward) => {
+  try {
+    if (!TELEGRAM_BOT_TOKEN) {
+      console.warn('❌ Telegram Bot Token not configured - mining notification not sent');
+      return false;
+    }
+
+    const result = await db.query(
+      `SELECT tum.telegram_id, tn.mining_alerts 
+       FROM telegram_user_map tum
+       LEFT JOIN telegram_notifications tn ON tum.user_id = tn.user_id
+       WHERE tum.user_id = $1 AND (tn.mining_alerts IS NULL OR tn.mining_alerts = true)`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      console.log(`⏭️ No Telegram connection or mining alerts disabled for user: ${userId}`);
+      return false;
+    }
+
+    const telegramId = result.rows[0].telegram_id;
+    const message = `⛏️ *Mining Complete!*\n\nYour mining session is ready to claim!\n\n` +
+                   `💎 Available reward: *${reward} ZP*\n` +
+                   `🚀 Open the Ziver app to claim your reward!`;
+
+    const success = await sendMessage(telegramId, message);
+
+    if (success) {
+      console.log(`✅ Mining ready-to-claim notification sent to Telegram user: ${telegramId}`);
+      
+      // Update notification timestamp
+      await db.query(
+        'UPDATE users SET last_notification_sent = NOW() WHERE id = $1',
+        [userId]
+      );
+    }
+
+    return success;
+
+  } catch (error) {
+    console.error('❌ Error sending mining notification:', error);
+    return false;
+  }
+};
+
+// ==================== FIXED: REFERRAL NOTIFICATION ====================
+const sendReferralNotification = async (referrerId, newUserUsername) => {
+  try {
+    if (!TELEGRAM_BOT_TOKEN) {
+      console.warn('❌ Telegram Bot Token not configured - referral notification not sent');
+      return false;
+    }
+
+    const result = await db.query(
+      `SELECT tum.telegram_id, tn.referral_alerts 
+       FROM telegram_user_map tum
+       LEFT JOIN telegram_notifications tn ON tum.user_id = tn.user_id
+       WHERE tum.user_id = $1 AND (tn.referral_alerts IS NULL OR tn.referral_alerts = true)`,
+      [referrerId]
+    );
+
+    if (result.rows.length === 0) {
+      return false;
+    }
+
+    const telegramId = result.rows[0].telegram_id;
+    const message = `🎉 *New Referral!*\n\n@${newUserUsername} just joined Ziver using your referral link!\n\n` +
+                   `💎 You earned *150 ZP* referral bonus!\n` +
+                   `👥 Keep sharing your link to earn more!`;
+
+    const success = await sendMessage(telegramId, message);
+
+    if (success) {
+      console.log(`✅ Referral notification sent to Telegram user: ${telegramId}`);
+    }
+
+    return success;
+
+  } catch (error) {
+    console.error('❌ Error sending referral notification:', error);
+    return false;
+  }
+};
+
+// ==================== KEEP YOUR EXISTING FUNCTIONS BELOW ====================
 
 // Get help message
 const getHelpMessage = () => {
@@ -498,7 +755,6 @@ const verifyConnectionCode = asyncHandler(async (req, res) => {
     } finally {
       client.release();
     }
-
   } catch (error) {
     console.error('Error verifying connection code:', error);
     res.status(500).json({ 
@@ -631,62 +887,6 @@ const updateNotificationSettings = asyncHandler(async (req, res) => {
   }
 });
 
-// Send referral notification (called when new user registers)
-const sendReferralNotification = async (referrerId, newUserUsername) => {
-  try {
-    const result = await db.query(
-      `SELECT tum.telegram_id, tn.referral_alerts 
-       FROM telegram_user_map tum
-       JOIN telegram_notifications tn ON tum.user_id = tn.user_id
-       WHERE tum.user_id = $1 AND tn.referral_alerts = true`,
-      [referrerId]
-    );
-
-    if (result.rows.length === 0) {
-      return;
-    }
-
-    const telegramId = result.rows[0].telegram_id;
-    const message = `🎉 *New Referral!*\n\n@${newUserUsername} just joined Ziver using your referral link!\n\n` +
-                   `💎 You earned *150 ZP* referral bonus!\n` +
-                   `👥 Keep sharing your link to earn more!`;
-
-    await sendMessage(telegramId, message);
-
-    console.log(`Referral notification sent to Telegram user: ${telegramId}`);
-  } catch (error) {
-    console.error('Error sending referral notification:', error);
-  }
-};
-
-// Send mining notification when mining is READY to claim (not after claiming)
-const sendMiningNotification = async (userId, reward) => {
-  try {
-    const result = await db.query(
-      `SELECT tum.telegram_id, tn.mining_alerts 
-       FROM telegram_user_map tum
-       JOIN telegram_notifications tn ON tum.user_id = tn.user_id
-       WHERE tum.user_id = $1 AND tn.mining_alerts = true`,
-      [userId]
-    );
-
-    if (result.rows.length === 0) {
-      return;
-    }
-
-    const telegramId = result.rows[0].telegram_id;
-    const message = `⛏️ *Mining Complete!*\n\nYour mining session is ready to claim!\n\n` +
-                   `💎 Available reward: *${reward} ZP*\n` +
-                   `🚀 Open the Ziver app to claim your reward!`;
-
-    await sendMessage(telegramId, message);
-
-    console.log(`Mining ready-to-claim notification sent to Telegram user: ${telegramId}`);
-  } catch (error) {
-    console.error('Error sending mining notification:', error);
-  }
-};
-
 // Send notification when reward is claimed (optional)
 const sendMiningClaimedNotification = async (userId, reward) => {
   try {
@@ -786,17 +986,29 @@ const sendTestMessage = asyncHandler(async (req, res) => {
   }
 });
 
+// ==================== EXPORT ALL FUNCTIONS ====================
 module.exports = {
+  // Announcement functions
+  sendAnnouncement,
+  getTelegramStats,
+  
+  // Core message functions
+  sendMessage,
+  sendReferralNotification,
+  sendMiningNotification,
+  sendMiningClaimedNotification,
+  
+  // Bot management
   setWebhook,
   handleTelegramWebhook,
+  setWebhookManual,
+  getWebhookInfo,
+  sendTestMessage,
+  
+  // User connection management
   generateConnectionCode,
   verifyConnectionCode,
   getConnectionStatus,
   disconnectTelegram,
-  updateNotificationSettings,
-  sendReferralNotification,
-  sendMiningNotification,
-  setWebhookManual,
-  getWebhookInfo,
-  sendTestMessage
+  updateNotificationSettings
 };
