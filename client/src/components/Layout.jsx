@@ -114,13 +114,22 @@ const Layout = () => {
           <div className="header-right">
             <div className="user-controls-container" ref={dropdownRef}>
               <button
+                onClick={handleThemeToggle}
+                className="theme-toggle-button"
+                title={`Current theme: ${theme}`}
+                aria-label={`Switch theme (current: ${theme})`}
+              >
+                <ThemeIcon size={18} />
+              </button>
+              
+              <button
                 onClick={handleProfileClick}
                 className="profile-dropdown-button"
                 aria-label="Open profile menu"
               >
                 <span className="profile-avatar">{getUserAvatar()}</span>
                 <span className="profile-name">{user?.username || 'User'}</span>
-                <ChevronDownIcon size={16} />
+                <ChevronDownIcon size={16} className="profile-chevron" />
               </button>
               
               {showProfileDropdown && (
@@ -156,15 +165,6 @@ const Layout = () => {
                   </button>
                 </div>
               )}
-              
-              <button
-                onClick={handleThemeToggle}
-                className="theme-toggle-button"
-                title={`Current theme: ${theme}`}
-                aria-label={`Switch theme (current: ${theme})`}
-              >
-                <ThemeIcon size={18} />
-              </button>
             </div>
           </div>
         </div>
