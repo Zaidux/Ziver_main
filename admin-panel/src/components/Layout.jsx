@@ -14,7 +14,8 @@ import {
   X,
   Sun,
   Moon,
-  MessageCircle // ADDED: Import MessageCircle icon for feedback
+  MessageCircle,
+  Megaphone // ADDED: Import Megaphone icon for Telegram announcements
 } from "lucide-react"
 import { useTheme } from "../context/ThemeContext"
 
@@ -33,7 +34,8 @@ const Layout = () => {
     { to: "/", icon: LayoutDashboard, label: "Dashboard" },
     { to: "/users", icon: Users, label: "Users" },
     { to: "/tasks", icon: ClipboardList, label: "Tasks" },
-    { to: "/feedback", icon: MessageCircle, label: "Feedback" }, // ADDED: Feedback Management
+    { to: "/feedback", icon: MessageCircle, label: "Feedback" },
+    { to: "/telegram-announcement", icon: Megaphone, label: "Telegram Announcements" }, // ADDED: Telegram Announcements
     { to: "/system-status", icon: Network, label: "System Status" },
     { to: "/settings", icon: Settings, label: "Settings" },
   ]
