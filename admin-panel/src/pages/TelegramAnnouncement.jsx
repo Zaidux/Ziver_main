@@ -31,7 +31,7 @@ import {
   History 
 } from '@mui/icons-material';
 import adminService from '../services/adminService';
-import './TelegramAnnouncement.css'
+import './TelegramAnnouncement.css';
 
 function TabPanel({ children, value, index, ...other }) {
   return (
