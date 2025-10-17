@@ -35,7 +35,42 @@ export const updateComponentStatus = async (component, status, error = null) => 
   return response.data;
 };
 
-// ... rest of your code remains the same
+// Telegram Announcements
+const sendAnnouncement = async (announcementData) => {
+  try {
+    const response = await api.post('/announcements/send', announcementData);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to send announcement');
+  }
+};
+
+const sendUserMessage = async (messageData) => {
+  try {
+    const response = await api.post('/announcements/send-user', messageData);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to send user message');
+  }
+};
+
+const getAnnouncementHistory = async (params = {}) => {
+  try {
+    const response = await api.get('/announcements/history', { params });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to get announcement history');
+  }
+};
+
+const getTelegramStats = async () => {
+  try {
+    const response = await api.get('/announcements/stats');
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to get Telegram stats');
+  }
+};
 
 // Existing Admin Methods
 const getSummary = () => api.get('/admin/summary');
@@ -69,7 +104,11 @@ const adminService = {
   getTaskValidationRules,
   createValidationRule,
   updateValidationRule,
-  deleteValidationRule
+  deleteValidationRule,
+  sendAnnouncement,
+  sendUserMessage,
+  getAnnouncementHistory,
+  getTelegramStats
 };
 
 export default adminService;
