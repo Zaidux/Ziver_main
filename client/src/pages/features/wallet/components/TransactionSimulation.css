@@ -1,3 +1,37 @@
+/* Added CSS variables for light and dark mode support */
+:root {
+  --bg-primary-dark: #0f0f0f;
+  --bg-primary-light: #ffffff;
+  --bg-secondary-dark: #1a1a1a;
+  --bg-secondary-light: #f5f5f5;
+  --text-primary-dark: #ffffff;
+  --text-primary-light: #1a1a1a;
+  --text-secondary-dark: #888888;
+  --text-secondary-light: #666666;
+  --primary: #00ff80;
+  --primary-alpha-dark: rgba(0, 255, 128, 0.1);
+  --primary-alpha-light: rgba(0, 128, 64, 0.1);
+}
+
+/* Light mode */
+body.light-mode {
+  --bg-primary: var(--bg-primary-light);
+  --bg-secondary: var(--bg-secondary-light);
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+  --primary-alpha: var(--primary-alpha-light);
+}
+
+/* Dark mode (default) */
+body.dark-mode,
+body {
+  --bg-primary: var(--bg-primary-dark);
+  --bg-secondary: var(--bg-secondary-dark);
+  --text-primary: var(--text-primary-dark);
+  --text-secondary: var(--text-secondary-dark);
+  --primary-alpha: var(--primary-alpha-dark);
+}
+
 .transaction-simulation-modal {
   position: fixed;
   top: 0;
@@ -22,8 +56,8 @@
 
 .modal-content {
   position: relative;
-  background: #1a1a1a;
-  border: 1px solid rgba(0, 255, 128, 0.2);
+  background: var(--bg-secondary);
+  border: 1px solid var(--primary-alpha);
   border-radius: 20px;
   padding: 32px;
   max-width: 500px;
@@ -31,6 +65,7 @@
   max-height: 90vh;
   overflow-y: auto;
   animation: slideUp 0.3s ease-out;
+  transition: background-color 0.3s ease;
 }
 
 @keyframes slideUp {
@@ -47,13 +82,13 @@
 .modal-content h2 {
   font-size: 24px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 24px;
 }
 
 .transaction-preview {
-  background: rgba(0, 255, 128, 0.05);
-  border: 1px solid rgba(0, 255, 128, 0.2);
+  background: var(--primary-alpha);
+  border: 1px solid var(--primary-alpha);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 24px;
@@ -72,12 +107,12 @@
 }
 
 .preview-item .label {
-  color: #888;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
 .preview-item .value {
-  color: #00ff80;
+  color: var(--primary);
   font-weight: 600;
   font-size: 14px;
 }
@@ -107,10 +142,10 @@
 }
 
 .simulation-info {
-  background: rgba(0, 255, 128, 0.05);
+  background: var(--primary-alpha);
   border-radius: 8px;
   padding: 12px;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   font-size: 13px;
   margin-bottom: 24px;
 }
@@ -144,7 +179,7 @@
 
 .shard-approval span {
   font-size: 14px;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .shard-approval .status {
@@ -268,7 +303,7 @@
 }
 
 .tx-hash {
-  color: #888;
+  color: var(--text-secondary);
   font-size: 13px;
   margin-bottom: 12px;
 }
