@@ -3,11 +3,11 @@
   background: var(--card-bg);
   border-bottom: 1px solid var(--border-color);
   padding: 0 1rem;
-  position: fixed;
+  position: sticky;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: 100;
   backdrop-filter: blur(12px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   height: 64px;
@@ -17,7 +17,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   height: 100%;
 }
@@ -33,14 +33,14 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  position: relative;
+  position: right;
 }
 
 /* Enhanced logo styling */
 .header-logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
   font-size: 1.35rem;
   font-weight: 800;
   color: var(--primary);
@@ -50,7 +50,7 @@
 
 .logo-icon {
   color: var(--primary);
-  animation: logoPulse 3s ease-in-out infinite;
+  animation: logoPulse 4s ease-in-out infinite;
 }
 
 @keyframes logoPulse {
@@ -73,11 +73,11 @@
 .profile-dropdown-button {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.5rem;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 8px 14px;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
   color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
