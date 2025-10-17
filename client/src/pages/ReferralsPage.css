@@ -1,7 +1,55 @@
-/* ReferralsPage.css - Professional Mobile-First Design with Light/Dark Theme */
+/* ReferralsPage.css - Professional Mobile-First Design */
+:root {
+  --primary: #00e676;
+  --primary-dark: #00c853;
+  --secondary: #2196f3;
+  --telegram: #0088cc;
+  --whatsapp: #25d366;
+  --twitter: #1da1f2;
+  --background: #121212;
+  --surface: #1e1e1e;
+  --surface-light: #2d2d2d;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-disabled: #666666;
+  --error: #f44336;
+  --success: #4caf50;
+  --border: #333333;
+  --border-light: #404040;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
+
+/* Light mode variables */
+body.light-mode {
+  --primary: #00c853;
+  --primary-dark: #00a040;
+  --secondary: #1976d2;
+  --telegram: #0088cc;
+  --whatsapp: #25d366;
+  --twitter: #1da1f2;
+  --background: #f5f5f5;
+  --surface: #ffffff;
+  --surface-light: #f0f0f0;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-disabled: #999999;
+  --error: #d32f2f;
+  --success: #388e3c;
+  --border: #e0e0e0;
+  --border-light: #f0f0f0;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
 .referrals-container {
   min-height: 100vh;
-  background: var(--bg-primary);
+  background: var(--background);
   color: var(--text-primary);
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -9,16 +57,16 @@
 
 /* Header Section */
 .referrals-header {
-  background: var(--card-bg);
+  background: var(--surface);
   padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
 }
 
 .header-content h1 {
   margin: 0 0 0.25rem 0;
   font-size: 1.25rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--primary), var(--info));
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -37,10 +85,10 @@
 }
 
 .stat-card {
-  background: var(--bg-tertiary);
+  background: var(--surface-light);
   padding: 0.85rem;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -95,9 +143,9 @@
 }
 
 .error-message {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: var(--danger);
+  background: rgba(244, 67, 54, 0.15);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  color: var(--error);
   padding: 0.75rem 1rem;
   margin: 0.75rem 1rem;
   border-radius: var(--radius-sm);
@@ -109,11 +157,11 @@
 
 /* Referral Cards */
 .referral-card {
-  background: var(--card-bg);
+  background: var(--surface);
   border-radius: var(--radius-md);
   padding: 1rem;
   margin: 0.75rem 1rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
 }
 
 .card-header {
@@ -143,7 +191,7 @@
 
 /* Telegram Card */
 .telegram-card {
-  border-color: var(--info);
+  border-color: var(--telegram);
 }
 
 .telegram-connected {
@@ -157,9 +205,9 @@
   align-items: flex-start;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: rgba(42, 42, 42, 0.1);
+  background: rgba(0, 136, 204, 0.1);
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(42, 42, 42, 0.3);
+  border: 1px solid rgba(0, 136, 204, 0.3);
 }
 
 .status-icon {
@@ -199,7 +247,7 @@
 }
 
 .connection-instructions {
-  background: var(--bg-tertiary);
+  background: var(--surface-light);
   padding: 0.75rem;
   border-radius: var(--radius-sm);
   margin-bottom: 0.75rem;
@@ -220,7 +268,7 @@
 }
 
 .connection-instructions code {
-  background: var(--bg-primary);
+  background: var(--background);
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
   font-family: monospace;
@@ -234,8 +282,8 @@
 
 .code-input {
   flex: 1;
-  background: var(--input-bg);
-  border: 1px solid var(--input-border);
+  background: var(--surface-light);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
   padding: 0.75rem;
   color: var(--text-primary);
@@ -257,7 +305,7 @@
   gap: 0.4rem;
   margin: 0;
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-disabled);
 }
 
 /* Buttons */
@@ -286,19 +334,19 @@
 }
 
 .btn-primary:disabled {
-  background: var(--bg-tertiary);
-  color: var(--text-muted);
+  background: var(--surface-light);
+  color: var(--text-disabled);
   cursor: not-allowed;
 }
 
 .btn-secondary {
-  background: var(--bg-tertiary);
+  background: var(--surface-light);
   color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-light);
 }
 
 .btn-secondary:hover {
-  background: var(--input-border);
+  background: var(--border);
 }
 
 .button-loading {
@@ -331,8 +379,8 @@
 }
 
 .referral-link-display {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  background: var(--surface-light);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
   padding: 0.75rem;
   display: flex;
@@ -371,14 +419,14 @@
 }
 
 .copy-button:disabled {
-  background: var(--bg-tertiary);
-  color: var(--text-muted);
+  background: var(--surface-light);
+  color: var(--text-disabled);
   cursor: not-allowed;
 }
 
 /* Share Buttons */
 .share-buttons {
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-light);
   padding-top: 1rem;
 }
 
@@ -398,8 +446,8 @@
 }
 
 .share-btn {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  background: var(--surface-light);
+  border: 1px solid var(--border-light);
   padding: 0.75rem 0.5rem;
   border-radius: var(--radius-sm);
   color: var(--text-primary);
@@ -414,17 +462,17 @@
 }
 
 .share-btn.telegram {
-  border-color: var(--info);
-  color: var(--info);
+  border-color: var(--telegram);
+  color: var(--telegram);
 }
 
 .share-btn.telegram:hover {
-  background: rgba(42, 42, 42, 0.1);
+  background: rgba(0, 136, 204, 0.1);
 }
 
 .share-btn.whatsapp {
-  border-color: #25d366;
-  color: #25d366;
+  border-color: var(--whatsapp);
+  color: var(--whatsapp);
 }
 
 .share-btn.whatsapp:hover {
@@ -432,8 +480,8 @@
 }
 
 .share-btn.twitter {
-  border-color: #1da1f2;
-  color: #1da1f2;
+  border-color: var(--twitter);
+  color: var(--twitter);
 }
 
 .share-btn.twitter:hover {
@@ -445,14 +493,14 @@
   display: flex;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--border-color);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
 }
 
 .tab {
   flex: 1;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  background: var(--surface-light);
+  border: 1px solid var(--border-light);
   padding: 0.75rem 1rem;
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
@@ -481,8 +529,8 @@
 }
 
 .referral-item {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 0.85rem;
   display: flex;
@@ -524,7 +572,7 @@
 
 .last-seen {
   font-size: 0.7rem;
-  color: var(--text-muted);
+  color: var(--text-disabled);
 }
 
 .referral-stats {
@@ -563,7 +611,7 @@
 }
 
 .empty-icon {
-  color: var(--text-muted);
+  color: var(--text-disabled);
   margin-bottom: 1rem;
   opacity: 0.5;
 }
@@ -587,8 +635,8 @@
 }
 
 .step {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 1rem;
   display: flex;
@@ -631,10 +679,10 @@
 /* Progress Section */
 .progress-section {
   padding: 1rem;
-  background: var(--card-bg);
+  background: var(--surface);
   margin: 0.75rem 1rem;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
 }
 
 .progress-header {
@@ -661,7 +709,7 @@
 
 .progress-bar {
   height: 8px;
-  background: var(--bg-tertiary);
+  background: var(--surface-light);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -677,110 +725,8 @@
 .progress-note {
   margin: 0;
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-disabled);
   text-align: center;
-}
-
-/* Referral Status Styles */
-.referral-status {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-top: 4px;
-}
-
-.mining-status {
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 8px;
-  display: inline-block;
-  width: fit-content;
-}
-
-.mining-status.mining {
-  background: rgba(0, 255, 128, 0.1);
-  color: var(--primary);
-  border: 1px solid rgba(0, 255, 128, 0.2);
-}
-
-.mining-status.idle {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Remove Button Styles */
-.remove-btn {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  color: var(--danger);
-  padding: 6px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.remove-btn:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.3);
-  transform: translateY(-1px);
-}
-
-.remove-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Small spinner for remove button */
-.button-spinner-small {
-  width: 12px;
-  height: 12px;
-  border: 2px solid transparent;
-  border-top: 2px solid currentColor;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-/* Enhanced referral stats layout */
-.referral-stats {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Update referral item layout for better spacing */
-.referral-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  transition: all 0.3s ease;
-}
-
-.referral-item:hover {
-  background: var(--input-border);
-  border-color: var(--primary);
-  transform: translateY(-1px);
-}
-
-/* Last seen text */
-.last-seen {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-/* Animation for the spinner */
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 /* Desktop Styles */
