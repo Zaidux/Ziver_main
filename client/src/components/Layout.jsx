@@ -131,4 +131,4 @@ const Layout = () => {
   );
 };
 
-export default
+export default Layout;
