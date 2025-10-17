@@ -1,51 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Card, 
-  CardContent, 
-  Typography, 
-  TextField, 
-  Button, 
-  Alert,
-  Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Chip,
-  Tab,
-  Tabs,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper
-} from '@mui/material';
-import { 
-  Send, 
-  People, 
-  Announcement, 
-  Message,
-  History 
-} from '@mui/icons-material';
+import { Send, Users, Bell, MessageCircle, History, Megaphone } from 'lucide-react';
 import adminService from '../services/adminService';
 import './TelegramAnnouncement.css';
-
-function TabPanel({ children, value, index, ...other }) {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`telegram-tabpanel-${index}`}
-      aria-labelledby={`telegram-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-}
 
 const TelegramAnnouncements = () => {
   const [tabValue, setTabValue] = useState(0);
@@ -125,16 +81,16 @@ const TelegramAnnouncements = () => {
     }
   };
 
-  const handleTabChange = (event, newValue) => {
+  const handleTabChange = (newValue) => {
     setTabValue(newValue);
   };
 
   const announcementTypes = [
-    { value: 'general', label: 'General', color: 'primary' },
-    { value: 'security', label: 'Security', color: 'error' },
-    { value: 'update', label: 'Update', color: 'info' },
-    { value: 'promotion', label: 'Promotion', color: 'success' },
-    { value: 'maintenance', label: 'Maintenance', color: 'warning' }
+    { value: 'general', label: 'General', badge: 'badge-primary' },
+    { value: 'security', label: 'Security', badge: 'badge-error' },
+    { value: 'update', label: 'Update', badge: 'badge-info' },
+    { value: 'promotion', label: 'Promotion', badge: 'badge-success' },
+    { value: 'maintenance', label: 'Maintenance', badge: 'badge-warning' }
   ];
 
   const targetOptions = [
@@ -143,248 +99,274 @@ const TelegramAnnouncements = () => {
     { value: 'mining_enabled', label: 'Users with Mining Alerts' }
   ];
 
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString();
+  };
+
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        <Announcement sx={{ mr: 1, verticalAlign: 'bottom' }} />
-        Telegram Announcements
-      </Typography>
+    <div className="telegram-announcements-container">
+      <div className="page-header">
+        <h1 className="page-title">
+          <Megaphone size={32} />
+          Telegram Announcements
+        </h1>
+        <p className="page-subtitle">
+          Send announcements and messages to your Telegram users
+        </p>
+      </div>
 
       {alert.message && (
-        <Alert severity={alert.type} sx={{ mb: 2 }} onClose={() => setAlert({ type: '', message: '' })}>
+        <div className={`alert alert-${alert.type}`}>
           {alert.message}
-        </Alert>
+          <button 
+            className="alert-close"
+            onClick={() => setAlert({ type: '', message: '' })}
+          >
+            ×
+          </button>
+        </div>
       )}
 
       {/* Stats Cards */}
       {stats && (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Total Telegram Users
-                </Typography>
-                <Typography variant="h4" component="div">
-                  {stats.total_users}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  System Updates Enabled
-                </Typography>
-                <Typography variant="h4" component="div">
-                  {stats.system_updates_enabled}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Active Users (7 days)
-                </Typography>
-                <Typography variant="h4" component="div">
-                  {stats.active_users}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Recent Announcements
-                </Typography>
-                <Typography variant="h4" component="div">
-                  {stats.recent_announcements}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+        <div className="stats-grid">
+          <div className="stat-card stat-card-telegram">
+            <div className="stat-icon">
+              <Users size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-label">Total Telegram Users</div>
+              <div className="stat-value">{stats.total_users}</div>
+            </div>
+          </div>
+
+          <div className="stat-card stat-card-success">
+            <div className="stat-icon">
+              <Bell size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-label">System Updates Enabled</div>
+              <div className="stat-value">{stats.system_updates_enabled}</div>
+            </div>
+          </div>
+
+          <div className="stat-card stat-card-warning">
+            <div className="stat-icon">
+              <Users size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-label">Active Users (7 days)</div>
+              <div className="stat-value">{stats.active_users}</div>
+            </div>
+          </div>
+
+          <div className="stat-card stat-card-info">
+            <div className="stat-icon">
+              <History size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-label">Recent Announcements</div>
+              <div className="stat-value">{stats.recent_announcements}</div>
+            </div>
+          </div>
+        </div>
       )}
 
-      <Card>
-        <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab icon={<Announcement />} label="Send Announcement" />
-          <Tab icon={<Message />} label="Send to User" />
-          <Tab icon={<History />} label="History" />
-        </Tabs>
+      <div className="announcement-card">
+        <div className="announcement-tabs">
+          <button
+            className={`announcement-tab ${tabValue === 0 ? 'announcement-tab-active' : ''}`}
+            onClick={() => handleTabChange(0)}
+          >
+            <Megaphone size={20} />
+            Send Announcement
+          </button>
+          <button
+            className={`announcement-tab ${tabValue === 1 ? 'announcement-tab-active' : ''}`}
+            onClick={() => handleTabChange(1)}
+          >
+            <MessageCircle size={20} />
+            Send to User
+          </button>
+          <button
+            className={`announcement-tab ${tabValue === 2 ? 'announcement-tab-active' : ''}`}
+            onClick={() => handleTabChange(2)}
+          >
+            <History size={20} />
+            History
+          </button>
+        </div>
 
-        <TabPanel value={tabValue} index={0}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Announcement Type</InputLabel>
-                <Select
+        <div className="tab-content">
+          {/* Send Announcement Tab */}
+          {tabValue === 0 && (
+            <div>
+              <div className="form-group">
+                <label>Announcement Type</label>
+                <select
+                  className="form-control select"
                   value={announcementData.announcementType}
-                  label="Announcement Type"
                   onChange={(e) => setAnnouncementData({
                     ...announcementData,
                     announcementType: e.target.value
                   })}
                 >
                   {announcementTypes.map(type => (
-                    <MenuItem key={type.value} value={type.value}>
-                      <Chip 
-                        label={type.label} 
-                        size="small" 
-                        color={type.color}
-                        variant="outlined"
-                      />
-                    </MenuItem>
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
                   ))}
-                </Select>
-              </FormControl>
-            </Grid>
+                </select>
+              </div>
 
-            <Grid item xs={12}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Target Users</InputLabel>
-                <Select
+              <div className="form-group">
+                <label>Target Users</label>
+                <select
+                  className="form-control select"
                   value={announcementData.targetUsers}
-                  label="Target Users"
                   onChange={(e) => setAnnouncementData({
                     ...announcementData,
                     targetUsers: e.target.value
                   })}
                 >
                   {targetOptions.map(option => (
-                    <MenuItem key={option.value} value={option.value}>
+                    <option key={option.value} value={option.value}>
                       {option.label}
-                    </MenuItem>
+                    </option>
                   ))}
-                </Select>
-              </FormControl>
-            </Grid>
+                </select>
+              </div>
 
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                rows={4}
-                label="Announcement Message"
-                value={announcementData.message}
-                onChange={(e) => setAnnouncementData({
-                  ...announcementData,
-                  message: e.target.value
-                })}
-                placeholder="Enter your announcement message here..."
-                helperText="Markdown formatting is supported"
-              />
-            </Grid>
+              <div className="form-group">
+                <label>Announcement Message</label>
+                <textarea
+                  className="form-control textarea"
+                  value={announcementData.message}
+                  onChange={(e) => setAnnouncementData({
+                    ...announcementData,
+                    message: e.target.value
+                  })}
+                  placeholder="Enter your announcement message here..."
+                  rows="6"
+                />
+                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                  Markdown formatting is supported
+                </div>
+              </div>
 
-            <Grid item xs={12}>
-              <Button
-                variant="contained"
-                startIcon={<Send />}
+              <button
+                className={`btn btn-primary btn-lg ${loading ? 'loading' : ''}`}
                 onClick={handleSendAnnouncement}
                 disabled={loading || !announcementData.message.trim()}
-                size="large"
               >
-                {loading ? 'Sending...' : 'Send Announcement'}
-              </Button>
-            </Grid>
-          </Grid>
-        </TabPanel>
+                <Send size={20} />
+                {loading ? <span className="loading-text">Sending</span> : 'Send Announcement'}
+              </button>
+            </div>
+          )}
 
-        <TabPanel value={tabValue} index={1}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Telegram User ID"
-                value={userMessageData.telegramId}
-                onChange={(e) => setUserMessageData({
-                  ...userMessageData,
-                  telegramId: e.target.value
-                })}
-                placeholder="Enter Telegram ID"
-                helperText="Find Telegram ID in user management"
-              />
-            </Grid>
+          {/* Send to User Tab */}
+          {tabValue === 1 && (
+            <div>
+              <div className="form-group">
+                <label>Telegram User ID</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={userMessageData.telegramId}
+                  onChange={(e) => setUserMessageData({
+                    ...userMessageData,
+                    telegramId: e.target.value
+                  })}
+                  placeholder="Enter Telegram ID"
+                />
+                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                  Find Telegram ID in user management
+                </div>
+              </div>
 
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                rows={4}
-                label="Message"
-                value={userMessageData.message}
-                onChange={(e) => setUserMessageData({
-                  ...userMessageData,
-                  message: e.target.value
-                })}
-                placeholder="Enter your message here..."
-              />
-            </Grid>
+              <div className="form-group">
+                <label>Message</label>
+                <textarea
+                  className="form-control textarea"
+                  value={userMessageData.message}
+                  onChange={(e) => setUserMessageData({
+                    ...userMessageData,
+                    message: e.target.value
+                  })}
+                  placeholder="Enter your message here..."
+                  rows="6"
+                />
+              </div>
 
-            <Grid item xs={12}>
-              <Button
-                variant="contained"
-                startIcon={<Message />}
+              <button
+                className={`btn btn-primary btn-lg ${loading ? 'loading' : ''}`}
                 onClick={handleSendUserMessage}
                 disabled={loading || !userMessageData.telegramId || !userMessageData.message.trim()}
-                size="large"
               >
-                {loading ? 'Sending...' : 'Send Message'}
-              </Button>
-            </Grid>
-          </Grid>
-        </TabPanel>
+                <MessageCircle size={20} />
+                {loading ? <span className="loading-text">Sending</span> : 'Send Message'}
+              </button>
+            </div>
+          )}
 
-        <TabPanel value={tabValue} index={2}>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Target</TableCell>
-                  <TableCell>Sent</TableCell>
-                  <TableCell>Failed</TableCell>
-                  <TableCell>Admin</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {announcementHistory.map((announcement) => (
-                  <TableRow key={announcement.id}>
-                    <TableCell>
-                      {new Date(announcement.created_at).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={announcement.announcement_type} 
-                        size="small"
-                        color={
-                          announcementTypes.find(t => t.value === announcement.announcement_type)?.color || 'default'
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>{announcement.target_users}</TableCell>
-                    <TableCell>{announcement.sent_count}</TableCell>
-                    <TableCell>
-                      {announcement.failed_count > 0 ? (
-                        <Chip label={announcement.failed_count} size="small" color="error" />
-                      ) : (
-                        announcement.failed_count
-                      )}
-                    </TableCell>
-                    <TableCell>{announcement.admin_username}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </TabPanel>
-      </Card>
-    </Box>
+          {/* History Tab */}
+          {tabValue === 2 && (
+            <div>
+              {announcementHistory.length > 0 ? (
+                <div className="table-container">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Target</th>
+                        <th>Sent</th>
+                        <th>Failed</th>
+                        <th>Admin</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {announcementHistory.map((announcement) => {
+                        const typeConfig = announcementTypes.find(t => t.value === announcement.announcement_type);
+                        return (
+                          <tr key={announcement.id}>
+                            <td>{formatDate(announcement.created_at)}</td>
+                            <td>
+                              <span className={`badge ${typeConfig?.badge || 'badge-primary'}`}>
+                                {announcement.announcement_type}
+                              </span>
+                            </td>
+                            <td>{announcement.target_users}</td>
+                            <td>{announcement.sent_count}</td>
+                            <td>
+                              {announcement.failed_count > 0 ? (
+                                <span className="badge badge-error">
+                                  {announcement.failed_count}
+                                </span>
+                              ) : (
+                                announcement.failed_count
+                              )}
+                            </td>
+                            <td>{announcement.admin_username}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <History size={48} className="empty-state-icon" />
+                  <h3>No Announcements Yet</h3>
+                  <p>Send your first announcement to see history here</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 
