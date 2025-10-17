@@ -7,62 +7,6 @@ function getRandomPoints(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// NEW FUNCTION: Check and send mining completion notifications
-const checkMiningCompletion = asyncHandler(async (req, res) => {
-  const userId = req.user.id;
-  const now = new Date();
-
-  const userResult = await db.query(`
-    SELECT mining_session_start_time, last_claim_time, daily_streak_count,
-           zp_balance, social_capital_score
-    FROM users WHERE id = $1
-  `, [userId]);
-
-  const user = userResult.rows[0];
-  if (!user) {
-    res.status(404);
-    throw new Error('User not found');
-  }
-
-  const settingsResult = await db.query('SELECT * FROM app_settings');
-  const appSettings = settingsResult.rows.reduce((acc, setting) => {
-    acc[setting.setting_key] = setting.setting_value;
-    return acc;
-  }, {});
-
-  const miningCycleHours = parseFloat(appSettings.MINING_CYCLE_HOURS || '4');
-  const MINING_CYCLE_DURATION = miningCycleHours * 60 * 60 * 1000;
-
-  let miningCompleted = false;
-  let rewardAmount = 0;
-
-  // Check if mining session is complete and ready to claim
-  if (user.mining_session_start_time) {
-    const startTime = new Date(user.mining_session_start_time);
-    const elapsed = now.getTime() - startTime.getTime();
-
-    if (elapsed >= MINING_CYCLE_DURATION) {
-      miningCompleted = true;
-      rewardAmount = parseInt(appSettings.MINING_REWARD || '50', 10);
-
-      // Send Telegram notification that mining is READY to claim
-      try {
-        await sendMiningNotification(userId, rewardAmount);
-        console.log(`Telegram mining completion notification sent to user: ${userId}`);
-      } catch (notificationError) {
-        console.error('Error sending Telegram mining notification:', notificationError);
-        // Don't fail the check if notification fails
-      }
-    }
-  }
-
-  res.json({
-    miningCompleted,
-    rewardAmount: miningCompleted ? rewardAmount : 0,
-    message: miningCompleted ? 'Mining completed! Ready to claim.' : 'Mining in progress'
-  });
-});
-
 const claimReward = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const now = new Date();
@@ -70,7 +14,7 @@ const claimReward = asyncHandler(async (req, res) => {
   // Get user data with ALL required fields from database
   const userResult = await db.query(`
     SELECT mining_session_start_time, last_claim_time, daily_streak_count,
-           zp_balance, social_capital_score
+           zp_balance, social_capital_score, last_notification_sent
     FROM users WHERE id = $1
   `, [userId]);
 
@@ -112,17 +56,13 @@ const claimReward = asyncHandler(async (req, res) => {
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 1) {
-      // Claimed yesterday, continue streak
       newStreak++;
     } else if (diffDays === 0) {
       // Already claimed today, don't change streak
-      // This prevents multiple claims per day from increasing streak
     } else if (diffDays > 1) {
-      // Missed one or more days, reset streak
       newStreak = 1;
     }
   } else {
-    // First time claiming
     newStreak = 1;
   }
 
@@ -141,7 +81,8 @@ const claimReward = asyncHandler(async (req, res) => {
         zp_balance = zp_balance + $1,
         social_capital_score = social_capital_score + $2,
         daily_streak_count = $3,
-        mining_session_start_time = NULL, -- Reset mining session after claim
+        mining_session_start_time = NULL,
+        last_notification_sent = NULL, -- Clear notification flag
         last_claim_time = NOW(),
         last_activity = NOW()
       WHERE id = $4
@@ -153,7 +94,7 @@ const claimReward = asyncHandler(async (req, res) => {
 
     const updatedUser = rows[0];
 
-    // ✅ Create mining transaction record
+    // Create mining transaction record
     await Transaction.create({
       userId: userId,
       type: 'mining_reward',
@@ -169,13 +110,12 @@ const claimReward = asyncHandler(async (req, res) => {
 
     await client.query('COMMIT');
 
-    // 🔥 NEW: Send Telegram notification that reward was CLAIMED
+    // Send Telegram notification that reward was CLAIMED
     try {
       await sendMiningClaimedNotification(userId, zpToAdd);
-      console.log(`Telegram mining claimed notification sent to user: ${userId}`);
+      console.log(`💰 Telegram mining claimed notification sent to user: ${userId}`);
     } catch (notificationError) {
       console.error('Error sending Telegram mining claimed notification:', notificationError);
-      // Don't fail the claim if notification fails
     }
 
     res.json({
@@ -195,13 +135,13 @@ const claimReward = asyncHandler(async (req, res) => {
   }
 });
 
-// Function to get current mining status
+// Function to get current mining status - FIXED: No spam notifications
 const getMiningStatus = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
   const userResult = await db.query(`
     SELECT mining_session_start_time, last_claim_time, daily_streak_count,
-           zp_balance, social_capital_score, last_activity
+           zp_balance, social_capital_score, last_activity, last_notification_sent
     FROM users WHERE id = $1
   `, [userId]);
 
@@ -230,37 +170,95 @@ const getMiningStatus = asyncHandler(async (req, res) => {
   if (user.mining_session_start_time) {
     const startTime = new Date(user.mining_session_start_time);
     const elapsed = new Date().getTime() - startTime.getTime();
-    const progress = Math.min(elapsed / MINING_CYCLE_DURATION, 1); // Cap at 1
+    const progress = Math.min(elapsed / MINING_CYCLE_DURATION, 1);
 
     if (elapsed >= MINING_CYCLE_DURATION) {
       miningStatus.canClaim = true;
       miningStatus.progress = 1;
-
-      // Send Telegram notification when mining completes (only if not already sent)
-      try {
-        const rewardAmount = parseInt(appSettings.MINING_REWARD || '50', 10);
-        await sendMiningNotification(userId, rewardAmount);
-        console.log(`Telegram mining completion notification sent via status check to user: ${userId}`);
-      } catch (notificationError) {
-        console.error('Error sending Telegram mining notification:', notificationError);
-      }
+      
+      // REMOVED: Telegram notification from here to prevent spam
+      // The background checker will handle notifications automatically
     } else {
       miningStatus.timeRemaining = MINING_CYCLE_DURATION - elapsed;
       miningStatus.progress = progress;
     }
   } else {
-    miningStatus.canClaim = false; // Can't claim if no active session
+    miningStatus.canClaim = false;
     miningStatus.progress = 0;
   }
 
   res.json(miningStatus);
 });
 
-// Rest of the code remains exactly the same...
+// Manual mining completion check endpoint
+const checkMiningCompletion = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const now = new Date();
+
+  const userResult = await db.query(`
+    SELECT mining_session_start_time, last_claim_time, last_notification_sent
+    FROM users WHERE id = $1
+  `, [userId]);
+
+  const user = userResult.rows[0];
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  const settingsResult = await db.query('SELECT * FROM app_settings');
+  const appSettings = settingsResult.rows.reduce((acc, setting) => {
+    acc[setting.setting_key] = setting.setting_value;
+    return acc;
+  }, {});
+
+  const miningCycleHours = parseFloat(appSettings.MINING_CYCLE_HOURS || '4');
+  const MINING_CYCLE_DURATION = miningCycleHours * 60 * 60 * 1000;
+
+  let miningCompleted = false;
+  let rewardAmount = 0;
+
+  if (user.mining_session_start_time) {
+    const startTime = new Date(user.mining_session_start_time);
+    const elapsed = now.getTime() - startTime.getTime();
+
+    if (elapsed >= MINING_CYCLE_DURATION) {
+      miningCompleted = true;
+      rewardAmount = parseInt(appSettings.MINING_REWARD || '50', 10);
+
+      // Send Telegram notification only if not already sent recently
+      const lastNotificationSent = user.last_notification_sent;
+      const shouldSendNotification = !lastNotificationSent || 
+        (now - new Date(lastNotificationSent)) > (60 * 60 * 1000);
+
+      if (shouldSendNotification) {
+        try {
+          await sendMiningNotification(userId, rewardAmount);
+          
+          // Update last_notification_sent
+          await db.query(
+            'UPDATE users SET last_notification_sent = NOW() WHERE id = $1',
+            [userId]
+          );
+          
+          console.log(`✅ Manual check: Mining notification sent to user: ${userId}`);
+        } catch (notificationError) {
+          console.error('Error sending Telegram mining notification:', notificationError);
+        }
+      }
+    }
+  }
+
+  res.json({
+    miningCompleted,
+    rewardAmount: miningCompleted ? rewardAmount : 0,
+    message: miningCompleted ? 'Mining completed! Ready to claim.' : 'Mining in progress'
+  });
+});
+
 const startMining = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
-  // Check if user already has an active mining session
   const userResult = await db.query(`
     SELECT mining_session_start_time
     FROM users WHERE id = $1
@@ -281,7 +279,6 @@ const startMining = asyncHandler(async (req, res) => {
   const miningCycleHours = parseFloat(appSettings.MINING_CYCLE_HOURS || '4');
   const MINING_CYCLE_DURATION = miningCycleHours * 60 * 60 * 1000;
 
-  // If user has an active session that's not completed, return error
   if (user.mining_session_start_time) {
     const startTime = new Date(user.mining_session_start_time);
     const elapsed = new Date().getTime() - startTime.getTime();
@@ -292,10 +289,11 @@ const startMining = asyncHandler(async (req, res) => {
     }
   }
 
-  // Start new mining session
+  // Start new mining session and clear previous notification flag
   const query = `
     UPDATE users
     SET mining_session_start_time = NOW(),
+        last_notification_sent = NULL,
         last_activity = NOW()
     WHERE id = $1
     RETURNING id, username, email, zp_balance, social_capital_score,
@@ -309,7 +307,6 @@ const startMining = asyncHandler(async (req, res) => {
     throw new Error('User not found');
   }
 
-  // Return consistent response format with userData
   res.json({
     success: true,
     message: 'Mining started successfully',
@@ -318,7 +315,6 @@ const startMining = asyncHandler(async (req, res) => {
 });
 
 const getMiningConfig = asyncHandler(async (req, res) => {
-  // Get mining configuration from app_settings
   const settingsResult = await db.query(`
     SELECT setting_key, setting_value
     FROM app_settings
@@ -334,7 +330,6 @@ const getMiningConfig = asyncHandler(async (req, res) => {
 });
 
 const updateMiningSettings = asyncHandler(async (req, res) => {
-  // Check if user is admin
   if (req.user.role !== 'ADMIN') {
     res.status(403);
     throw new Error('Admin access required');
@@ -377,5 +372,5 @@ module.exports = {
   startMining,
   getMiningConfig,
   updateMiningSettings,
-  checkMiningCompletion // NEW: Export the new function
+  checkMiningCompletion
 };
