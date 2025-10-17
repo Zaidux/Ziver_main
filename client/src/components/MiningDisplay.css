@@ -1,6 +1,85 @@
 /* Mining Display Styles - Enhanced & Professional */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
+/* Added light mode and dark mode support */
+:root {
+  --dark-bg: #2a2a2a;
+  --dark-text: #ffffff;
+  --dark-text-secondary: #a5a5a5;
+  --dark-accent: #00ff80;
+  --light-bg: #f5f5f5;
+  --light-text: #1a1a1a;
+  --light-text-secondary: #666666;
+  --light-accent: #00c853;
+}
+
+body.light-mode .mining-display {
+  background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .header-title {
+  background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+body.light-mode .header-subtitle {
+  color: #666666;
+}
+
+body.light-mode .clock-face {
+  background: radial-gradient(circle, #f0f0f0 0%, #e8e8e8 100%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .clock-icon {
+  color: #666666;
+}
+
+body.light-mode .clock-icon.mining,
+body.light-mode .clock-icon.ready {
+  color: #00a040;
+}
+
+body.light-mode .zp-label {
+  color: #00a040;
+}
+
+body.light-mode .zp-value {
+  color: #1a1a1a;
+}
+
+body.light-mode .progress-indicator {
+  color: #00a040;
+}
+
+body.light-mode .progress-percentage {
+  color: #666666;
+}
+
+body.light-mode .mining-action-button {
+  background: linear-gradient(135deg, #00c853 0%, #00a040 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(0, 200, 83, 0.3), 0 0 0 1px rgba(0, 200, 83, 0.1);
+}
+
+body.light-mode .mining-action-button:hover:not(.disabled) {
+  box-shadow: 0 6px 24px rgba(0, 200, 83, 0.4), 0 0 0 1px rgba(0, 200, 83, 0.2);
+}
+
+body.light-mode .mining-action-button.disabled {
+  background: linear-gradient(135deg, #e0e0e0 0%, #d0d0d0 100%);
+  color: #999999;
+}
+
+body.light-mode .error-message {
+  color: #d32f2f;
+  background: rgba(211, 47, 47, 0.1);
+  border: 1px solid rgba(211, 47, 47, 0.2);
+}
+
 .mining-display {
   background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
   padding: 32px 24px;
