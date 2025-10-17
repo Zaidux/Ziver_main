@@ -5,7 +5,8 @@ const {
   getMiningStatus,
   startMining,
   getMiningConfig,
-  updateMiningSettings
+  updateMiningSettings,
+  checkMiningCompletion // Add this
 } = require('../controllers/miningController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -18,6 +19,11 @@ router.post('/claim', protect, claimReward);
 // @desc    Get current mining status and user data
 // @access  Private
 router.get('/status', protect, getMiningStatus);
+
+// @route   GET /api/mining/check-completion
+// @desc    Check if mining is complete (for manual checks)
+// @access  Private
+router.get('/check-completion', protect, checkMiningCompletion);
 
 // @route   POST /api/mining/start
 // @desc    Start a new mining session
