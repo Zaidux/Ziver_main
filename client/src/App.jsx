@@ -1,4 +1,3 @@
-[ec2-user@ip-172-31-32-236 src]$ cat App.jsx
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
