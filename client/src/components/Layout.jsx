@@ -105,54 +105,70 @@ const Layout = () => {
     <div className={`app-container ${navbarCollapsed ? "navbar-collapsed" : ""}`}>
       <header className="global-header">
         <div className="header-content">
+          {/* LEFT SIDE - Logo */}
           <div className="header-logo">
             <Zap className="logo-icon" size={22} />
             <span className="logo-text">ZIVER</span>
           </div>
 
+          {/* RIGHT SIDE - User Controls */}
           <div className="header-actions" ref={dropdownRef}>
-            <button
-              onClick={handleProfileClick}
-              className="profile-dropdown-button global"
-              aria-label="Open profile menu"
-            >
-              <span className="profile-avatar">{getUserAvatar()}</span>
-              <ChevronDownIcon size={16} className="profile-arrow" />
-            </button>
+            <div className="user-controls-container">
+              {/* Theme Toggle Button */}
+              <button
+                onClick={handleThemeToggle}
+                className="theme-toggle-button"
+                title={`Current theme: ${theme}`}
+                aria-label={`Switch theme (current: ${theme})`}
+              >
+                <ThemeIcon size={18} />
+              </button>
 
-            {showProfileDropdown && (
-              <div className="profile-dropdown-menu global">
-                <div className="dropdown-user-info">
-                  <div className="user-avatar-large">{getUserAvatar()}</div>
-                  <div className="user-details">
-                    <div className="user-name">{user?.username || 'User'}</div>
-                    <div className="user-email">{user?.email || 'user@example.com'}</div>
+              {/* Profile Dropdown Button */}
+              <button
+                onClick={handleProfileClick}
+                className="profile-dropdown-button"
+                aria-label="Open profile menu"
+              >
+                <span className="profile-avatar">{getUserAvatar()}</span>
+                <ChevronDownIcon size={16} className="profile-arrow" />
+              </button>
+
+              {/* Profile Dropdown Menu */}
+              {showProfileDropdown && (
+                <div className="profile-dropdown-menu">
+                  <div className="dropdown-user-info">
+                    <div className="user-avatar-large">{getUserAvatar()}</div>
+                    <div className="user-details">
+                      <div className="user-name">{user?.username || 'User'}</div>
+                      <div className="user-email">{user?.email || 'user@example.com'}</div>
+                    </div>
                   </div>
+                  <div className="dropdown-divider"></div>
+                  <button className="dropdown-item" onClick={() => handleMenuAction("profile")}>
+                    <User size={18} />
+                    <span>Profile</span>
+                  </button>
+                  <button className="dropdown-item" onClick={() => handleMenuAction("history")}>
+                    <History size={18} />
+                    <span>History</span>
+                  </button>
+                  <button className="dropdown-item" onClick={() => handleMenuAction("settings")}>
+                    <Settings size={18} />
+                    <span>Settings</span>
+                  </button>
+                  <button className="dropdown-item feedback" onClick={() => handleMenuAction("feedback")}>
+                    <MessageCircle size={18} />
+                    <span>Feedback</span>
+                  </button>
+                  <div className="dropdown-divider"></div>
+                  <button className="dropdown-item logout" onClick={() => handleMenuAction("logout")}>
+                    <LogOut size={18} />
+                    <span>Logout</span>
+                  </button>
                 </div>
-                <div className="dropdown-divider"></div>
-                <button className="dropdown-item" onClick={() => handleMenuAction("profile")}>
-                  <User size={18} />
-                  <span>Profile</span>
-                </button>
-                <button className="dropdown-item" onClick={() => handleMenuAction("history")}>
-                  <History size={18} />
-                  <span>History</span>
-                </button>
-                <button className="dropdown-item" onClick={() => handleMenuAction("settings")}>
-                  <Settings size={18} />
-                  <span>Settings</span>
-                </button>
-                <button className="dropdown-item feedback" onClick={() => handleMenuAction("feedback")}>
-                  <MessageCircle size={18} />
-                  <span>Feedback</span>
-                </button>
-                <div className="dropdown-divider"></div>
-                <button className="dropdown-item logout" onClick={() => handleMenuAction("logout")}>
-                  <LogOut size={18} />
-                  <span>Logout</span>
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </header>
