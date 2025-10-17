@@ -111,65 +111,70 @@ const Layout = () => {
             </div>
           </div>
 
-          <div className="header-right" ref={dropdownRef}>
-            {user && (
-              <div className="profile-section">
-                <button onClick={handleProfileClick} className="profile-dropdown-button" aria-label="Open profile menu">
-                  <span className="profile-avatar">{getUserAvatar()}</span>
-                  <span className="profile-name">{user.username}</span>
-                </button>
+          <div className="header-right">
+            {/* This is the new container that groups the profile and theme buttons.
+              The dropdownRef is moved here to properly handle outside clicks.
+            */}
+            <div className="user-controls-container" ref={dropdownRef}>
+              {user && (
+                <div className="profile-section">
+                  <button onClick={handleProfileClick} className="profile-dropdown-button" aria-label="Open profile menu">
+                    <span className="profile-avatar">{getUserAvatar()}</span>
+                    <span className="profile-name">{user.username}</span>
+                  </button>
 
-                {showProfileDropdown && (
-                  <div className="profile-dropdown-menu">
-                    <div className="dropdown-user-info">
-                      <div className="user-avatar-large">{getUserAvatar()}</div>
-                      <div className="user-details">
-                        <div className="user-name">{user.username}</div>
-                        <div className="user-email">{user.email}</div>
+                  {showProfileDropdown && (
+                    <div className="profile-dropdown-menu">
+                      <div className="dropdown-user-info">
+                        <div className="user-avatar-large">{getUserAvatar()}</div>
+                        <div className="user-details">
+                          <div className="user-name">{user.username}</div>
+                          <div className="user-email">{user.email}</div>
+                        </div>
                       </div>
+
+                      <div className="dropdown-divider"></div>
+
+                      <button className="dropdown-item" onClick={() => handleMenuAction("profile")}>
+                        <User size={18} />
+                        <span>Profile</span>
+                      </button>
+
+                      <button className="dropdown-item" onClick={() => handleMenuAction("history")}>
+                        <History size={18} />
+                        <span>History</span>
+                      </button>
+
+                      <button className="dropdown-item" onClick={() => handleMenuAction("settings")}>
+                        <Settings size={18} />
+                        <span>Settings</span>
+                      </button>
+
+                      <button className="dropdown-item feedback" onClick={() => handleMenuAction("feedback")}>
+                        <MessageCircle size={18} />
+                        <span>Feedback</span>
+                      </button>
+
+                      <div className="dropdown-divider"></div>
+
+                      <button className="dropdown-item logout" onClick={() => handleMenuAction("logout")}>
+                        <LogOut size={18} />
+                        <span>Logout</span>
+                      </button>
                     </div>
+                  )}
+                </div>
+              )}
 
-                    <div className="dropdown-divider"></div>
-
-                    <button className="dropdown-item" onClick={() => handleMenuAction("profile")}>
-                      <User size={18} />
-                      <span>Profile</span>
-                    </button>
-
-                    <button className="dropdown-item" onClick={() => handleMenuAction("history")}>
-                      <History size={18} />
-                      <span>History</span>
-                    </button>
-
-                    <button className="dropdown-item" onClick={() => handleMenuAction("settings")}>
-                      <Settings size={18} />
-                      <span>Settings</span>
-                    </button>
-
-                    <button className="dropdown-item feedback" onClick={() => handleMenuAction("feedback")}>
-                      <MessageCircle size={18} />
-                      <span>Feedback</span>
-                    </button>
-
-                    <div className="dropdown-divider"></div>
-
-                    <button className="dropdown-item logout" onClick={() => handleMenuAction("logout")}>
-                      <LogOut size={18} />
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <button
-              onClick={handleThemeToggle}
-              className="theme-toggle-button"
-              title={`Current theme: ${theme}`}
-              aria-label={`Switch theme (current: ${theme})`}
-            >
-              <ThemeIcon size={18} />
-            </button>
+              <button
+                onClick={handleThemeToggle}
+                className="theme-toggle-button"
+                title={`Current theme: ${theme}`}
+                aria-label={`Switch theme (current: ${theme})`}
+              >
+                <ThemeIcon size={18} />
+              </button>
+            </div>
           </div>
         </div>
       </header>
