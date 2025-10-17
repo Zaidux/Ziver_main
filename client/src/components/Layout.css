@@ -108,6 +108,28 @@ position: relative;
   font-size: 0.9rem;
 }
 
+.profile-dropdown-menu.global {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 0.5rem;
+  min-width: 200px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.dropdown-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #333;
+  margin-bottom: 0.5rem;
+}
+
 .profile-name {
 max-width: 120px;
 overflow: hidden;
