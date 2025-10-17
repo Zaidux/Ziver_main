@@ -24,11 +24,14 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  flex: 1;
 }
 
 .header-right {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex: 1;
 }
 
 /* Enhanced logo styling */
@@ -65,15 +68,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 50px;
-  padding: 4px 8px;
-  transition: border-color 0.2s ease;
-}
-
-.user-controls-container:hover {
-  border-color: #555;
 }
 
 /* Profile Section */
@@ -87,17 +81,18 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: transparent;
-  border: none;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
   border-radius: 50px;
   color: #fff;
   cursor: pointer;
-  padding: 4px 8px;
-  transition: background-color 0.2s ease;
+  padding: 6px 12px 6px 6px;
+  transition: all 0.2s ease;
 }
 
 .profile-dropdown-button:hover {
   background-color: #3d3d3d;
+  border-color: #555;
 }
 
 /* Profile Avatar */
@@ -113,6 +108,7 @@
   font-weight: 700;
   font-size: 0.9rem;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .profile-name {
@@ -124,31 +120,41 @@
   font-size: 0.9rem;
 }
 
+.profile-chevron {
+  color: #888;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.profile-dropdown-button:hover .profile-chevron {
+  color: #fff;
+}
+
 /* Theme Toggle Button */
 .theme-toggle-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: transparent;
-  border: none;
+  width: 44px;
+  height: 44px;
+  background: #2a2a2a;
+  border: 1px solid #444;
   border-radius: 50%;
   color: var(--text-primary);
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .theme-toggle-button:hover {
   background-color: #3d3d3d;
+  border-color: #555;
 }
 
 /* Enhanced Dropdown Menu */
 .profile-dropdown-menu {
   position: absolute;
-  top: calc(100% + 12px);
+  top: calc(100% + 8px);
   right: 0;
-  left: auto;
   background: var(--card-bg, #1e1e1e);
   border: 1px solid var(--border-color, #333);
   border-radius: 16px;
@@ -319,10 +325,11 @@
     display: none;
   }
   .profile-dropdown-button {
-    padding: 4px;
+    padding: 6px;
   }
   .profile-dropdown-menu {
     min-width: 260px;
+    right: -8px;
   }
 }
 
