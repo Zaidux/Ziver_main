@@ -14,7 +14,7 @@ const claimReward = asyncHandler(async (req, res) => {
   // Get user data with ALL required fields from database
   const userResult = await db.query(`
     SELECT mining_session_start_time, last_claim_time, daily_streak_count,
-           zp_balance, social_capital_score, last_notification_sent
+           zp_balance, social_capital_score, last_notification_sent, username
     FROM users WHERE id = $1
   `, [userId]);
 
@@ -110,12 +110,19 @@ const claimReward = asyncHandler(async (req, res) => {
 
     await client.query('COMMIT');
 
-    // Send Telegram notification that reward was CLAIMED
+    // FIXED: Send Telegram notification that reward was CLAIMED
     try {
-      await sendMiningClaimedNotification(userId, zpToAdd);
-      console.log(`💰 Telegram mining claimed notification sent to user: ${userId}`);
+      console.log(`💰 Attempting to send mining claimed notification to user: ${userId}`);
+      const notificationSent = await sendMiningClaimedNotification(userId, zpToAdd);
+      
+      if (notificationSent) {
+        console.log(`✅ Telegram mining claimed notification sent successfully to user: ${userId}`);
+      } else {
+        console.log(`⏭️ No Telegram notification sent (user may not have Telegram connected or alerts disabled): ${userId}`);
+      }
     } catch (notificationError) {
-      console.error('Error sending Telegram mining claimed notification:', notificationError);
+      console.error('❌ Error sending Telegram mining claimed notification:', notificationError);
+      // Don't throw error - continue with successful claim response
     }
 
     res.json({
@@ -175,7 +182,7 @@ const getMiningStatus = asyncHandler(async (req, res) => {
     if (elapsed >= MINING_CYCLE_DURATION) {
       miningStatus.canClaim = true;
       miningStatus.progress = 1;
-      
+
       // REMOVED: Telegram notification from here to prevent spam
       // The background checker will handle notifications automatically
     } else {
@@ -233,17 +240,18 @@ const checkMiningCompletion = asyncHandler(async (req, res) => {
 
       if (shouldSendNotification) {
         try {
-          await sendMiningNotification(userId, rewardAmount);
-          
-          // Update last_notification_sent
-          await db.query(
-            'UPDATE users SET last_notification_sent = NOW() WHERE id = $1',
-            [userId]
-          );
-          
-          console.log(`✅ Manual check: Mining notification sent to user: ${userId}`);
+          const notificationSent = await sendMiningNotification(userId, rewardAmount);
+
+          if (notificationSent) {
+            // Update last_notification_sent
+            await db.query(
+              'UPDATE users SET last_notification_sent = NOW() WHERE id = $1',
+              [userId]
+            );
+            console.log(`✅ Manual check: Mining notification sent to user: ${userId}`);
+          }
         } catch (notificationError) {
-          console.error('Error sending Telegram mining notification:', notificationError);
+          console.error('❌ Error sending Telegram mining notification:', notificationError);
         }
       }
     }
