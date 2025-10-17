@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
 const setWebhook = require('./setupTelegramWebhook');
+const backgroundMiningChecker = require('./services/backgroundMiningChecker');
+const backgroundCheckerRoutes = require('./routes/backgroundCheckerRoutes');
 
 // Import route files
 const authRoutes = require('./routes/authRoutes');
@@ -153,6 +155,20 @@ app.use('/api/system', systemStatusRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/transactions', transactionRoutes); // NEW ROUTES ADDED
+app.use('/api/background-checker', backgroundCheckerRoutes);
+
+// Optional: Add graceful shutdown
+process.on('SIGINT', () => {
+  console.log('🛑 Received SIGINT. Shutting down gracefully...');
+  backgroundMiningChecker.stop();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('🛑 Received SIGTERM. Shutting down gracefully...');
+  backgroundMiningChecker.stop();
+  process.exit(0);
+});
 
 // Test Database Connection
 const checkDbConnection = async () => {
@@ -339,6 +355,9 @@ app.use((error, req, res, next) => {
     error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
   });
 });
+
+// Start background mining checker when server starts
+backgroundMiningChecker.start();
 
 // Start the Server
 initializeApp().catch(error => {
