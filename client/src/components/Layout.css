@@ -1,25 +1,19 @@
 /* Global Header Styles - Enhanced */
 .global-header {
-  background: var(--card-bg);
+  width: 100%;
+  background-color: var(--bg-primary);
   border-bottom: 1px solid var(--border-color);
-  padding: 0 1rem;
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  height: 64px;
+  z-index: 100;
 }
 
 .header-content {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* logo left, profile right */
   align-items: center;
-  max-width: 1400px;
-  margin: 0 auto;
-  height: 100%;
+  padding: 0 16px;
+  height: 60px;
 }
 
 /* Improved header left section */
@@ -32,8 +26,8 @@
 .header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
-  position: relative;
+  gap: 10px;
+  justify-content: flex-end;
 }
 
 /* Enhanced logo styling */
@@ -41,16 +35,17 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: var(--primary);
-  text-decoration: none;
-  letter-spacing: -0.02em;
 }
 
 .logo-icon {
-  color: var(--primary);
-  animation: logoPulse 3s ease-in-out infinite;
+  font-size: 1.4rem;
+  color: var(--accent-color, #00ff80);
+}
+
+.logo-text {
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--text-primary, #00ff80);
 }
 
 @keyframes logoPulse {
