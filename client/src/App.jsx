@@ -21,11 +21,9 @@ import LoadingScreen from './components/LoadingScreen';
 
 // Profile-related imports
 import ProfilePage from './pages/profile/pages/ProfilePage';
-
-// NEW: Import Feedback Page
 import FeedbackPage from './pages/profile/pages/FeedbackPage';
 
-// Settings Pages (thin wrappers)
+// Settings Pages
 import SettingsPage from './pages/profile/pages/settings/SettingsPage';
 import AppearanceSettingsPage from './pages/profile/pages/settings/AppearanceSettingsPage';
 import SecuritySettingsPage from './pages/profile/pages/settings/SecuritySettingsPage';
@@ -41,77 +39,32 @@ const PlatformRouter = () => {
   const [isLockdown, setIsLockdown] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Combined loading state
   const isLoading = authLoading || platformLoading || isInitializing;
 
   // Initialize app and check system status
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Check lockdown status
         const response = await api.get('/system/status');
         const systemData = response.data;
         setIsLockdown(systemData.lockdownMode);
 
-        // Handle lockdown redirects
         if (systemData.lockdownMode && user && user.role !== 'ADMIN' && location.pathname !== '/lockdown') {
-          console.log('🔒 Redirecting to lockdown page');
           navigate('/lockdown', { replace: true });
         }
 
         if (!systemData.lockdownMode && location.pathname === '/lockdown') {
-          console.log('🔓 Lockdown lifted, redirecting to app');
           navigate('/', { replace: true });
         }
       } catch (error) {
         console.error('Error initializing app:', error);
       } finally {
-        // Small delay for better UX
         setTimeout(() => setIsInitializing(false), 1000);
       }
     };
 
     initializeApp();
   }, [user, navigate, location]);
-
-  // Heartbeat and lockdown monitoring for authenticated users
-  useEffect(() => {
-    let intervalId;
-    let lockdownInterval;
-
-    const doHeartbeat = async () => {
-      try {
-        await api.post('/user/heartbeat');
-      } catch (error) {
-        if (error.response?.status === 401) {
-          logout();
-        }
-      }
-    };
-
-    const monitorLockdown = async () => {
-      try {
-        const response = await api.get('/system/status');
-        const systemData = response.data;
-        setIsLockdown(systemData.lockdownMode);
-      } catch (error) {
-        console.error('Error monitoring lockdown:', error);
-      }
-    };
-
-    if (user) {
-      // Start heartbeat (every minute)
-      intervalId = setInterval(doHeartbeat, 60000);
-
-      // Monitor lockdown status (every 30 seconds)
-      lockdownInterval = setInterval(monitorLockdown, 30000);
-    }
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-      if (lockdownInterval) clearInterval(lockdownInterval);
-    };
-  }, [user, logout]);
 
   // Show loading screen during initial app loading
   if (isLoading) {
@@ -123,8 +76,6 @@ const PlatformRouter = () => {
 
     return <LoadingScreen message={loadingMessage} />;
   }
-
-  console.log('Platform detection:', { platform, isWeb, isTelegram, user: !!user, path: location.pathname });
 
   // Show landing page only for web users who are NOT logged in AND NOT coming from Telegram
   const isAuthRoute = ['/login', '/register', '/lockdown'].includes(location.pathname);
@@ -141,26 +92,40 @@ const PlatformRouter = () => {
     );
   }
 
-  // For Telegram, mobile app, authenticated users, or specific auth routes, show the app
-  return <AppRoutes user={user} isLockdown={isLockdown} />;
+  // For authenticated users or specific auth routes
+  return (
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/lockdown" element={<LockdownPage />} />
+
+      {/* Show landing page at root for non-authenticated web users */}
+      {!user && (
+        <Route path="/" element={<LandingPage />} />
+      )}
+
+      {/* Protected Routes with Layout */}
+      <Route 
+        path="/*" 
+        element={
+          <ProtectedRoute>
+            <LayoutWrapper isLockdown={isLockdown} user={user} />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Fallback route */}
+      <Route path="*" element={<Navigate to={user ? "/" : "/login"} replace />} />
+    </Routes>
+  );
 };
 
-// Regular app routes
-const AppRoutes = ({ user, isLockdown }) => (
-  <Routes>
-    {/* Public Routes */}
-    <Route path="/register" element={<RegisterPage />} />
-    <Route path="/login" element={<LoginPage />} />
-    <Route path="/lockdown" element={<LockdownPage />} />
-
-    {/* Show landing page at root for non-authenticated web users */}
-    {!user && (
-      <Route path="/" element={<LandingPage />} />
-    )}
-
-    {/* Protected Routes - Show Layout for all authenticated users */}
-    <Route element={<ProtectedRoute />}>
-      <Route element={<Layout />}>
+// Layout wrapper component
+const LayoutWrapper = ({ isLockdown, user }) => {
+  return (
+    <Layout>
+      <Routes>
         {/* Only show these routes if not in lockdown OR user is admin */}
         {(!isLockdown || user?.role === 'ADMIN') ? (
           <>
@@ -168,22 +133,14 @@ const AppRoutes = ({ user, isLockdown }) => (
             <Route path="/mining" element={<MiningHub />} />
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/referrals" element={<ReferralsPage />} />
-
-            {/* Profile Page */}
             <Route path="/profile" element={<ProfilePage />} />
-
-            // In your App.jsx, update the feedback route:
             <Route path="/feedback" element={<FeedbackPage />} />
-
-            {/* New Settings Pages */}
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/settings/appearance" element={<AppearanceSettingsPage />} />
             <Route path="/settings/security" element={<SecuritySettingsPage />} />
             <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
             <Route path="/settings/account" element={<AccountSettingsPage />} />
             <Route path="/history" element={<TransactionHistoryPage />} />
-
-            {/* Updated Coming Soon routes with admin bypass */}
             <Route path="/job-marketplace" element={
               <ComingSoonPage featureName="Marketplace">
                 <div>Real Marketplace Content Here</div>
@@ -196,16 +153,13 @@ const AppRoutes = ({ user, isLockdown }) => (
             } />
           </>
         ) : (
-          // If in lockdown and not admin, show lockdown page within layout
+          // If in lockdown and not admin, show lockdown page
           <Route path="*" element={<LockdownPage />} />
         )}
-      </Route>
-    </Route>
-
-    {/* Fallback route for 404 errors */}
-    <Route path="*" element={<Navigate to={user ? "/" : "/login"} replace />} />
-  </Routes>
-);
+      </Routes>
+    </Layout>
+  );
+};
 
 function App() {
   return (
