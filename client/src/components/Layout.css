@@ -1,26 +1,32 @@
-
 /* Global Header Styles - Enhanced */
 .global-header {
-background: var(--card-bg);
-border-bottom: 1px solid var(--border-color);
-padding: 0 1rem;
-position: fixed;
-top: 0;
-left: 0;
-right: 0;
-z-index: 1000;
-backdrop-filter: blur(12px);
-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-height: 64px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+  padding: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .header-content {
-display: flex;
-justify-content: space-between;
-align-items: center;
-max-width: 1400px;
-margin: 0 auto;
-height: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #00ff00;
+}
+
+.logo-icon {
+  font-size: 1.75rem;
 }
 
 /* Improved header left section */
