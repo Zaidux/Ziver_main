@@ -2,8 +2,8 @@
 .global-header {
   background: #1a1a1a;
   border-bottom: 1px solid #333;
-  padding: 0 1rem; /* Adjusted padding */
-  height: 64px; /* Set a fixed height */
+  padding: 0 1rem;
+  height: 64px;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -16,6 +16,7 @@
   max-width: 1200px;
   margin: 0 auto;
   height: 100%;
+  padding: 0 1rem;
 }
 
 /* Improved header sections */
@@ -59,18 +60,14 @@
   }
 }
 
-/*
-  --- NEW & UPDATED STYLES FOR RIGHT-SIDE CONTROLS ---
-*/
-
-/* This is the new container that creates the pill shape */
+/* User Controls Container */
 .user-controls-container {
   display: flex;
   align-items: center;
-  gap: 4px; /* Space between profile and theme button */
+  gap: 4px;
   background-color: #2a2a2a;
   border: 1px solid #444;
-  border-radius: 50px; /* This creates the pill shape */
+  border-radius: 50px;
   padding: 4px;
   transition: border-color 0.2s ease;
 }
@@ -79,43 +76,43 @@
   border-color: #555;
 }
 
-/* The profile section now lives inside the container */
+/* Profile Section */
 .profile-section {
   position: relative;
   display: flex;
 }
 
-/* The profile button is restyled to be transparent */
+/* Profile Dropdown Button */
 .profile-dropdown-button {
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: transparent; /* Changed */
-  border: none; /* Changed */
+  background-color: transparent;
+  border: none;
   border-radius: 50px;
   color: #fff;
   cursor: pointer;
-  padding: 4px 12px 4px 4px; /* Adjusted padding */
+  padding: 4px 12px 4px 4px;
   transition: background-color 0.2s ease;
 }
 
 .profile-dropdown-button:hover {
-  background-color: #3d3d3d; /* Hover effect */
+  background-color: #3d3d3d;
 }
 
-/* The profile avatar is restyled to match the target image */
+/* Profile Avatar */
 .profile-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #1a1a1a; /* Changed to dark background */
-  color: #00ff00; /* Changed to green text */
+  background: #1a1a1a;
+  color: #00ff00;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   font-size: 0.9rem;
-  overflow: hidden; /* Ensures image inside is clipped */
+  overflow: hidden;
 }
 
 .profile-name {
@@ -127,35 +124,53 @@
   font-size: 0.9rem;
 }
 
-/* Theme toggle button is restyled to be a transparent circle */
+/* Profile Toggle Button */
+.profile-toggle-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #00ff00;
+  border: none;
+  border-radius: 50%;
+  color: #1a1a1a;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: background-color 0.2s ease;
+  margin-left: 4px;
+}
+
+.profile-toggle-button:hover {
+  background-color: #00cc00;
+}
+
+/* Theme Toggle Button */
 .theme-toggle-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px; /* Adjusted size */
-  height: 36px; /* Adjusted size */
-  background: transparent; /* Changed */
-  border: none; /* Changed */
-  border-radius: 50%; /* Makes it a circle */
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
   color: var(--text-primary);
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
 
 .theme-toggle-button:hover {
-  background-color: #3d3d3d; /* Hover effect */
+  background-color: #3d3d3d;
 }
-
-/*
-  --- END OF NEW & UPDATED STYLES ---
-*/
 
 /* Enhanced Dropdown Menu */
 .profile-dropdown-menu {
   position: absolute;
-  top: calc(100% + 12px); /* Increased spacing from top */
-  right: 0; /* Aligns to the right of the container */
-  left: auto; /* Overrides previous 'left: 0' */
+  top: calc(100% + 12px);
+  right: -8px;
+  left: auto;
   background: var(--card-bg, #1e1e1e);
   border: 1px solid var(--border-color, #333);
   border-radius: 16px;
@@ -267,8 +282,6 @@
   border-radius: 50%;
 }
 
-/* --- The rest of your CSS file remains the same --- */
-
 /* Improved Navbar Container */
 .navbar-container {
   position: fixed;
@@ -314,7 +327,7 @@
 /* Main Content Area */
 .main-content {
   min-height: 100vh;
-  padding-top: 64px; /* Matches header height */
+  padding-top: 64px;
   padding-bottom: 90px;
   background-color: var(--bg-primary);
 }
@@ -322,20 +335,20 @@
   padding-bottom: 40px;
 }
 
-/* Media Queries (unchanged) */
+/* Media Queries */
 @media (max-width: 480px) {
   .profile-name {
-    display: none; /* Hide username on very small screens to save space */
+    display: none;
   }
   .profile-dropdown-button {
-    padding: 4px; /* Adjust padding when name is hidden */
+    padding: 4px;
   }
   .profile-dropdown-menu {
     min-width: 260px;
   }
 }
 
-/* Safe area support (unchanged) */
+/* Safe area support */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .navbar-container { padding-bottom: env(safe-area-inset-bottom); }
   .main-content { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
