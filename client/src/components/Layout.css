@@ -509,20 +509,3 @@ body {
   margin: 0;
   padding: 0;
 }
-
-/* DEBUG STYLES - REMOVE AFTER FIXING */
-.global-header {
-  border: 2px solid red !important;
-}
-
-.header-content {
-  border: 2px solid blue !important;
-}
-
-.header-logo {
-  border: 2px solid green !important;
-}
-
-.header-actions {
-  border: 2px solid yellow !important;
-}
