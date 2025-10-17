@@ -93,42 +93,29 @@ const PlatformRouter = () => {
   }
 
   // For authenticated users or specific auth routes
-  return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/lockdown" element={<LockdownPage />} />
-
-      {/* Show landing page at root for non-authenticated web users */}
-      {!user && (
-        <Route path="/" element={<LandingPage />} />
-      )}
-
-      {/* Protected Routes with Layout */}
-      <Route 
-        path="/*" 
-        element={
-          <ProtectedRoute>
-            <LayoutWrapper isLockdown={isLockdown} user={user} />
-          </ProtectedRoute>
-        } 
-      />
-
-      {/* Fallback route */}
-      <Route path="*" element={<Navigate to={user ? "/" : "/login"} replace />} />
-    </Routes>
-  );
+  return <AppRoutes user={user} isLockdown={isLockdown} />;
 };
 
-// Layout wrapper component
-const LayoutWrapper = ({ isLockdown, user }) => {
-  return (
-    <Layout>
-      <Routes>
+// Regular app routes - SIMPLIFIED VERSION
+const AppRoutes = ({ user, isLockdown }) => (
+  <Routes>
+    {/* Public Routes */}
+    <Route path="/register" element={<RegisterPage />} />
+    <Route path="/login" element={<LoginPage />} />
+    <Route path="/lockdown" element={<LockdownPage />} />
+
+    {/* Show landing page at root for non-authenticated web users */}
+    {!user && (
+      <Route path="/" element={<LandingPage />} />
+    )}
+
+    {/* Protected Routes - Use the original structure that was working */}
+    <Route element={<ProtectedRoute />}>
+      <Route element={<Layout />}>
         {/* Only show these routes if not in lockdown OR user is admin */}
         {(!isLockdown || user?.role === 'ADMIN') ? (
           <>
+            <Route index element={<MiningHub />} />
             <Route path="/" element={<MiningHub />} />
             <Route path="/mining" element={<MiningHub />} />
             <Route path="/tasks" element={<TasksPage />} />
@@ -153,13 +140,16 @@ const LayoutWrapper = ({ isLockdown, user }) => {
             } />
           </>
         ) : (
-          // If in lockdown and not admin, show lockdown page
+          // If in lockdown and not admin, show lockdown page within layout
           <Route path="*" element={<LockdownPage />} />
         )}
-      </Routes>
-    </Layout>
-  );
-};
+      </Route>
+    </Route>
+
+    {/* Fallback route for 404 errors */}
+    <Route path="*" element={<Navigate to={user ? "/" : "/login"} replace />} />
+  </Routes>
+);
 
 function App() {
   return (
