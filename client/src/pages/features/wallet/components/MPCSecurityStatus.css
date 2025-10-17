@@ -1,9 +1,44 @@
+/* Added CSS variables for light and dark mode support */
+:root {
+  --bg-primary-dark: #0f0f0f;
+  --bg-primary-light: #ffffff;
+  --bg-secondary-dark: #1a1a1a;
+  --bg-secondary-light: #f5f5f5;
+  --text-primary-dark: #ffffff;
+  --text-primary-light: #1a1a1a;
+  --text-secondary-dark: #888888;
+  --text-secondary-light: #666666;
+  --primary: #00ff80;
+  --primary-alpha-dark: rgba(0, 255, 128, 0.1);
+  --primary-alpha-light: rgba(0, 128, 64, 0.1);
+}
+
+/* Light mode */
+body.light-mode {
+  --bg-primary: var(--bg-primary-light);
+  --bg-secondary: var(--bg-secondary-light);
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+  --primary-alpha: var(--primary-alpha-light);
+}
+
+/* Dark mode (default) */
+body.dark-mode,
+body {
+  --bg-primary: var(--bg-primary-dark);
+  --bg-secondary: var(--bg-secondary-dark);
+  --text-primary: var(--text-primary-dark);
+  --text-secondary: var(--text-secondary-dark);
+  --primary-alpha: var(--primary-alpha-dark);
+}
+
 .mpc-security-status {
-  background: rgba(0, 255, 128, 0.05);
-  border: 1px solid rgba(0, 255, 128, 0.2);
+  background: var(--primary-alpha);
+  border: 1px solid var(--primary-alpha);
   border-radius: 16px;
   padding: 24px;
   margin-bottom: 24px;
+  transition: background-color 0.3s ease;
 }
 
 .security-header {
@@ -27,7 +62,7 @@
 }
 
 .security-message {
-  color: #a0a0a0;
+  color: var(--text-secondary);
   font-size: 14px;
   margin: 0;
 }
@@ -41,7 +76,7 @@
 
 .shard-card {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(0, 255, 128, 0.2);
+  border: 1px solid var(--primary-alpha);
   border-radius: 12px;
   padding: 16px;
   text-align: center;
@@ -63,13 +98,13 @@
 .shard-card h3 {
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
 }
 
 .shard-location {
   font-size: 12px;
-  color: #888;
+  color: var(--text-secondary);
   margin: 0 0 12px 0;
 }
 
@@ -105,9 +140,9 @@
   align-items: flex-start;
   gap: 12px;
   padding: 12px;
-  background: rgba(0, 255, 128, 0.05);
+  background: var(--primary-alpha);
   border-radius: 8px;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
