@@ -18,7 +18,7 @@ const systemStatusRoutes = require('./routes/systemStatusRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const transactionRoutes = require('./routes/transactionRoutes'); // NEW ROUTE
-
+const announcementRoutes = require('./routes/announcementRoutes');
 const TaskValidation = require('./models/TaskValidation');
 
 const app = express();
@@ -156,6 +156,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/transactions', transactionRoutes); // NEW ROUTES ADDED
 app.use('/api/background-checker', backgroundCheckerRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 // Optional: Add graceful shutdown
 process.on('SIGINT', () => {
