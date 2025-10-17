@@ -7,7 +7,7 @@ const { admin } = require('../middleware/adminMiddleware');
 // @route   POST /api/background-checker/start
 // @desc    Start background mining checker
 // @access  Private/Admin
-router.post('/start', protect, adminOnly, (req, res) => {
+router.post('/start', protect, admin, (req, res) => {
   try {
     backgroundMiningChecker.start();
     res.json({
@@ -27,7 +27,7 @@ router.post('/start', protect, adminOnly, (req, res) => {
 // @route   POST /api/background-checker/stop
 // @desc    Stop background mining checker
 // @access  Private/Admin
-router.post('/stop', protect, adminOnly, (req, res) => {
+router.post('/stop', protect, admin, (req, res) => {
   try {
     backgroundMiningChecker.stop();
     res.json({
@@ -47,7 +47,7 @@ router.post('/stop', protect, adminOnly, (req, res) => {
 // @route   POST /api/background-checker/manual-check
 // @desc    Manually trigger a mining status check
 // @access  Private/Admin
-router.post('/manual-check', protect, adminOnly, async (req, res) => {
+router.post('/manual-check', protect, admin, async (req, res) => {
   try {
     await backgroundMiningChecker.manualCheck();
     res.json({
@@ -67,7 +67,7 @@ router.post('/manual-check', protect, adminOnly, async (req, res) => {
 // @route   GET /api/background-checker/status
 // @desc    Get background checker status
 // @access  Private/Admin
-router.get('/status', protect, adminOnly, (req, res) => {
+router.get('/status', protect, admin, (req, res) => {
   try {
     res.json({
       success: true,
