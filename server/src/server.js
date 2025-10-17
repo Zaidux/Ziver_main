@@ -3,8 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
 const setWebhook = require('./setupTelegramWebhook');
-const backgroundMiningChecker = require('./services/backgroundMiningChecker');
-const backgroundCheckerRoutes = require('./routes/backgroundCheckerRoutes');
 
 // Import route files
 const authRoutes = require('./routes/authRoutes');
@@ -17,8 +15,10 @@ const telegramRoutes = require('./routes/telegramRoutes');
 const systemStatusRoutes = require('./routes/systemStatusRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
-const transactionRoutes = require('./routes/transactionRoutes'); // NEW ROUTE
+const transactionRoutes = require('./routes/transactionRoutes');
+const backgroundCheckerRoutes = require('./routes/backgroundCheckerRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
+
 const TaskValidation = require('./models/TaskValidation');
 
 const app = express();
@@ -26,14 +26,15 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Add this after your middleware but before routes
 const path = require('path');
 const fs = require('fs');
 
 // Create uploads directory if it doesn't exist - FIX THE PATH
-const uploadsDir = path.join(__dirname, '../uploads'); // Changed from './uploads'
+const uploadsDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
   console.log('📁 Created uploads directory:', uploadsDir);
@@ -53,14 +54,14 @@ app.use('/api/feedback', (req, res, next) => {
       contentLength: req.headers['content-length'],
       authorization: req.headers.authorization ? 'Present' : 'Missing'
     });
-    
+
     // Store the original response methods
     const originalSend = res.send;
     const originalJson = res.json;
     const originalEnd = res.end;
-    
+
     let responseSent = false;
-    
+
     // Override response methods to catch all response types
     res.send = function(data) {
       if (!responseSent) {
@@ -73,7 +74,7 @@ app.use('/api/feedback', (req, res, next) => {
       }
       originalSend.apply(this, arguments);
     };
-    
+
     res.json = function(data) {
       if (!responseSent) {
         console.log('📤 Response sent via res.json():', {
@@ -84,7 +85,7 @@ app.use('/api/feedback', (req, res, next) => {
       }
       originalJson.apply(this, arguments);
     };
-    
+
     res.end = function(data) {
       if (!responseSent) {
         console.log('📤 Response sent via res.end():', {
@@ -95,7 +96,7 @@ app.use('/api/feedback', (req, res, next) => {
       }
       originalEnd.apply(this, arguments);
     };
-    
+
     // Log when the request completes
     res.on('finish', () => {
       console.log('✅ FEEDBACK REQUEST COMPLETED ==========\n');
@@ -154,22 +155,9 @@ app.use('/api/telegram', telegramRoutes);
 app.use('/api/system', systemStatusRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/feedback', feedbackRoutes);
-app.use('/api/transactions', transactionRoutes); // NEW ROUTES ADDED
+app.use('/api/transactions', transactionRoutes);
 app.use('/api/background-checker', backgroundCheckerRoutes);
 app.use('/api/announcements', announcementRoutes);
-
-// Optional: Add graceful shutdown
-process.on('SIGINT', () => {
-  console.log('🛑 Received SIGINT. Shutting down gracefully...');
-  backgroundMiningChecker.stop();
-  process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-  console.log('🛑 Received SIGTERM. Shutting down gracefully...');
-  backgroundMiningChecker.stop();
-  process.exit(0);
-});
 
 // Test Database Connection
 const checkDbConnection = async () => {
@@ -274,21 +262,20 @@ const initializeFeedbackSystem = async () => {
       `);
       console.log('✅ Feedback table created successfully');
     } else {
-      // ✅ Check if all required columns exist
       const columnsCheck = await db.query(`
         SELECT column_name 
         FROM information_schema.columns 
         WHERE table_name = 'feedback'
       `);
-      
+
       const existingColumns = columnsCheck.rows.map(row => row.column_name);
       const requiredColumns = ['attachments', 'zp_reward', 'seb_reward', 'admin_notes', 'rewarded_at'];
-      
+
       const missingColumns = requiredColumns.filter(col => !existingColumns.includes(col));
-      
+
       if (missingColumns.length > 0) {
         console.log('🔧 Adding missing columns to feedback table:', missingColumns);
-        
+
         for (const column of missingColumns) {
           try {
             if (column === 'attachments') {
@@ -306,7 +293,7 @@ const initializeFeedbackSystem = async () => {
           }
         }
       }
-      
+
       console.log('✅ Feedback table schema is up to date');
     }
   } catch (error) {
@@ -329,6 +316,11 @@ const initializeApp = async () => {
   await initializeSettingsSystem();
   await initializeFeedbackSystem();
 
+  // Import and start background mining checker AFTER database is connected
+  const backgroundMiningChecker = require('./services/backgroundMiningChecker');
+  backgroundMiningChecker.start();
+  console.log('🚀 Background mining checker started');
+
   if (process.env.TELEGRAM_BOT_TOKEN) {
     console.log('🤖 Setting up Telegram webhook...');
     await setWebhook();
@@ -340,8 +332,25 @@ const initializeApp = async () => {
     console.log(`🎉 Server is running on port ${PORT}`);
     console.log(`🔗 Available routes:`);
     console.log(`   POST /api/feedback - Submit feedback`);
+    console.log(`   GET  /api/background-checker/status - Check background checker status`);
+    console.log(`   POST /api/announcements/send - Send Telegram announcements`);
   });
 };
+
+// Optional: Add graceful shutdown
+process.on('SIGINT', () => {
+  console.log('🛑 Received SIGINT. Shutting down gracefully...');
+  const backgroundMiningChecker = require('./services/backgroundMiningChecker');
+  backgroundMiningChecker.stop();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('🛑 Received SIGTERM. Shutting down gracefully...');
+  const backgroundMiningChecker = require('./services/backgroundMiningChecker');
+  backgroundMiningChecker.stop();
+  process.exit(0);
+});
 
 // Catch-all 404 Handler
 app.use((req, res, next) => {
@@ -356,9 +365,6 @@ app.use((error, req, res, next) => {
     error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
   });
 });
-
-// Start background mining checker when server starts
-backgroundMiningChecker.start();
 
 // Start the Server
 initializeApp().catch(error => {
