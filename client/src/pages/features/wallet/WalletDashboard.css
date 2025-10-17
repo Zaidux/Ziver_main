@@ -1,7 +1,54 @@
+/* Added CSS variables for light and dark mode support */
+:root {
+  --bg-primary-dark: #0f0f0f;
+  --bg-primary-light: #ffffff;
+  --bg-secondary-dark: #1a1a1a;
+  --bg-secondary-light: #f5f5f5;
+  --bg-tertiary-dark: #2a2a2a;
+  --bg-tertiary-light: #e8e8e8;
+  --text-primary-dark: #ffffff;
+  --text-primary-light: #1a1a1a;
+  --text-secondary-dark: #a0a0a0;
+  --text-secondary-light: #666666;
+  --border-dark: rgba(0, 255, 128, 0.2);
+  --border-light: rgba(0, 128, 64, 0.2);
+  --primary: #00ff80;
+  --primary-alpha-dark: rgba(0, 255, 128, 0.1);
+  --primary-alpha-light: rgba(0, 128, 64, 0.1);
+  --card-bg-dark: #1a1a1a;
+  --card-bg-light: #f9f9f9;
+}
+
+/* Light mode */
+body.light-mode {
+  --bg-primary: var(--bg-primary-light);
+  --bg-secondary: var(--bg-secondary-light);
+  --bg-tertiary: var(--bg-tertiary-light);
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+  --border-color: var(--border-light);
+  --primary-alpha: var(--primary-alpha-light);
+  --card-bg: var(--card-bg-light);
+}
+
+/* Dark mode (default) */
+body.dark-mode,
+body {
+  --bg-primary: var(--bg-primary-dark);
+  --bg-secondary: var(--bg-secondary-dark);
+  --bg-tertiary: var(--bg-tertiary-dark);
+  --text-primary: var(--text-primary-dark);
+  --text-secondary: var(--text-secondary-dark);
+  --border-color: var(--border-dark);
+  --primary-alpha: var(--primary-alpha-dark);
+  --card-bg: var(--card-bg-dark);
+}
+
 .wallet-dashboard {
   min-height: 100vh;
   background: var(--bg-primary);
   color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .wallet-content {
