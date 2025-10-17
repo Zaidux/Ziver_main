@@ -110,62 +110,56 @@ const Layout = () => {
               <span className="logo-text">ZIVER</span>
             </div>
           </div>
-
           <div className="header-right">
-            {/* This is the new container that groups the profile and theme buttons.
-              The dropdownRef is moved here to properly handle outside clicks.
-            */}
             <div className="user-controls-container" ref={dropdownRef}>
-              {user && (
-                <div className="profile-section">
-                  <button onClick={handleProfileClick} className="profile-dropdown-button" aria-label="Open profile menu">
-                    <span className="profile-avatar">{getUserAvatar()}</span>
-                    <span className="profile-name">{user.username}</span>
-                  </button>
-
-                  {showProfileDropdown && (
-                    <div className="profile-dropdown-menu">
-                      <div className="dropdown-user-info">
-                        <div className="user-avatar-large">{getUserAvatar()}</div>
-                        <div className="user-details">
-                          <div className="user-name">{user.username}</div>
-                          <div className="user-email">{user.email}</div>
-                        </div>
-                      </div>
-
-                      <div className="dropdown-divider"></div>
-
-                      <button className="dropdown-item" onClick={() => handleMenuAction("profile")}>
-                        <User size={18} />
-                        <span>Profile</span>
-                      </button>
-
-                      <button className="dropdown-item" onClick={() => handleMenuAction("history")}>
-                        <History size={18} />
-                        <span>History</span>
-                      </button>
-
-                      <button className="dropdown-item" onClick={() => handleMenuAction("settings")}>
-                        <Settings size={18} />
-                        <span>Settings</span>
-                      </button>
-
-                      <button className="dropdown-item feedback" onClick={() => handleMenuAction("feedback")}>
-                        <MessageCircle size={18} />
-                        <span>Feedback</span>
-                      </button>
-
-                      <div className="dropdown-divider"></div>
-
-                      <button className="dropdown-item logout" onClick={() => handleMenuAction("logout")}>
-                        <LogOut size={18} />
-                        <span>Logout</span>
-                      </button>
+              <button
+                onClick={handleProfileClick}
+                className="profile-dropdown-button"
+                aria-label="Open profile menu"
+              >
+                <span className="profile-avatar">{getUserAvatar()}</span>
+                <span className="profile-name">{user.username}</span>
+              </button>
+              <button
+                onClick={handleProfileClick}
+                className="profile-toggle-button"
+                aria-label="Toggle profile"
+              >
+                Z
+              </button>
+              {showProfileDropdown && (
+                <div className="profile-dropdown-menu">
+                  <div className="dropdown-user-info">
+                    <div className="user-avatar-large">{getUserAvatar()}</div>
+                    <div className="user-details">
+                      <div className="user-name">{user.username}</div>
+                      <div className="user-email">{user.email}</div>
                     </div>
-                  )}
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <button className="dropdown-item" onClick={() => handleMenuAction("profile")}>
+                    <User size={18} />
+                    <span>Profile</span>
+                  </button>
+                  <button className="dropdown-item" onClick={() => handleMenuAction("history")}>
+                    <History size={18} />
+                    <span>History</span>
+                  </button>
+                  <button className="dropdown-item" onClick={() => handleMenuAction("settings")}>
+                    <Settings size={18} />
+                    <span>Settings</span>
+                  </button>
+                  <button className="dropdown-item feedback" onClick={() => handleMenuAction("feedback")}>
+                    <MessageCircle size={18} />
+                    <span>Feedback</span>
+                  </button>
+                  <div className="dropdown-divider"></div>
+                  <button className="dropdown-item logout" onClick={() => handleMenuAction("logout")}>
+                    <LogOut size={18} />
+                    <span>Logout</span>
+                  </button>
                 </div>
               )}
-
               <button
                 onClick={handleThemeToggle}
                 className="theme-toggle-button"
@@ -178,11 +172,9 @@ const Layout = () => {
           </div>
         </div>
       </header>
-
       <div className="main-content">
         <Outlet />
       </div>
-
       <div className={`navbar-container ${navbarCollapsed ? "collapsed" : ""}`}>
         <button
           className="navbar-toggle"
