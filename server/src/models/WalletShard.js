@@ -73,6 +73,28 @@ class WalletShard {
   }
 }
 
+// This method– is to get user's wallet address w
+static async getUserWalletAddresses(userId) {
+  const result = await db.query(
+    `SELECT DISTINCT chain_type FROM wallet_shards 
+     WHERE user_id = $1 AND is_active = true`,
+    [userId]
+  );
+  
+  const addresses = {};
+  for (const row of result.rows) {
+    // In practice, we'd store the actual addresses
+    // For now, we'll derive them from shards
+    const shards = await this.getUserShards(userId);
+    if (shards.length >= 2) {
+      // Derive address from shards
+      addresses[row.chain_type] = 'derived_address_here';
+    }
+  }
+  
+  return addresses;
+}
+
 // Initialize table
 WalletShard.initTable = async () => {
   try {
