@@ -185,6 +185,30 @@ const initializeTaskValidation = async () => {
   }
 };
 
+// Add this with your other initialization functions
+const initializeWalletSystem = async () => {
+  try {
+    await WalletShard.initTable();
+    await Policy.initTable();
+    await RecoveryRequest.initTable();
+    await Guardian.initTable();
+    console.log('✅ Wallet system tables initialized successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize wallet system:', error);
+    throw error;
+  }
+};
+
+// Then call it in your initializeApp function:
+const initializeApp = async () => {
+  console.log('🔧 Starting application initialization...');
+  
+  const dbConnected = await checkDbConnection();
+  if (!dbConnected) {
+    console.error('❌ Cannot start server without database connection');
+    process.exit(1);
+  }
+
 // Initialize settings system (create tables if needed)
 const initializeSettingsSystem = async () => {
   try {
@@ -324,6 +348,7 @@ const initializeApp = async () => {
   await initializeTaskValidation();
   await initializeSettingsSystem();
   await initializeFeedbackSystem();
+  await initializeWalletSystem();
 
   // Import and start background mining checker AFTER database is connected
   const backgroundMiningChecker = require('./services/backgroundMiningChecker');
