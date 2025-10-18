@@ -1,7 +1,7 @@
 {
   "name": "server",
-  "version": "1.0.0",
-  "description": "Backend server for the Ziver App Phase 1",
+  "version": "1.5.0",
+  "description": "Backend server for the Ziver App Phase 1 - Now going to Phase 1 stage 2",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -10,7 +10,10 @@
   "keywords": [
     "ziver",
     "defi",
-    "tma"
+    "tma",
+    "app",
+    "crypto",
+    "blockchain"
   ],
   "author": "",
   "license": "ISC",
@@ -33,7 +36,23 @@
     "qrcode": "^1.5.3",
     "rate-limiter-flexible": "^4.0.1",
     "speakeasy": "^2.0.0",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+
+    // MPC & Cryptography
+    "@noble/curves": "^1.4.0",
+    "@noble/hashes": "^1.4.0",
+    "tss-lib": "^2.0.0",
+    
+    // Blockchain Interactions
+    "ethers": "^6.10.0",
+    "web3": "^4.2.0",
+    "@tonclient/core": "^1.0.0",
+    "@tonclient/lib-node": "^1.0.0",
+    
+    // Utilities
+    "node-cron": "^3.0.3",
+    "redis": "^4.6.13",
+    "ws": "^8.17.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
