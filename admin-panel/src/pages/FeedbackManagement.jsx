@@ -14,7 +14,6 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import api from '../services/api';
-import adminService from '../services/adminService'; // Add admin service
 import './FeedbackManagement.css';
 
 const FeedbackManagement = () => {
@@ -87,15 +86,16 @@ const FeedbackManagement = () => {
         ...(filters.priority !== 'all' && { priority: filters.priority })
       });
 
-      // Use the correct admin endpoint
+      console.log("📊 Loading feedback...");
       const response = await api.get(`/feedback/admin/all?${params}`);
-      console.log('📊 Feedback response:', response.data);
-      
-      setFeedback(response.data.feedback || []);
+      console.log("✅ Feedback response:", response);
+
+      // Use response directly, not response.data
+      setFeedback(response.feedback || []);
       setPagination({
-        currentPage: response.data.pagination?.currentPage || 1,
-        totalPages: response.data.pagination?.totalPages || 1,
-        totalCount: response.data.pagination?.totalCount || 0
+        currentPage: response.pagination?.currentPage || 1,
+        totalPages: response.pagination?.totalPages || 1,
+        totalCount: response.pagination?.totalCount || 0
       });
     } catch (error) {
       console.error('❌ Error loading feedback:', error);
@@ -112,10 +112,15 @@ const FeedbackManagement = () => {
 
   const loadStats = async () => {
     try {
-      // Use the correct stats endpoint
+      console.log("📈 Loading feedback stats...");
       const response = await api.get('/feedback/admin/stats');
-      console.log('📈 Stats response:', response.data);
-      setStats(response.data.stats);
+      console.log("✅ Stats response:", response);
+      // Use response directly, not response.data
+      setStats(response.stats || {
+        byStatus: { pending: 0, reviewed: 0, in_progress: 0, resolved: 0, rewarded: 0, closed: 0 },
+        byType: { suggestion: 0, bug: 0, complaint: 0, feature: 0 },
+        byPriority: { low: 0, medium: 0, high: 0 }
+      });
     } catch (error) {
       console.error('❌ Error loading stats:', error);
       // Set default stats if API fails
@@ -150,23 +155,25 @@ const FeedbackManagement = () => {
 
   const handleStatusUpdate = async (feedbackId, newStatus) => {
     try {
+      console.log("🔄 Updating status...");
       await api.put(`/feedback/admin/${feedbackId}/status`, { status: newStatus });
       await loadFeedback();
       await loadStats();
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error('❌ Error updating status:', error);
     }
   };
 
   const handleRewardSubmit = async () => {
     try {
+      console.log("💰 Submitting reward...");
       await api.post(`/feedback/admin/${selectedFeedback.id}/reward`, rewardData);
       setShowRewardModal(false);
       setRewardData({ zpReward: 0, sebReward: 0, adminNotes: '' });
       await loadFeedback();
       await loadStats();
     } catch (error) {
-      console.error('Error rewarding user:', error);
+      console.error('❌ Error rewarding user:', error);
     }
   };
 
@@ -195,6 +202,14 @@ const FeedbackManagement = () => {
   const getPriorityColor = (priority) => {
     const option = priorityOptions.find(opt => opt.value === priority);
     return option?.color || '#6B7280';
+  };
+
+  const getFileIcon = (mimetype) => {
+    if (mimetype?.startsWith('image/')) return '🖼️';
+    if (mimetype?.includes('pdf')) return '📕';
+    if (mimetype?.includes('word') || mimetype?.includes('document')) return '📄';
+    if (mimetype?.includes('spreadsheet') || mimetype?.includes('excel')) return '📊';
+    return '📎';
   };
 
   const formatDate = (dateString) => {
@@ -235,7 +250,7 @@ const FeedbackManagement = () => {
               <MessageCircle size={24} />
             </div>
             <div className="stat-info">
-              <div className="stat-value">{pagination.totalCount}</div>
+              <div className="stat-value">{pagination.totalCount || 0}</div>
               <div className="stat-label">Total Feedback</div>
             </div>
           </div>
@@ -516,7 +531,7 @@ const FeedbackManagement = () => {
                   </div>
                 </div>
               </div>
-
+              
               <div className="detail-section">
                 <h3>Message</h3>
                 <div className="message-content">
@@ -524,65 +539,62 @@ const FeedbackManagement = () => {
                 </div>
               </div>
 
-              // In the detail modal section, replace the attachments grid with this:
-{selectedFeedback.attachments && selectedFeedback.attachments.length > 0 && (
-  <div className="detail-section">
-    <h3>Attachments ({selectedFeedback.attachments.length})</h3>
-    <div className="attachments-grid">
-      {selectedFeedback.attachments.map((attachment, index) => (
-        <div key={index} className="attachment-item">
-          <a 
-            href={attachment.url} // This is the S3 URL
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="attachment-link"
-          >
-            {/* Check if it's an image */}
-            {attachment.mimetype?.startsWith('image/') ? (
-              <img 
-                src={attachment.url} // Direct S3 URL
-                alt={attachment.filename}
-                className="attachment-image"
-                onError={(e) => {
-                  // Fallback for broken images
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'block';
-                }}
-              />
-            ) : (
-              <div className="file-placeholder">
-                <div className="file-icon">
-                  {getFileIcon(attachment.mimetype)}
+              {/* Attachments Section */}
+              {selectedFeedback.attachments && selectedFeedback.attachments.length > 0 && (
+                <div className="detail-section">
+                  <h3>Attachments ({selectedFeedback.attachments.length})</h3>
+                  <div className="attachments-grid">
+                    {selectedFeedback.attachments.map((attachment, index) => (
+                      <div key={index} className="attachment-item">
+                        <a 
+                          href={attachment.url}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="attachment-link"
+                        >
+                          {attachment.mimetype?.startsWith('image/') ? (
+                            <img 
+                              src={attachment.url}
+                              alt={attachment.filename}
+                              className="attachment-image"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                              }}
+                            />
+                          ) : (
+                            <div className="file-placeholder">
+                              <div className="file-icon">
+                                {getFileIcon(attachment.mimetype)}
+                              </div>
+                              <span className="file-name">{attachment.filename}</span>
+                            </div>
+                          )}
+                          <div className="file-placeholder" style={{display: 'none'}}>
+                            <div className="file-icon">📄</div>
+                            <span className="file-name">{attachment.filename}</span>
+                          </div>
+                        </a>
+                        <div className="attachment-info">
+                          <span className="attachment-name">{attachment.filename}</span>
+                          <span className="attachment-size">
+                            {(attachment.size / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                          <a 
+                            href={attachment.url}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="download-link"
+                            download={attachment.filename}
+                          >
+                            Download
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <span className="file-name">{attachment.filename}</span>
-              </div>
-            )}
-            {/* Error fallback */}
-            <div className="file-placeholder" style={{display: 'none'}}>
-              <div className="file-icon">📄</div>
-              <span className="file-name">{attachment.filename}</span>
-            </div>
-          </a>
-          <div className="attachment-info">
-            <span className="attachment-name">{attachment.filename}</span>
-            <span className="attachment-size">
-              {(attachment.size / 1024 / 1024).toFixed(2)} MB
-            </span>
-            <a 
-              href={attachment.url} // Direct S3 URL for download
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="download-link"
-              download={attachment.filename}
-            >
-              Download
-            </a>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+              )}
 
               {selectedFeedback.admin_notes && (
                 <div className="detail-section">
