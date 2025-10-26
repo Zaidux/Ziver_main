@@ -21,20 +21,29 @@ function App() {
   useEffect(() => {
     const initializeBackend = async () => {
       try {
-        await backendService.initialize();
+        console.log('🚀 Starting backend initialization...');
+        const selectedBackend = await backendService.initialize();
+        console.log('✅ Backend initialized with:', selectedBackend.name);
         setBackendInitialized(true);
-        
+
         // Start health checks
         backendService.startHealthChecks();
-      } catch (error) {
-        console.error('Failed to initialize backend service:', error);
-        setInitializationError(error.message);
         
-        // Try to use AWS as fallback
+        // Log current backend for debugging
+        console.log('🎯 Current backend URL:', backendService.getBaseURL());
+        
+      } catch (error) {
+        console.error('❌ Failed to initialize backend service:', error);
+        setInitializationError(error.message);
+
+        // Try to use AWS as fallback even if health check failed
         try {
+          console.log('🔄 Attempting AWS fallback...');
           backendService.selectBackend('aws');
           setBackendInitialized(true);
+          console.log('✅ Fallback to AWS successful');
         } catch (fallbackError) {
+          console.error('💥 All backends unavailable:', fallbackError);
           setInitializationError('All backends are unavailable');
         }
       }
