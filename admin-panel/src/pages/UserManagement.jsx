@@ -17,12 +17,15 @@ const UserManagement = () => {
     setUsers([])
 
     try {
+      console.log("🔍 Searching users...");
       const response = await adminService.searchUsers(searchTerm)
-      setUsers(response.data)
-      if (response.data.length === 0) {
+      console.log("✅ Users search result:", response);
+      setUsers(response || []); // Use response directly, not response.data
+      if (response.length === 0) {
         setError("No users found.")
       }
     } catch (err) {
+      console.error("❌ Error searching users:", err);
       setError("Failed to search for users.")
     } finally {
       setLoading(false)
@@ -97,11 +100,11 @@ const UserManagement = () => {
                         {user.email}
                       </div>
                     </td>
-                    <td className="text-success font-semibold">{user.zp_balance.toLocaleString()}</td>
+                    <td className="text-success font-semibold">{user.zp_balance?.toLocaleString() || 0}</td>
                     <td>
                       <div className="flex-center-gap">
                         <TrendingUp size={16} className="text-success" />
-                        {user.social_capital_score}
+                        {user.social_capital_score || 0}
                       </div>
                     </td>
                     <td>
