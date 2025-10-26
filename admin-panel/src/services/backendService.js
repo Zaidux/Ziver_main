@@ -9,12 +9,12 @@ class BackendService {
       },
       render: {
         name: 'Render Development',
-        url: 'https://ziver-api.onrender.com', // Replace with actual Render URL
+        url: 'https://ziver-api.onrender.com',
         priority: 2, // Fallback backend
         type: 'development'
       }
     };
-    
+
     this.currentBackend = null;
     this.healthCheckInterval = null;
     this.isHealthChecking = false;
@@ -23,13 +23,20 @@ class BackendService {
   // Health check for a single backend
   async checkBackendHealth(backend) {
     try {
-      const response = await fetch(`${backend.url}/api/health`, {
+      // Create a timeout promise
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 5000)
+      );
+
+      // Create the fetch promise
+      const fetchPromise = fetch(`${backend.url}/api/system/ping`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        timeout: 5000
       });
+
+      const response = await Promise.race([fetchPromise, timeoutPromise]);
       
       return {
         ...backend,
@@ -51,7 +58,7 @@ class BackendService {
     const healthChecks = Object.values(this.backends).map(backend => 
       this.checkBackendHealth(backend)
     );
-    
+
     const results = await Promise.all(healthChecks);
     return results;
   }
@@ -60,15 +67,15 @@ class BackendService {
   async autoSelectBackend() {
     const results = await this.checkAllBackends();
     const healthyBackends = results.filter(b => b.status === 'healthy');
-    
+
     if (healthyBackends.length === 0) {
       throw new Error('No healthy backends available');
     }
-    
+
     // Select the backend with highest priority (lowest number)
     const bestBackend = healthyBackends.sort((a, b) => a.priority - b.priority)[0];
     this.currentBackend = bestBackend;
-    
+
     return bestBackend;
   }
 
@@ -95,21 +102,21 @@ class BackendService {
     if (this.healthCheckInterval) {
       clearInterval(this.healthCheckInterval);
     }
-    
+
     this.healthCheckInterval = setInterval(async () => {
       if (this.isHealthChecking) return;
-      
+
       this.isHealthChecking = true;
       try {
         const results = await this.checkAllBackends();
-        
+
         // If current backend is unhealthy, switch to best available
         if (this.currentBackend && 
             results.find(b => b.url === this.currentBackend.url)?.status !== 'healthy') {
           await this.autoSelectBackend();
           console.log('Auto-switched to backup backend:', this.currentBackend.name);
         }
-        
+
         // Emit event for UI updates
         window.dispatchEvent(new CustomEvent('backendHealthUpdate', {
           detail: { backends: results }
@@ -145,7 +152,7 @@ class BackendService {
         console.warn('Saved backend unhealthy, auto-selecting...');
       }
     }
-    
+
     // Auto-select best backend
     return await this.autoSelectBackend();
   }
