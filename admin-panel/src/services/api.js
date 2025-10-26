@@ -7,11 +7,11 @@ const createAPIClient = () => {
       'Content-Type': 'application/json',
       ...customHeaders
     };
-    
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     return headers;
   };
 
@@ -19,13 +19,22 @@ const createAPIClient = () => {
     try {
       const baseURL = backendService.getBaseURL();
       const url = `${baseURL}${endpoint}`;
-      
+
       console.log(`API Request: ${url}`); // Debug log
-      
+
       const response = await fetch(url, {
         ...options,
         headers: getHeaders(options.headers),
       });
+
+      // Parse response data
+      let data;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        data = await response.text();
+      }
 
       // If unauthorized, clear token and redirect to login
       if (response.status === 401) {
@@ -35,62 +44,63 @@ const createAPIClient = () => {
         throw new Error('Authentication required');
       }
 
-      // If backend is down, try to switch and retry once
-      if (response.status >= 500) {
-        console.warn(`Backend error (${response.status}), attempting to switch backends...`);
-        await backendService.autoSelectBackend();
-        const newBaseURL = backendService.getBaseURL();
-        const newUrl = `${newBaseURL}${endpoint}`;
-        
-        console.log(`Retrying with: ${newUrl}`); // Debug log
-        const retryResponse = await fetch(newUrl, {
-          ...options,
-          headers: getHeaders(options.headers),
-        });
-        
-        return retryResponse;
+      // If not successful, throw error with response data
+      if (!response.ok) {
+        const error = new Error(data.message || `HTTP error! status: ${response.status}`);
+        error.response = { status: response.status, data };
+        throw error;
       }
 
-      return response;
+      // Return the parsed data directly (not the response object)
+      return data;
+
     } catch (error) {
       // Network error - try to switch backends
       if (error.name === 'TypeError' || error.message.includes('Failed to fetch')) {
         console.warn('Network error, switching backends...');
         await backendService.autoSelectBackend();
-        
+
         const baseURL = backendService.getBaseURL();
         const url = `${baseURL}${endpoint}`;
-        
+
         console.log(`Retrying after network error: ${url}`); // Debug log
-        return await fetch(url, {
+        const retryResponse = await fetch(url, {
           ...options,
           headers: getHeaders(options.headers),
         });
+
+        const retryData = await retryResponse.json();
+        if (!retryResponse.ok) {
+          throw new Error(retryData.message || `HTTP error! status: ${retryResponse.status}`);
+        }
+        return retryData;
       }
+      
+      // Re-throw other errors
       throw error;
     }
   };
 
   return {
     get: (endpoint) => request(endpoint),
-    
+
     post: (endpoint, data) => 
       request(endpoint, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    
+
     put: (endpoint, data) => 
       request(endpoint, {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
-    
+
     delete: (endpoint) => 
       request(endpoint, {
         method: 'DELETE',
       }),
-    
+
     upload: (endpoint, formData) =>
       request(endpoint, {
         method: 'POST',
