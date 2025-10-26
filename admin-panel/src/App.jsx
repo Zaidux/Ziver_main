@@ -6,7 +6,7 @@ import TaskManagement from "./pages/TaskManagement";
 import Settings from "./pages/Settings";
 import UserManagement from "./pages/UserManagement";
 import SystemStatus from "./pages/SystemStatus";
-import FeedbackManagement from "./pages/FeedbackManagment";
+import FeedbackManagement from "./pages/FeedbackManagement";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./context/ThemeContext";
