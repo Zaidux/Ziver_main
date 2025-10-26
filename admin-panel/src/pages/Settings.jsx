@@ -15,10 +15,13 @@ const Settings = () => {
 
   const fetchSettings = async () => {
     try {
+      console.log("⚙️ Fetching settings...");
       const response = await adminService.getSettings()
-      setSettings(response.data)
+      console.log("✅ Settings received:", response);
+      setSettings(response || []); // Use response directly, not response.data
     } catch (error) {
-      console.error("Error fetching settings:", error)
+      console.error("❌ Error fetching settings:", error)
+      setSettings([]); // Set empty array on error
     } finally {
       setLoading(false)
     }
@@ -33,13 +36,14 @@ const Settings = () => {
   const handleSave = async (setting) => {
     try {
       setSaving(setting.id)
+      console.log("💾 Saving setting:", setting);
       await adminService.updateSetting({
         setting_key: setting.setting_key,
         setting_value: setting.setting_value,
       })
       alert(`✅ '${setting.description}' saved successfully!`)
     } catch (error) {
-      console.error("Error saving setting:", error)
+      console.error("❌ Error saving setting:", error)
       alert("❌ Error saving setting. Please try again.")
     } finally {
       setSaving(null)
@@ -50,6 +54,7 @@ const Settings = () => {
     return (
       <div className="loading-container">
         <div className="spinner-large"></div>
+        <p>Loading settings...</p>
       </div>
     )
   }
@@ -74,7 +79,7 @@ const Settings = () => {
                 <label className="setting-label">{setting.description}</label>
                 <input
                   type="text"
-                  value={setting.setting_value}
+                  value={setting.setting_value || ''}
                   onChange={(e) => handleSettingChange(index, e.target.value)}
                   className="setting-input"
                 />
