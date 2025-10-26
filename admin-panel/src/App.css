@@ -1,2 +1,59 @@
 /* This file is intentionally minimal as styles are now in index.css */
 /* Keep this file for any app-specific overrides if needed */
+/* App-specific styles */
+.app-initializing {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #f8f9fa;
+}
+
+.initialization-message {
+  text-align: center;
+  padding: 40px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  max-width: 400px;
+}
+
+.initialization-message h2 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.initialization-message p {
+  margin-bottom: 20px;
+  color: #666;
+}
+
+.initialization-message button {
+  padding: 10px 20px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.initialization-message button:hover {
+  background: #0056b3;
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Additional app-wide styles can be added here */
