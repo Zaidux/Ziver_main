@@ -2,9 +2,9 @@
 
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import axios from "axios"
 import { Shield, Mail, Lock, AlertCircle, Sun, Moon } from "lucide-react"
 import { useTheme } from "../context/ThemeContext"
+import api from "../services/api" // Import the api service that uses backendService
 
 const AdminLoginPage = () => {
   const [formData, setFormData] = useState({ email: "", password: "" })
@@ -23,18 +23,22 @@ const AdminLoginPage = () => {
     setError("")
 
     try {
-      const response = await axios.post("https://ziver-api.onrender.com/api/auth/login", {
+      // Use the api service instead of hardcoded axios call
+      const response = await api.post("/api/auth/login", {
         email: formData.email,
         password: formData.password,
       })
 
-      const { user, token, appSettings } = response.data
+      const { user, token, appSettings } = response
 
       if (user && user.role === "ADMIN") {
         localStorage.setItem("admin_user", JSON.stringify(user))
         localStorage.setItem("admin_token", token)
         localStorage.setItem("admin_settings", JSON.stringify(appSettings))
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`
+        
+        // Set authorization header for future requests
+        // The api service will handle this automatically via interceptors
+        console.log("✅ Login successful, user role:", user.role)
         navigate("/")
       } else {
         setError("Access Denied: Administrator privileges required.")
@@ -42,8 +46,8 @@ const AdminLoginPage = () => {
         localStorage.removeItem("admin_token")
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed. Please try again.")
-      console.error("Login error:", err)
+      console.error("Login error details:", err)
+      setError(err.response?.data?.message || err.message || "Login failed. Please try again.")
     } finally {
       setLoading(false)
     }
