@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react";
 import {
   Activity,
   Database,
@@ -13,14 +13,14 @@ import {
   XCircle,
   Play,
   Pause,
-} from "lucide-react"
-import { getSystemStatus, toggleLockdown } from "../services/adminService"
-import BackendStatus from "../components/BackendStatus"
+} from "lucide-react";
+import { getSystemStatus, toggleLockdown } from "../services/adminService";
+import BackendStatus from "../components/BackendStatus";
 
 const SystemStatus = () => {
-  const [systemStatus, setSystemStatus] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [lockdownLoading, setLockdownLoading] = useState(false)
+  const [systemStatus, setSystemStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [lockdownLoading, setLockdownLoading] = useState(false);
 
   const components = [
     { key: "database", name: "Database", icon: Database, color: "#EF4444" },
@@ -29,14 +29,15 @@ const SystemStatus = () => {
     { key: "tasks", name: "Task System", icon: AlertTriangle, color: "#A855F7" },
     { key: "referrals", name: "Referral System", icon: Users, color: "#F59E0B" },
     { key: "telegram", name: "Telegram Bot", icon: Shield, color: "#14B8A6" },
-  ]
+  ];
 
   const fetchStatus = async () => {
     try {
-      const status = await getSystemStatus()
-      setSystemStatus(status)
+      const status = await getSystemStatus();
+      setSystemStatus(status);
     } catch (error) {
-      console.error("Error fetching system status:", error)
+      console.error("Error fetching system status:", error);
+      // Fallback status
       setSystemStatus({
         lockdownMode: false,
         componentStatuses: {
@@ -48,54 +49,54 @@ const SystemStatus = () => {
           telegram: "operational",
         },
         errorLogs: [],
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleToggleLockdown = async () => {
     try {
-      setLockdownLoading(true)
-      const result = await toggleLockdown()
+      setLockdownLoading(true);
+      const result = await toggleLockdown();
       setSystemStatus((prev) => ({
         ...prev,
         lockdownMode: result.lockdownMode,
-      }))
-      alert(`✅ ${result.message}`)
+      }));
+      alert(`✅ ${result.message}`);
     } catch (error) {
-      console.error("Error toggling lockdown:", error)
-      alert("❌ Error toggling lockdown mode. Please check console for details.")
+      console.error("Error toggling lockdown:", error);
+      alert("❌ Error toggling lockdown mode. Please check console for details.");
     } finally {
-      setLockdownLoading(false)
+      setLockdownLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchStatus()
-    const interval = setInterval(fetchStatus, 10000)
-    return () => clearInterval(interval)
-  }, [])
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getStatusIcon = (status) => {
     switch (status) {
       case "operational":
-        return <CheckCircle size={20} className="text-success" />
+        return <CheckCircle size={20} className="text-success" />;
       case "degraded":
-        return <AlertTriangle size={20} className="text-warning" />
+        return <AlertTriangle size={20} className="text-warning" />;
       case "down":
-        return <XCircle size={20} className="text-danger" />
+        return <XCircle size={20} className="text-danger" />;
       default:
-        return <AlertTriangle size={20} className="text-muted" />
+        return <AlertTriangle size={20} className="text-muted" />;
     }
-  }
+  };
 
   if (loading) {
     return (
       <div className="loading-container">
         <div className="spinner-large"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -110,7 +111,7 @@ const SystemStatus = () => {
         </div>
       </div>
 
-      {/* Backend Services Status - NEW SECTION */}
+      {/* Backend Services Status */}
       <BackendStatus />
 
       {/* System Health Overview */}
@@ -158,8 +159,8 @@ const SystemStatus = () => {
       {/* Component Status Grid */}
       <div className="components-grid">
         {components.map((component) => {
-          const Icon = component.icon
-          const status = systemStatus.componentStatuses[component.key]
+          const Icon = component.icon;
+          const status = systemStatus.componentStatuses[component.key];
           return (
             <div key={component.key} className="component-card">
               <div className="component-header">
@@ -184,7 +185,7 @@ const SystemStatus = () => {
                 ></div>
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -214,7 +215,7 @@ const SystemStatus = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default SystemStatus
+export default SystemStatus;
