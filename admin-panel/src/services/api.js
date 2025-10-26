@@ -16,69 +16,78 @@ const createAPIClient = () => {
   };
 
   const request = async (endpoint, options = {}) => {
-    try {
-      const baseURL = backendService.getBaseURL();
-      const url = `${baseURL}${endpoint}`;
-
-      console.log(`API Request: ${url}`); // Debug log
-
-      const response = await fetch(url, {
-        ...options,
-        headers: getHeaders(options.headers),
-      });
-
-      // Parse response data
-      let data;
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        data = await response.text();
-      }
-
-      // If unauthorized, clear token and redirect to login
-      if (response.status === 401) {
-        localStorage.removeItem('admin_token');
-        localStorage.removeItem('admin_user');
-        window.location.href = '/login';
-        throw new Error('Authentication required');
-      }
-
-      // If not successful, throw error with response data
-      if (!response.ok) {
-        const error = new Error(data.message || `HTTP error! status: ${response.status}`);
-        error.response = { status: response.status, data };
-        throw error;
-      }
-
-      // Return the parsed data directly (not the response object)
-      return data;
-
-    } catch (error) {
-      // Network error - try to switch backends
-      if (error.name === 'TypeError' || error.message.includes('Failed to fetch')) {
-        console.warn('Network error, switching backends...');
-        await backendService.autoSelectBackend();
-
+    let lastError = null;
+    
+    // Try the request with potential backend switching
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
         const baseURL = backendService.getBaseURL();
         const url = `${baseURL}${endpoint}`;
 
-        console.log(`Retrying after network error: ${url}`); // Debug log
-        const retryResponse = await fetch(url, {
+        console.log(`API Request (attempt ${attempt + 1}): ${url}`);
+
+        const response = await fetch(url, {
           ...options,
           headers: getHeaders(options.headers),
         });
 
-        const retryData = await retryResponse.json();
-        if (!retryResponse.ok) {
-          throw new Error(retryData.message || `HTTP error! status: ${retryResponse.status}`);
+        // Parse response data
+        let data;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          data = await response.text();
         }
-        return retryData;
+
+        // If unauthorized, clear token and redirect to login
+        if (response.status === 401) {
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin_user');
+          window.location.href = '/login';
+          throw new Error('Authentication required');
+        }
+
+        // If backend is down (5xx error), try to switch and retry
+        if (response.status >= 500) {
+          console.warn(`Backend error (${response.status}), attempting to switch backends...`);
+          await backendService.autoSelectBackend();
+          lastError = new Error(data.message || `Backend error: ${response.status}`);
+          continue; // Retry with new backend
+        }
+
+        // If not successful, throw error with response data
+        if (!response.ok) {
+          const error = new Error(data.message || `HTTP error! status: ${response.status}`);
+          error.response = { status: response.status, data };
+          throw error;
+        }
+
+        // Return the parsed data directly (not the response object)
+        return data;
+
+      } catch (error) {
+        lastError = error;
+        
+        // Network error or backend down - try to switch backends
+        if (error.name === 'TypeError' || error.message.includes('Failed to fetch') || error.message.includes('Backend error')) {
+          console.warn('Network/backend error, switching backends...');
+          try {
+            await backendService.autoSelectBackend();
+            console.log(`Switched to backend: ${backendService.currentBackend?.name}`);
+          } catch (switchError) {
+            console.error('Failed to switch backends:', switchError);
+            break; // No healthy backends available
+          }
+        } else {
+          // Other errors (auth, validation, etc.) - don't retry
+          break;
+        }
       }
-      
-      // Re-throw other errors
-      throw error;
     }
+
+    // If we get here, all attempts failed
+    throw lastError || new Error('Request failed after multiple attempts');
   };
 
   return {
