@@ -44,10 +44,12 @@ const SystemStatus = () => {
 
   const fetchStatus = async () => {
     try {
+      console.log("🔄 Fetching system status...");
       const status = await getSystemStatus();
+      console.log("✅ System status received:", status);
       setSystemStatus(status);
     } catch (error) {
-      console.error("Error fetching system status:", error);
+      console.error("❌ Error fetching system status:", error);
       // Set fallback status with error state
       setSystemStatus(prev => ({
         ...prev,
@@ -61,7 +63,7 @@ const SystemStatus = () => {
         },
         errorLogs: [{ 
           component: "System", 
-          error: "Failed to fetch system status", 
+          error: "Failed to fetch system status: " + error.message, 
           timestamp: new Date().toISOString() 
         }],
       }));
@@ -96,6 +98,7 @@ const SystemStatus = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case "operational":
+      case "healthy":
         return <CheckCircle size={20} className="text-success" />;
       case "degraded":
         return <AlertTriangle size={20} className="text-warning" />;
@@ -136,15 +139,15 @@ const SystemStatus = () => {
         <div className="system-health-content">
           <div>
             <h2 className="system-health-title">
-              {systemStatus.lockdownMode ? "System in Lockdown Mode" : "All Systems Operational"}
+              {systemStatus?.lockdownMode ? "System in Lockdown Mode" : "All Systems Operational"}
             </h2>
             <p className="system-health-subtitle">
-              {systemStatus.lockdownMode ? "🔒 Restricted access mode active" : "✅ All services running normally"}
+              {systemStatus?.lockdownMode ? "🔒 Restricted access mode active" : "✅ All services running normally"}
             </p>
           </div>
           <div className="system-health-actions">
             <div className="system-health-icon">
-              {systemStatus.lockdownMode ? (
+              {systemStatus?.lockdownMode ? (
                 <XCircle size={32} className="text-danger" />
               ) : (
                 <CheckCircle size={32} className="text-success" />
@@ -153,11 +156,11 @@ const SystemStatus = () => {
             <button
               onClick={handleToggleLockdown}
               disabled={lockdownLoading}
-              className={`btn ${systemStatus.lockdownMode ? "btn-success" : "btn-danger"}`}
+              className={`btn ${systemStatus?.lockdownMode ? "btn-success" : "btn-danger"}`}
             >
               {lockdownLoading ? (
                 <div className="spinner"></div>
-              ) : systemStatus.lockdownMode ? (
+              ) : systemStatus?.lockdownMode ? (
                 <>
                   <Play size={16} />
                   Disable Lockdown
@@ -177,7 +180,7 @@ const SystemStatus = () => {
       <div className="components-grid">
         {components.map((component) => {
           const Icon = component.icon;
-          const status = systemStatus.componentStatuses[component.key] || "checking";
+          const status = systemStatus?.componentStatuses?.[component.key] || "checking";
           return (
             <div key={component.key} className="component-card">
               <div className="component-header">
@@ -196,8 +199,8 @@ const SystemStatus = () => {
                 <div
                   className="component-progress-bar"
                   style={{
-                    width: status === "operational" ? "100%" : status === "degraded" ? "60%" : "0%",
-                    background: status === "operational" ? "#10B981" : status === "degraded" ? "#F59E0B" : "#EF4444",
+                    width: status === "operational" || status === "healthy" ? "100%" : status === "degraded" ? "60%" : "0%",
+                    background: status === "operational" || status === "healthy" ? "#10B981" : status === "degraded" ? "#F59E0B" : "#EF4444",
                   }}
                 ></div>
               </div>
@@ -212,7 +215,7 @@ const SystemStatus = () => {
           <AlertTriangle size={20} />
           <h2 className="card-title">Recent Error Logs</h2>
         </div>
-        {(!systemStatus.errorLogs || systemStatus.errorLogs.length === 0) ? (
+        {(!systemStatus?.errorLogs || systemStatus.errorLogs.length === 0) ? (
           <div className="empty-state">
             <CheckCircle size={48} className="text-success" />
             <p>No recent errors. System is running smoothly!</p>
