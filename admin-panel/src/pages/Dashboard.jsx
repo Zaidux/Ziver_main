@@ -34,21 +34,30 @@ const Dashboard = () => {
         setLoading(true)
         setError("")
 
+        console.log("Fetching dashboard data...")
+        console.log("Admin token:", localStorage.getItem('admin_token'))
+
         const [summaryResponse, systemStatusResponse] = await Promise.all([
           adminService.getSummary(),
           adminService.getSystemStatus(),
         ])
 
+        console.log("Summary response:", summaryResponse)
+        console.log("System status response:", systemStatusResponse)
+
+        // FIX: Use the response directly, not response.data
         const systemHealth = getSystemHealth(systemStatusResponse)
 
         setSummary({
-          ...summaryResponse.data,
+          ...summaryResponse, // Remove .data - response is the actual data
           systemHealth,
-          totalTasks: summaryResponse.data.totalTasks || 0,
-          activeTasks: summaryResponse.data.activeTasks || 0,
+          totalTasks: summaryResponse.totalTasks || 0,
+          activeTasks: summaryResponse.activeTasks || 0,
         })
       } catch (err) {
         console.error("Dashboard error:", err)
+        console.error("Error details:", err.response)
+        
         if (err.response?.status === 403) {
           setError("Access denied. Administrator privileges required.")
         } else if (err.response?.status === 401) {
@@ -79,6 +88,7 @@ const Dashboard = () => {
     return (
       <div className="loading-container">
         <div className="spinner-large"></div>
+        <p>Loading dashboard data...</p>
       </div>
     )
   }
@@ -103,7 +113,7 @@ const Dashboard = () => {
           </div>
           <div className="stat-content">
             <h3 className="stat-label">Total Users</h3>
-            <p className="stat-value">{summary.totalUsers.toLocaleString()}</p>
+            <p className="stat-value">{summary.totalUsers?.toLocaleString() || 0}</p>
           </div>
         </div>
 
@@ -113,7 +123,7 @@ const Dashboard = () => {
           </div>
           <div className="stat-content">
             <h3 className="stat-label">Online Now</h3>
-            <p className="stat-value">{summary.onlineUsers}</p>
+            <p className="stat-value">{summary.onlineUsers || 0}</p>
           </div>
         </div>
 
@@ -124,7 +134,7 @@ const Dashboard = () => {
           <div className="stat-content">
             <h3 className="stat-label">Active Tasks</h3>
             <p className="stat-value">
-              {summary.activeTasks}/{summary.totalTasks}
+              {summary.activeTasks || 0}/{summary.totalTasks || 0}
             </p>
           </div>
         </div>
