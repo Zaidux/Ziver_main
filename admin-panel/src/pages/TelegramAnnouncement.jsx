@@ -26,19 +26,25 @@ const TelegramAnnouncements = () => {
 
   const loadStats = async () => {
     try {
+      console.log("📊 Loading Telegram stats...");
       const response = await adminService.getTelegramStats();
-      setStats(response.stats);
+      console.log("✅ Telegram stats:", response);
+      setStats(response || {}); // Use response directly
     } catch (error) {
-      console.error('Error loading stats:', error);
+      console.error('❌ Error loading stats:', error);
+      setStats({}); // Set empty object on error
     }
   };
 
   const loadAnnouncementHistory = async () => {
     try {
+      console.log("📜 Loading announcement history...");
       const response = await adminService.getAnnouncementHistory();
-      setAnnouncementHistory(response.announcements);
+      console.log("✅ Announcement history:", response);
+      setAnnouncementHistory(response || []); // Use response directly
     } catch (error) {
-      console.error('Error loading history:', error);
+      console.error('❌ Error loading history:', error);
+      setAnnouncementHistory([]); // Set empty array on error
     }
   };
 
@@ -50,13 +56,16 @@ const TelegramAnnouncements = () => {
 
     setLoading(true);
     try {
+      console.log("📤 Sending announcement...");
       const response = await adminService.sendAnnouncement(announcementData);
+      console.log("✅ Announcement sent:", response);
       setAlert({ type: 'success', message: response.message });
       setAnnouncementData({ ...announcementData, message: '' });
       loadStats();
       loadAnnouncementHistory();
     } catch (error) {
-      setAlert({ type: 'error', message: error.response?.data?.message || 'Failed to send announcement' });
+      console.error('❌ Error sending announcement:', error);
+      setAlert({ type: 'error', message: error.message || 'Failed to send announcement' });
     } finally {
       setLoading(false);
     }
@@ -70,12 +79,15 @@ const TelegramAnnouncements = () => {
 
     setLoading(true);
     try {
+      console.log("📤 Sending user message...");
       const response = await adminService.sendUserMessage(userMessageData);
+      console.log("✅ User message sent:", response);
       setAlert({ type: 'success', message: response.message });
       setUserMessageData({ telegramId: '', message: '' });
       loadAnnouncementHistory();
     } catch (error) {
-      setAlert({ type: 'error', message: error.response?.data?.message || 'Failed to send message' });
+      console.error('❌ Error sending user message:', error);
+      setAlert({ type: 'error', message: error.message || 'Failed to send message' });
     } finally {
       setLoading(false);
     }
@@ -136,7 +148,7 @@ const TelegramAnnouncements = () => {
             </div>
             <div className="stat-content">
               <div className="stat-label">Total Telegram Users</div>
-              <div className="stat-value">{stats.total_users}</div>
+              <div className="stat-value">{stats.total_users || 0}</div>
             </div>
           </div>
 
@@ -146,7 +158,7 @@ const TelegramAnnouncements = () => {
             </div>
             <div className="stat-content">
               <div className="stat-label">System Updates Enabled</div>
-              <div className="stat-value">{stats.system_updates_enabled}</div>
+              <div className="stat-value">{stats.system_updates_enabled || 0}</div>
             </div>
           </div>
 
@@ -156,7 +168,7 @@ const TelegramAnnouncements = () => {
             </div>
             <div className="stat-content">
               <div className="stat-label">Active Users (7 days)</div>
-              <div className="stat-value">{stats.active_users}</div>
+              <div className="stat-value">{stats.active_users || 0}</div>
             </div>
           </div>
 
@@ -166,7 +178,7 @@ const TelegramAnnouncements = () => {
             </div>
             <div className="stat-content">
               <div className="stat-label">Recent Announcements</div>
-              <div className="stat-value">{stats.recent_announcements}</div>
+              <div className="stat-value">{stats.recent_announcements || 0}</div>
             </div>
           </div>
         </div>
@@ -338,14 +350,14 @@ const TelegramAnnouncements = () => {
                               </span>
                             </td>
                             <td>{announcement.target_users}</td>
-                            <td>{announcement.sent_count}</td>
+                            <td>{announcement.sent_count || 0}</td>
                             <td>
                               {announcement.failed_count > 0 ? (
                                 <span className="badge badge-error">
                                   {announcement.failed_count}
                                 </span>
                               ) : (
-                                announcement.failed_count
+                                announcement.failed_count || 0
                               )}
                             </td>
                             <td>{announcement.admin_username}</td>
