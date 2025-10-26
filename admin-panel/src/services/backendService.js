@@ -23,9 +23,11 @@ class BackendService {
   // Health check for a single backend
   async checkBackendHealth(backend) {
     try {
+      console.log(`🔍 Health checking ${backend.name}: ${backend.url}/api/system/ping`);
+      
       // Create a timeout promise
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), 5000)
+        setTimeout(() => reject(new Error('Request timeout')), 10000) // Increased timeout to 10s
       );
 
       // Create the fetch promise
@@ -34,16 +36,20 @@ class BackendService {
         headers: {
           'Content-Type': 'application/json',
         },
+        mode: 'cors' // Explicitly set CORS mode
       });
 
       const response = await Promise.race([fetchPromise, timeoutPromise]);
       
+      console.log(`✅ ${backend.name} health check:`, response.status, response.ok);
+
       return {
         ...backend,
         status: response.ok ? 'healthy' : 'unhealthy',
         lastChecked: new Date().toISOString()
       };
     } catch (error) {
+      console.error(`❌ ${backend.name} health check failed:`, error.message);
       return {
         ...backend,
         status: 'offline',
@@ -60,13 +66,17 @@ class BackendService {
     );
 
     const results = await Promise.all(healthChecks);
+    console.log('📊 All backend health results:', results);
     return results;
   }
 
   // Auto-select the best available backend
   async autoSelectBackend() {
+    console.log('🔄 Auto-selecting best backend...');
     const results = await this.checkAllBackends();
     const healthyBackends = results.filter(b => b.status === 'healthy');
+
+    console.log('✅ Healthy backends:', healthyBackends.map(b => b.name));
 
     if (healthyBackends.length === 0) {
       throw new Error('No healthy backends available');
@@ -76,6 +86,7 @@ class BackendService {
     const bestBackend = healthyBackends.sort((a, b) => a.priority - b.priority)[0];
     this.currentBackend = bestBackend;
 
+    console.log('🎯 Selected backend:', bestBackend.name);
     return bestBackend;
   }
 
@@ -84,6 +95,7 @@ class BackendService {
     if (this.backends[backendKey]) {
       this.currentBackend = this.backends[backendKey];
       localStorage.setItem('selectedBackend', backendKey);
+      console.log('🔧 Manually selected backend:', this.currentBackend.name);
       return this.currentBackend;
     }
     throw new Error(`Backend ${backendKey} not found`);
@@ -113,8 +125,9 @@ class BackendService {
         // If current backend is unhealthy, switch to best available
         if (this.currentBackend && 
             results.find(b => b.url === this.currentBackend.url)?.status !== 'healthy') {
+          console.log('🔄 Current backend unhealthy, switching...');
           await this.autoSelectBackend();
-          console.log('Auto-switched to backup backend:', this.currentBackend.name);
+          console.log('✅ Auto-switched to backup backend:', this.currentBackend.name);
         }
 
         // Emit event for UI updates
@@ -139,21 +152,30 @@ class BackendService {
 
   // Initialize backend service
   async initialize() {
+    console.log('🚀 Initializing backend service...');
+    
     // Try to use previously selected backend
     const savedBackend = localStorage.getItem('selectedBackend');
+    console.log('💾 Saved backend preference:', savedBackend);
+    
     if (savedBackend && this.backends[savedBackend]) {
       try {
+        console.log(`🔍 Testing saved backend: ${savedBackend}`);
         const health = await this.checkBackendHealth(this.backends[savedBackend]);
         if (health.status === 'healthy') {
           this.currentBackend = this.backends[savedBackend];
+          console.log('✅ Using saved backend:', this.currentBackend.name);
           return this.currentBackend;
+        } else {
+          console.log('❌ Saved backend unhealthy, will auto-select');
         }
       } catch (error) {
-        console.warn('Saved backend unhealthy, auto-selecting...');
+        console.warn('⚠️ Saved backend check failed, auto-selecting...');
       }
     }
 
     // Auto-select best backend
+    console.log('🔄 Starting auto-selection process...');
     return await this.autoSelectBackend();
   }
 }
