@@ -3,8 +3,8 @@ const {
   getSystemStatus, 
   toggleLockdown, 
   updateComponentStatus 
-} = require('../controllers/systemStatusController.js');
-const { admin } = require('../middleware/adminMiddleware.js');
+} = require('../controllers/systemStatusController');
+const { admin } = require('../middleware/adminMiddleware');
 const db = require('../config/db');
 
 const router = express.Router();
@@ -19,7 +19,7 @@ router.get('/health', async (req, res) => {
   try {
     // Check database connection
     await db.query('SELECT 1');
-    
+
     res.json({
       status: 'operational',
       timestamp: new Date().toISOString(),
@@ -46,7 +46,17 @@ router.get('/ping', (req, res) => {
   res.json({ 
     status: 'ok', 
     message: 'Server is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version || '1.0.0'
+  });
+});
+
+// Heartbeat endpoint for individual service checks
+router.get('/heartbeat', (req, res) => {
+  res.json({ 
+    status: 'alive', 
+    timestamp: new Date().toISOString(),
+    service: 'system'
   });
 });
 
