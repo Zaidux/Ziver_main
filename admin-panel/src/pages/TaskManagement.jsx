@@ -51,10 +51,13 @@ const TaskManagement = () => {
 
   const fetchTasks = async () => {
     try {
+      console.log("🔄 Fetching tasks...");
       const response = await adminService.getTasks()
-      setTasks(response.data)
+      console.log("✅ Tasks received:", response);
+      setTasks(response || []); // Use response directly, not response.data
     } catch (error) {
-      console.error("Error fetching tasks:", error)
+      console.error("❌ Error fetching tasks:", error)
+      setTasks([]); // Set empty array on error
     }
   }
 
@@ -127,6 +130,8 @@ const TaskManagement = () => {
             : [],
       }
 
+      console.log("📤 Submitting task:", taskData);
+
       if (isEditing) {
         await adminService.updateTask(isEditing, taskData)
       } else {
@@ -135,7 +140,7 @@ const TaskManagement = () => {
       resetForm()
       fetchTasks()
     } catch (error) {
-      console.error("Error saving task:", error)
+      console.error("❌ Error saving task:", error)
       alert("Error saving task: " + (error.response?.data?.message || error.message))
     } finally {
       setLoading(false)
@@ -157,7 +162,7 @@ const TaskManagement = () => {
 
     // Load existing validation rules if available
     if (task.validation_rules && task.validation_rules.length > 0) {
-      console.log(`Loading ${task.validation_rules.length} existing validation rules`)
+      console.log(`📋 Loading ${task.validation_rules.length} existing validation rules`)
       const formattedRules = task.validation_rules.map(rule => ({
         id: rule.id,
         rule_type: rule.rule_type,
@@ -170,7 +175,7 @@ const TaskManagement = () => {
     } else {
       setValidationRules([])
     }
-    
+
     setActiveTab("basic")
   }
 
@@ -350,7 +355,7 @@ const TaskManagement = () => {
           {activeTab === "validation" && formData.task_type === "in_app" && (
             <div className="tab-content">
               <h4 className="section-title">Validation Rules</h4>
-              
+
               {/* Show existing rules count */}
               {isEditing && validationRules.length > 0 && (
                 <div className="existing-rules-notice">
@@ -358,7 +363,7 @@ const TaskManagement = () => {
                   Editing will replace all existing rules.</p>
                 </div>
               )}
-              
+
               <div className="rule-form">
                 <select name="rule_type" value={currentRule.rule_type} onChange={handleRuleChange}>
                   {ruleTypes.map((rule) => (
@@ -426,9 +431,9 @@ const TaskManagement = () => {
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">Existing Tasks</h3>
-          <span className="badge">{tasks.length} tasks</span>
+          <span className="badge">{tasks?.length || 0} tasks</span>
         </div>
-        {tasks.length === 0 ? (
+        {!tasks || tasks.length === 0 ? (
           <div className="empty-state">
             <ClipboardList size={48} />
             <p>No tasks created yet.</p>
