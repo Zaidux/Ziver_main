@@ -18,7 +18,18 @@ import { getSystemStatus, toggleLockdown } from "../services/adminService";
 import BackendStatus from "../components/BackendStatus";
 
 const SystemStatus = () => {
-  const [systemStatus, setSystemStatus] = useState(null);
+  const [systemStatus, setSystemStatus] = useState({
+    lockdownMode: false,
+    componentStatuses: {
+      database: "checking",
+      authentication: "checking", 
+      mining: "checking",
+      tasks: "checking",
+      referrals: "checking",
+      telegram: "checking",
+    },
+    errorLogs: [],
+  });
   const [loading, setLoading] = useState(true);
   const [lockdownLoading, setLockdownLoading] = useState(false);
 
@@ -37,19 +48,23 @@ const SystemStatus = () => {
       setSystemStatus(status);
     } catch (error) {
       console.error("Error fetching system status:", error);
-      // Fallback status
-      setSystemStatus({
-        lockdownMode: false,
+      // Set fallback status with error state
+      setSystemStatus(prev => ({
+        ...prev,
         componentStatuses: {
-          database: "operational",
-          authentication: "operational",
-          mining: "operational",
-          tasks: "operational",
-          referrals: "operational",
-          telegram: "operational",
+          database: "down",
+          authentication: "down",
+          mining: "down", 
+          tasks: "down",
+          referrals: "down",
+          telegram: "down",
         },
-        errorLogs: [],
-      });
+        errorLogs: [{ 
+          component: "System", 
+          error: "Failed to fetch system status", 
+          timestamp: new Date().toISOString() 
+        }],
+      }));
     } finally {
       setLoading(false);
     }
@@ -85,6 +100,7 @@ const SystemStatus = () => {
       case "degraded":
         return <AlertTriangle size={20} className="text-warning" />;
       case "down":
+      case "checking":
         return <XCircle size={20} className="text-danger" />;
       default:
         return <AlertTriangle size={20} className="text-muted" />;
@@ -95,6 +111,7 @@ const SystemStatus = () => {
     return (
       <div className="loading-container">
         <div className="spinner-large"></div>
+        <p>Loading system status...</p>
       </div>
     );
   }
@@ -160,7 +177,7 @@ const SystemStatus = () => {
       <div className="components-grid">
         {components.map((component) => {
           const Icon = component.icon;
-          const status = systemStatus.componentStatuses[component.key];
+          const status = systemStatus.componentStatuses[component.key] || "checking";
           return (
             <div key={component.key} className="component-card">
               <div className="component-header">
@@ -195,7 +212,7 @@ const SystemStatus = () => {
           <AlertTriangle size={20} />
           <h2 className="card-title">Recent Error Logs</h2>
         </div>
-        {systemStatus.errorLogs.length === 0 ? (
+        {(!systemStatus.errorLogs || systemStatus.errorLogs.length === 0) ? (
           <div className="empty-state">
             <CheckCircle size={48} className="text-success" />
             <p>No recent errors. System is running smoothly!</p>
