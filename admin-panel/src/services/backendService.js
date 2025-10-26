@@ -9,7 +9,7 @@ class BackendService {
       },
       render: {
         name: 'Render Development',
-        url: 'https://your-render-backend.onrender.com', // Replace with actual Render URL
+        url: 'https://ziver-api.onrender.com', // Replace with actual Render URL
         priority: 2, // Fallback backend
         type: 'development'
       }
